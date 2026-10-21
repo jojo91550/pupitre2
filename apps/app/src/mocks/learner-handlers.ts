@@ -1,9 +1,10 @@
 import { http, HttpResponse } from 'msw';
 
-import type { CheckResult, QuizAnswer, SkillLevel, UserPublic } from '@/lib/api-types';
+import type { CheckResult, EarnedBadge, QuizAnswer, SkillLevel, UserPublic } from '@/lib/api-types';
 
 import {
   canSeeCourse,
+  completedCourses,
   COURSES,
   findCourse,
   isEnrolled,
@@ -12,7 +13,9 @@ import {
   moduleDetail,
   myCourses,
   scoreQuiz,
+  sessionsOf,
   toCourseResponse,
+  totalXp,
   visibleModules,
 } from '@/mocks/course-logic';
 import { bucket, db, save } from '@/mocks/db';
@@ -22,12 +25,6 @@ import type { CourseDefinition } from '@/mocks/model';
 
 // Routes of the learner flow (batch 1), mirroring course-service and
 // user-service. Every write is saved to the mock state.
-
-const XP_PER_COURSE = 200;
-
-function userXp(user: UserPublic): number {
-  return Object.keys(db().badges[user.id] ?? {}).length * XP_PER_COURSE;
-}
 
 /** modules.go — ensureModuleAccess: auto-enrolment in public courses, prerequisites. */
 function moduleAccess(course: CourseDefinition, user: UserPublic): Response | null {
@@ -39,6 +36,21 @@ function moduleAccess(course: CourseDefinition, user: UserPublic): Response | nu
   }
   const unmet = (course.spec.prerequisites ?? []).some((prereq) => !db().badges[user.id]?.[prereq.course]);
   return unmet ? apiError(403, 'Complete prerequisite courses first') : null;
+}
+
+function bookingCount(slug: string, sessionId: string): number {
+  return Object.values(db().bookings).filter((list) => list.some((b) => b.courseSlug === slug && b.sessionId === sessionId)).length;
+}
+
+/** badges.go — enrichBadgeRows: one entry per earned badge, with its number of holders. */
+export function badgesOf(userId: string): EarnedBadge[] {
+  const earned = db().badges[userId] ?? {};
+  return Object.entries(earned).flatMap(([slug, earnedAt]) => {
+    const course = findCourse(slug);
+    if (!course?.spec.badge) return [];
+    const earnedBy = Object.values(db().badges).filter((badges) => badges[slug]).length;
+    return [{ courseSlug: slug, courseTitle: course.spec.title, name: course.spec.badge.name, icon: course.spec.badge.icon, earnedAt, earnedBy }];
+  });
 }
 
 type Resolved = { course: CourseDefinition; user: UserPublic } | { error: Response };
@@ -153,36 +165,40 @@ export const learnerHandlers = [
     return HttpResponse.json({ courses: myCourses(account.user) });
   }),
 
+  // skill_level.go: a skill has a row once a course teaching it is completed;
+  // its level is the highest difficulty completed, « maître » once all are.
   http.get('/api/my/skills', ({ request }) => {
     const account = currentAccount(request);
     if (!account) return apiError(401, 'Missing Authorization header');
-    const mine = myCourses(account.user);
+    const done = completedCourses(account.user);
+    const order = ['beginner', 'intermediate', 'advanced'];
     const skills = new Map<string, SkillLevel>();
-    for (const course of mine) {
-      for (const skill of toCourseResponse(findCourse(course.slug)!).skills ?? []) {
-        const entry = skills.get(skill) ?? { skill, level: 'beginner', completedCourses: 0, totalCourses: 0 };
+    for (const course of COURSES.filter((c) => c.spec.public && !c.spec.hidden)) {
+      const response = toCourseResponse(course);
+      for (const skill of response.skills ?? []) {
+        const entry = skills.get(skill) ?? { skill, level: '', completedCourses: 0, totalCourses: 0 };
         entry.totalCourses += 1;
-        if (course.completed) entry.completedCourses += 1;
+        if (done.has(course.slug)) {
+          entry.completedCourses += 1;
+          if (order.indexOf(response.difficulty) > order.indexOf(entry.level)) entry.level = response.difficulty;
+        }
         skills.set(skill, entry);
       }
     }
-    for (const entry of skills.values()) {
-      const ratio = entry.completedCourses / entry.totalCourses;
-      entry.level = ratio >= 0.6 ? 'advanced' : ratio >= 0.3 ? 'intermediate' : 'beginner';
-    }
-    return HttpResponse.json({ skills: [...skills.values()] });
+    const rows = [...skills.values()]
+      .filter((entry) => entry.completedCourses > 0)
+      .map((entry) => ({
+        ...entry,
+        level: entry.completedCourses >= entry.totalCourses ? 'maître' : entry.level || 'beginner',
+      }))
+      .sort((a, b) => a.skill.localeCompare(b.skill));
+    return HttpResponse.json({ skills: rows });
   }),
 
   http.get('/api/my/badges', ({ request }) => {
     const account = currentAccount(request);
     if (!account) return apiError(401, 'Missing Authorization header');
-    const earned = db().badges[account.user.id] ?? {};
-    const badges = Object.entries(earned).flatMap(([slug, earnedAt]) => {
-      const course = findCourse(slug);
-      if (!course?.spec.badge) return [];
-      return [{ courseSlug: slug, courseTitle: course.spec.title, name: course.spec.badge.name, icon: course.spec.badge.icon, earnedAt, earnedBy: 1 }];
-    });
-    return HttpResponse.json({ badges });
+    return HttpResponse.json({ badges: badgesOf(account.user.id) });
   }),
 
   http.get('/api/my/session-bookings', ({ request }) => {
@@ -197,7 +213,7 @@ export const learnerHandlers = [
     const course = findCourse(String(params.slug));
     if (!course || !course.spec.public) return apiError(404, 'Course not found');
     const required = course.spec.xpRequired ?? 0;
-    if (userXp(account.user) < required) {
+    if (totalXp(account.user.id) < required) {
       return apiError(403, `Ce cours demande ${required} XP. Terminez d'autres cours pour en gagner.`);
     }
     bucket(db().enrollments, account.user.id)[course.slug] ??= new Date().toISOString();
@@ -213,15 +229,22 @@ export const learnerHandlers = [
     return HttpResponse.json({ message: 'Unenrolled' });
   }),
 
+  // sessions.go — BookSession: 409 once a limited session is full, then 204.
   http.post('/api/session-bookings/:slug/:sessionId', ({ request, params }) => {
     const account = currentAccount(request);
     if (!account) return apiError(401, 'Missing Authorization header');
+    const course = findCourse(String(params.slug));
+    const session = course && sessionsOf(course)?.find((s) => s.id === params.sessionId);
     const list = (db().bookings[account.user.id] ??= []);
-    if (!list.some((b) => b.courseSlug === params.slug && b.sessionId === params.sessionId)) {
+    const already = list.some((b) => b.courseSlug === params.slug && b.sessionId === params.sessionId);
+    if (!already && (session?.capacity ?? 0) > 0 && bookingCount(String(params.slug), String(params.sessionId)) >= session!.capacity!) {
+      return apiError(409, 'Session is full');
+    }
+    if (!already) {
       list.push({ courseSlug: String(params.slug), sessionId: String(params.sessionId), bookedAt: new Date().toISOString() });
     }
     save();
-    return HttpResponse.json({ message: 'Booked' }, { status: 201 });
+    return new HttpResponse(null, { status: 204 });
   }),
 
   http.delete('/api/session-bookings/:slug/:sessionId', ({ request, params }) => {
@@ -231,7 +254,12 @@ export const learnerHandlers = [
       (b) => !(b.courseSlug === params.slug && b.sessionId === params.sessionId),
     );
     save();
-    return HttpResponse.json({ message: 'Unbooked' });
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.get('/api/session-bookings/:slug/:sessionId/count', ({ request, params }) => {
+    if (!currentAccount(request)) return apiError(401, 'Missing Authorization header');
+    return HttpResponse.json({ count: bookingCount(String(params.slug), String(params.sessionId)) });
   }),
 
   http.get('/api/patterns', ({ request }) => {

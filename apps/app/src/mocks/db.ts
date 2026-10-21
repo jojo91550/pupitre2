@@ -1,4 +1,4 @@
-import type { SessionBooking } from '@/lib/api-types';
+import type { CourseSession, SessionBooking, XpEvent } from '@/lib/api-types';
 import { readItem, writeItem } from '@pupitre/ui/lib/storage';
 
 // Learner state of the mock backend: what user-service and course-service keep
@@ -25,25 +25,74 @@ type MockDb = {
   badges: Record<string, Record<string, string>>;
   /** userId → course slug → last activity */
   activity: Record<string, Record<string, string>>;
+  /** userId → XP events (user_xp_events), oldest first */
+  xp: Record<string, XpEvent[]>;
+  /** userId → path slug → enrolledAt */
+  paths: Record<string, Record<string, string>>;
+  /** userId → profile fields changed with PUT /api/auth/profile */
+  profiles: Record<string, { bio?: string; avatarUrl?: string }>;
+  /** course slug → sessions, once a trainer changed them */
+  sessions: Record<string, CourseSession[]>;
 };
 
 const ALICE = '7a1c3e52-5f0b-4c2e-9d61-0b8f1a2c3d41';
+const ADMIN = '0f6e2d18-3b7c-4a95-8e24-c1d3b5a7f960';
+const TRAP = '9c8b7a65-4d3e-4f21-b0a9-8e7d6c5b4a39';
 const daysAgo = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString();
 
-/** alice starts with two courses in progress and one badge, so every screen has content. */
+const LINUX_LESSONS = [
+  'navigation-et-système-de-fichiers',
+  'utilisateurs--groupes-et-permissions',
+  'processus--services-et-réseau',
+];
+
+/**
+ * alice has finished linux-intro and started two courses and a path, so every
+ * screen has content. admin and the trap account hold badges too: the
+ * leaderboard then shows the trap account's payloads (spec 003).
+ */
 function seed(): MockDb {
+  const xp = (source: string, sourceSlug: string, amount: number, days: number): XpEvent => ({
+    source,
+    sourceSlug,
+    amount,
+    earnedAt: daysAgo(days),
+  });
   return {
     enrollments: {
       [ALICE]: { 'kubernetes-basics': daysAgo(12), 'pupitre-demo': daysAgo(2), 'linux-intro': daysAgo(30) },
+      [ADMIN]: { 'linux-intro': daysAgo(40), 'docker-fundamentals': daysAgo(35) },
+      [TRAP]: { 'linux-intro': daysAgo(25) },
     },
     viewed: {
-      [ALICE]: { 'kubernetes-basics': ['concepts-fondamentaux'], 'pupitre-demo': [] },
+      [ALICE]: {
+        'kubernetes-basics': ['concepts-fondamentaux'],
+        'pupitre-demo': [],
+        'linux-intro': LINUX_LESSONS,
+      },
     },
-    quizzes: {},
+    quizzes: {
+      [ALICE]: { 'linux-intro': { 3: { bestScore: 5, maxScore: 5, passed: true, attempts: 1 } } },
+    },
     attempts: {},
     bookings: {},
-    badges: { [ALICE]: { 'linux-intro': daysAgo(20) } },
+    badges: {
+      [ALICE]: { 'linux-intro': daysAgo(20) },
+      [ADMIN]: { 'linux-intro': daysAgo(38), 'docker-fundamentals': daysAgo(30) },
+      [TRAP]: { 'linux-intro': daysAgo(22) },
+    },
     activity: { [ALICE]: { 'kubernetes-basics': daysAgo(1) } },
+    xp: {
+      [ALICE]: [
+        ...LINUX_LESSONS.map((lesson, i) => xp('lesson', `linux-intro/${lesson}`, 10, 24 - i)),
+        xp('module', 'linux-intro/quiz-introduction-à-linux', 25, 20),
+        xp('course', 'linux-intro', 200, 20),
+        xp('lesson', 'kubernetes-basics/concepts-fondamentaux', 10, 1),
+      ],
+    },
+    paths: { [ALICE]: { 'parcours-devops': daysAgo(10), 'parcours-competences-conteneurs': daysAgo(3) } },
+    profiles: {},
+    sessions: {},
   };
 }
 
@@ -53,7 +102,8 @@ export function db(): MockDb {
   if (cache) return cache;
   try {
     const raw = readItem('session', STORAGE_KEY);
-    cache = raw ? (JSON.parse(raw) as MockDb) : seed();
+    // A state saved by an older version lacks the newer tables: they start seeded.
+    cache = raw ? { ...seed(), ...(JSON.parse(raw) as Partial<MockDb>) } : seed();
   } catch {
     cache = seed();
   }

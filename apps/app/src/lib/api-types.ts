@@ -259,3 +259,71 @@ export type MarkdownPattern = {
   createdAt: string;
   updatedAt: string;
 };
+
+// ── Learner space (user-service, docs/specs/020) ───────────────────────────
+
+export type ProgressStatus = 'completed' | 'available' | 'locked';
+
+/** user-service/internal/handlers/paths.go — courseStatus. For a skill path, `slug` is a skill. */
+export type PathMemberStatus = { slug: string; status: ProgressStatus };
+
+/** user-service/internal/handlers/paths.go — myPath. It has no `level` field (defect A18). */
+export type MyPath = {
+  slug: string;
+  title: string;
+  description?: string;
+  kind?: 'course' | 'skill' | string;
+  enrolledAt: string;
+  courses?: PathMemberStatus[];
+  skills?: string[];
+};
+
+/** user-service/internal/handlers/skills.go — skillModuleStatus (SkillModule + status) */
+export type SkillModuleStatus = {
+  name: string;
+  slug: string;
+  index: number;
+  type: string;
+  courseSlug: string;
+  courseTitle: string;
+  status: ProgressStatus;
+};
+
+/** user-service/internal/repository/xp.go — XPEventRow */
+export type XpEvent = {
+  source: 'lesson' | 'module' | 'course' | string;
+  /** "course" or "course/module" */
+  sourceSlug: string;
+  amount: number;
+  earnedAt: string;
+};
+
+/** user-service/internal/handlers/xp.go — xpResponse */
+export type MyXp = { total: number; level: number; levelName: string; history: XpEvent[] };
+
+/** user-service/internal/handlers/my_groups.go — groupRow */
+export type MyGroup = {
+  id: string;
+  name: string;
+  source: string;
+  parentId: string;
+  depth: number;
+  mappedRole?: string;
+  courseSlugs: string[];
+};
+
+/** user-service/internal/handlers/badges.go — leaderboardEntry */
+export type LeaderboardEntry = {
+  rank: number;
+  userId: string;
+  username: string;
+  avatarUrl: string | null;
+  count: number;
+  icons: string[];
+};
+
+/** user-service/internal/handlers/badges.go — PublicUser */
+export type PublicUser = { id: string; username: string; avatarUrl: string | null };
+
+/** course-service/internal/handlers/sessions_admin.go — sessionBody */
+export type SessionInput = { title: string; date: string; location: string; capacity: number };

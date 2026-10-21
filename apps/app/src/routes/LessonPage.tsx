@@ -11,7 +11,8 @@ import { hostOf, isModuleDone, moduleHref } from '@/lib/module-links';
 import { InlineQuiz } from '@/components/quiz/InlineQuiz';
 import { patternCss, renderMarkdown, toPatternMap, type TocEntry } from '@/lib/markdown';
 import { safeUrl } from '@pupitre/ui/lib/security';
-import { readItem, removeItem, writeItem } from '@pupitre/ui/lib/storage';
+import { readItem, writeItem } from '@pupitre/ui/lib/storage';
+import { takeCourseReturn } from '@/lib/course-return';
 
 import { LabContent } from '@/components/lab/LabContent';
 
@@ -19,8 +20,6 @@ import { LabContent } from '@/components/lab/LabContent';
 // pupitre's pages/courses/[slug]/lessons/[index].astro.
 
 const MODE_KEY = 'pupitre.readingMode';
-/** Set by a learning path page: where to go once the course is finished. */
-export const RETURN_KEY = 'pupitre.courseReturnTo';
 
 const ICON_FOCUS = (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -113,9 +112,7 @@ function Lesson({ slug, courseTitle, module, modules }: LessonProps) {
       navigate(moduleHref(slug, next));
       return;
     }
-    const returnTo = readItem('session', RETURN_KEY);
-    removeItem('session', RETURN_KEY);
-    navigate(returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//') ? returnTo : `/courses/${slug}`);
+    navigate(takeCourseReturn() ?? `/courses/${slug}`);
   }, [navigate, next, slug]);
 
   const complete = useMutation({

@@ -8,6 +8,17 @@ import { AuthCallback } from '@/routes/AuthCallback';
 import { Login } from '@/routes/Login';
 import { Catalogue } from '@/routes/Catalogue';
 import { CourseDetail } from '@/routes/CourseDetail';
+import { Leaderboard } from '@/routes/Leaderboard';
+import { PublicProfile } from '@/routes/PublicProfile';
+import { MyCourses } from '@/routes/MyCourses';
+import { MyPaths } from '@/routes/MyPaths';
+import { MySkills } from '@/routes/MySkills';
+import { SkillPage } from '@/routes/SkillPage';
+import { MyBadges } from '@/routes/MyBadges';
+import { MyXp } from '@/routes/MyXp';
+import { MyGroups } from '@/routes/MyGroups';
+import { Profile } from '@/routes/Profile';
+import { Agenda } from '@/routes/Agenda';
 import { ComingSoon } from '@/components/ComingSoon';
 import { NotFound } from '@/routes/NotFound';
 
@@ -29,15 +40,15 @@ const learnerRoutes: RouteObject[] = [
     path: 'courses/:slug/quiz/:index',
     lazy: async () => ({ Component: (await import('@/routes/QuizPage')).QuizPage }),
   },
-  { path: 'skills/:slug', element: soon('Compétence', '020', 2) },
-  { path: 'my-courses', element: soon('Mes cours', '020', 2) },
-  { path: 'my-paths', element: soon('Mes parcours', '020', 2) },
-  { path: 'my-skills', element: soon('Mes compétences', '020', 2) },
-  { path: 'my-badges', element: soon('Mes badges', '020', 2) },
-  { path: 'my-xp', element: soon('Mon XP', '020', 2) },
-  { path: 'my-groups', element: soon('Mes groupes', '020', 2) },
-  { path: 'profile', element: soon('Mon profil', '021', 2) },
-  { path: 'agenda', element: soon('Agenda', '022', 2) },
+  { path: 'skills/:slug', element: <SkillPage /> },
+  { path: 'my-courses', element: <MyCourses /> },
+  { path: 'my-paths', element: <MyPaths /> },
+  { path: 'my-skills', element: <MySkills /> },
+  { path: 'my-badges', element: <MyBadges /> },
+  { path: 'my-xp', element: <MyXp /> },
+  { path: 'my-groups', element: <MyGroups /> },
+  { path: 'profile', element: <Profile /> },
+  { path: 'agenda', element: <Agenda /> },
 ];
 
 const adminOnlyRoutes: RouteObject[] = [
@@ -67,8 +78,8 @@ const routes: RouteObject[] = [
       // Public pages.
       { path: 'courses', element: <Catalogue /> },
       { path: 'courses/:slug', element: <CourseDetail /> },
-      { path: 'leaderboard', element: soon('Classement', '020', 2) },
-      { path: 'users/:id', element: soon('Profil public', '020', 2) },
+      { path: 'leaderboard', element: <Leaderboard /> },
+      { path: 'users/:id', element: <PublicProfile /> },
 
       { element: <RequireAuth />, children: learnerRoutes },
 

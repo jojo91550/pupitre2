@@ -11,9 +11,9 @@ import type {
 } from '@/lib/api-types';
 
 import { bucket, db, type QuizProgress } from '@/mocks/db';
-import { DEMO_COURSES } from '@/mocks/fixtures/demo-courses';
-import { SEED_COURSES } from '@/mocks/fixtures/seed-courses';
-import type { CourseDefinition, ModuleDefinition, QuestionDefinition } from '@/mocks/model';
+import { DEMO_COURSES, DEMO_PATHS } from '@/mocks/fixtures/demo-courses';
+import { SEED_COURSES, SEED_PATHS } from '@/mocks/fixtures/seed-courses';
+import type { CourseDefinition, ModuleDefinition, PathDefinition, QuestionDefinition } from '@/mocks/model';
 
 // The course-service and user-service rules the mock mode needs, written after
 // the Go handlers they mirror (course-service/internal/handlers/modules.go,
@@ -21,6 +21,26 @@ import type { CourseDefinition, ModuleDefinition, QuestionDefinition } from '@/m
 
 export const COURSES: CourseDefinition[] = [...DEMO_COURSES, ...SEED_COURSES];
 
+export const PATHS: PathDefinition[] = [...SEED_PATHS, ...DEMO_PATHS];
+
+/** repository/xp.go amounts. */
+export const XP_AMOUNTS = { lesson: 10, module: 25, course: 200 } as const;
+
+/** xp.go — awardXP: idempotent per (user, source, sourceSlug). */
+export function awardXp(userId: string, source: keyof typeof XP_AMOUNTS, sourceSlug: string) {
+  const events = (db().xp[userId] ??= []);
+  if (events.some((e) => e.source === source && e.sourceSlug === sourceSlug)) return;
+  events.push({ source, sourceSlug, amount: XP_AMOUNTS[source], earnedAt: new Date().toISOString() });
+}
+
+export function totalXp(userId: string): number {
+  return (db().xp[userId] ?? []).reduce((sum, e) => sum + e.amount, 0);
+}
+
+/** Sessions as a trainer left them (sessions_admin.go), else those of the definition. */
+export function sessionsOf(course: CourseDefinition) {
+  return db().sessions[course.slug] ?? course.spec.sessions;
+}
 export function findCourse(slug: string): CourseDefinition | undefined {
   return COURSES.find((course) => course.slug === slug);
 }
@@ -69,7 +89,7 @@ export function toCourseResponse(course: CourseDefinition): Course {
     skills: courseSkills(course),
     badge: spec.badge,
     inPerson: spec.inPerson,
-    sessions: spec.sessions,
+    sessions: sessionsOf(course),
     xpRequired: spec.xpRequired,
   };
 }
@@ -89,7 +109,7 @@ function viewedSet(userId: string, slug: string): Set<string> {
 }
 
 /** modules.go — completedSlugs: viewed lessons plus passed quizzes. */
-function completedSlugs(userId: string, course: CourseDefinition, modules: ModuleDefinition[]) {
+export function completedSlugs(userId: string, course: CourseDefinition, modules: ModuleDefinition[]) {
   const done = viewedSet(userId, course.slug);
   const progress = quizProgress(userId, course.slug);
   modules.forEach((module, index) => {
@@ -323,6 +343,7 @@ export function scoreQuiz(
 
   const progress = quizProgress(user.id, course.slug);
   const previous = progress[index];
+  if (passed) awardXp(user.id, 'module', `${course.slug}/${moduleSlug(module.name)}`);
   progress[index] = {
     bestScore: Math.max(previous?.bestScore ?? 0, totalScore),
     maxScore,
@@ -347,19 +368,22 @@ export function markViewed(course: CourseDefinition, moduleSlugValue: string, us
   const viewed = bucket(db().viewed, user.id);
   const list = (viewed[course.slug] ??= []);
   if (!list.includes(moduleSlugValue)) list.push(moduleSlugValue);
+  awardXp(user.id, 'lesson', `${course.slug}/${moduleSlugValue}`);
   touch(user.id, course.slug);
   awardBadgeIfComplete(course, user);
 }
 
-function isCourseComplete(course: CourseDefinition, user: UserPublic) {
+export function isCourseComplete(course: CourseDefinition, user: UserPublic) {
   const modules = visibleModules(course, false);
   const done = completedSlugs(user.id, course, modules);
   return modules.length > 0 && modules.every((module) => done.has(moduleSlug(module.name)));
 }
 
+/** internal.go — course completion: 200 XP, and the badge when the course has one. */
 function awardBadgeIfComplete(course: CourseDefinition, user: UserPublic) {
-  if (!course.spec.badge || !isCourseComplete(course, user)) return;
-  bucket(db().badges, user.id)[course.slug] ??= new Date().toISOString();
+  if (!isCourseComplete(course, user)) return;
+  awardXp(user.id, 'course', course.slug);
+  if (course.spec.badge) bucket(db().badges, user.id)[course.slug] ??= new Date().toISOString();
 }
 
 /** user-service enrollments.go — MyCourses */
@@ -389,4 +413,26 @@ export function myCourses(user: UserPublic): MyCourse[] {
         completed: Boolean(db().badges[user.id]?.[course.slug]) || isCourseComplete(course, user),
       };
     });
+}
+
+/** Courses the user completed: a badge earned or every module done. */
+export function completedCourses(user: UserPublic): Set<string> {
+  return new Set(myCourses(user).filter((c) => c.completed).map((c) => c.slug));
+}
+
+/** catalog.go — SkillModules: the visible modules tagged with the skill, course by course. */
+export function skillModules(skill: string) {
+  return COURSES.filter((course) => !course.spec.hidden && course.spec.public).flatMap((course) =>
+    visibleModules(course, false).flatMap((module, index) =>
+      (module.skills ?? []).includes(skill)
+        ? [{ name: module.name, slug: moduleSlug(module.name), index, type: module.type, courseSlug: course.slug, courseTitle: course.spec.title }]
+        : [],
+    ),
+  );
+}
+
+/** skills.go — a module counts as done once its quiz is passed or its lesson viewed. */
+export function isModuleDone(user: UserPublic, courseSlug: string, module: { slug: string; index: number; type: string }) {
+  if (module.type === 'quiz') return Boolean(quizProgress(user.id, courseSlug)[module.index]?.passed);
+  return viewedSet(user.id, courseSlug).has(module.slug);
 }

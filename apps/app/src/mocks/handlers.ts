@@ -6,6 +6,7 @@ import { findAccount, MOCK_PUBLIC_SETTINGS } from '@/mocks/data';
 import { apiError, currentAccount } from '@/mocks/http';
 import { mockToken } from '@/mocks/jwt';
 import { learnerHandlers } from '@/mocks/learner-handlers';
+import { spaceHandlers } from '@/mocks/space-handlers';
 
 // Mock API of `pnpm dev:mock` and of the tests. Each handler mirrors a Go route
 // and its response shape; errors use the same { "error": "…" } envelope.
@@ -69,6 +70,7 @@ export const handlers = [
   }),
 
   ...learnerHandlers,
+  ...spaceHandlers,
 
   // Anything not simulated yet answers clearly instead of reaching the network.
   http.all('/api/*', ({ request }) =>
