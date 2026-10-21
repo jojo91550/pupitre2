@@ -46,7 +46,7 @@ When a reference component is taken over:
    findings C2 and C3.
 3. **One application**: its learner and admin apps are merged into our single route table
    ([002](002-roles-and-guards.md)).
-4. **Mock data**: every route a reused page calls gets its handler in `src/mocks`
+4. **Mock data**: every route a reused page calls gets its handler in `apps/app/src/mocks`
    ([006](006-mock-mode.md)).
 5. **Attribution**: a reused file keeps a header comment naming its origin
    (`// Adapted from ebuildy/pupitre2: apps/app/src/routes/Catalogue.tsx`).

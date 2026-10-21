@@ -54,8 +54,10 @@ The `pupitre-desktop` desktop app (Tauri) embeds the frontend and exposes a Rust
 - **In a browser**: « Ce lab se vérifie dans Pupitre. » and an « Ouvrir dans Pupitre → » link to
   `pupitre://courses/{slug}/modules/{index}`.
 
-The local check lives in `src/lib/local-check.ts`, with the same signature as today
-(`resolveCheck(meta, remoteCheck, recordUrl, token)`), so the desktop app stays compatible.
+The local check lives in `apps/app/src/lib/local-check.ts`: `resolveCheck(meta, remoteCheck, record)`.
+The desktop app only relies on the Tauri command (`local_check`) and the `pupitre://` deep link,
+which are unchanged; `record` replaces the URL and token arguments of the Astro version, so the
+token stays in the session module ([003](003-security.md) S5).
 
 ## Acceptance criteria
 

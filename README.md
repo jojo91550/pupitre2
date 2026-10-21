@@ -7,10 +7,11 @@ New React frontend of the pupitre e-learning platform. It replaces the Astro fro
   pnpm.
 - Authentication: OIDC through Keycloak only.
 - Specs: [`docs/specs`](docs/specs/README.md).
+- Agent rules: [`AGENTS.md`](AGENTS.md).
 
 ## Requirements
 
-- Node.js 22 LTS or later.
+- Node.js 24 LTS (`.nvmrc`).
 - pnpm, enabled with `corepack enable`.
 - For `pnpm dev` only: user-service and course-service running locally (ports 8081 and 8082 by
   default). `pnpm dev:mock` needs no backend.
@@ -25,12 +26,22 @@ pnpm dev        # http://localhost:3000, against the Go services
 
 | Command | Effect |
 | --- | --- |
-| `pnpm build` | Type check, then production build in `dist/` |
-| `pnpm test` | Unit and component tests (Vitest) |
+| `pnpm build` | Type check, then production build in `apps/app/dist/` |
+| `pnpm test` | Unit and component tests (Vitest), every package |
 | `pnpm lint` | ESLint, including the security rules of `docs/specs/003-security.md` |
-| `pnpm typecheck` | TypeScript only |
+| `pnpm typecheck` | TypeScript only, every package |
 
 The dev proxy targets can be changed with `VITE_USER_SERVICE_URL` and `VITE_COURSE_SERVICE_URL`.
+
+## Layout
+
+| Path | Package | Content |
+| --- | --- | --- |
+| `apps/app` | `@pupitre/app` | The frontend: pages (`src/routes/`), components, API client, mocks |
+| `packages/ui` | `@pupitre/ui` | Design system: shadcn components, pupitre CSS, security helpers |
+| `docs/specs` | | Functional and technical specs |
+
+Details: [`docs/specs/000-scope-and-stack.md`](docs/specs/000-scope-and-stack.md).
 
 ## Contributing
 

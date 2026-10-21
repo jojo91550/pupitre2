@@ -67,7 +67,7 @@ export function safeRedirect(raw: string | null, fallback: string): string {
 
 - The backend returns a JWT (HS256, valid 8 hours by default) that every call sends in
   `Authorization: Bearer <token>`.
-- The token and the user are handled by **a single module** (`src/auth/session.ts`): no page
+- The token and the user are handled by **a single module** (`apps/app/src/lib/session.ts`): no page
   reads the storage directly.
 - Interim storage: `sessionStorage` (the session ends with the tab and is not shared between
   tabs). The target is an `HttpOnly` cookie set by the backend, which needs a server change

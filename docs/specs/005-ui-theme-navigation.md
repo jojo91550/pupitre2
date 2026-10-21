@@ -5,7 +5,7 @@ Features: F010 (light / dark theme), F011 (navigation shell), F012 (toasts), F01
 ## Colour tokens
 
 The tokens of the current frontend (`styles/tokens.css`) become the CSS variables of the shadcn
-theme, declared in `src/styles/globals.css` (`:root` and `.dark`).
+theme, declared in `packages/ui/src/styles/globals.css` (`:root` and `.dark`).
 
 | Current token | Light | Dark | shadcn variable |
 | --- | --- | --- | --- |
@@ -26,7 +26,7 @@ theme, declared in `src/styles/globals.css` (`:root` and `.dark`).
 - Radius: `--radius: 10px` (cards: 16 px).
 - Fonts: Hanken Grotesk (text), Caveat (the "pupitre" logo), JetBrains Mono (code), served locally
   (see [003](003-security.md) S6).
-- The logo is `public/pioupitre.png`, next to the word "pupitre" in Caveat.
+- The logo is `apps/app/public/pioupitre.png`, next to the word "pupitre" in Caveat.
 
 ## Visual design
 
@@ -37,7 +37,7 @@ layout, quiz palette, podium…) are those of the current Astro frontend, not a 
 - The visual reference of each screen is the current frontend: its page markup and
   `frontend/src/styles/*.css` (`components.css`, `learning.css`, `gamification.css`,
   `admonitions.css`, `admin.css`) at commit `3cdf7b2` of `genesary/pupitre`.
-- Those styles are ported to Tailwind classes or to a small CSS layer in `src/styles/`, keeping the
+- Those styles are ported to Tailwind classes or to a small CSS layer in `packages/ui/src/styles/`, keeping the
   same values (colours, spacing, sizes, shadows).
 - shadcn components are restyled with these tokens; their default look does not replace pupitre's.
 - Code reused from the reference rewrite is restyled the same way ([090](090-gaps-and-defects.md),
@@ -113,7 +113,7 @@ Every page that loads data has three states, with shared components:
 
 ## Language and formats
 
-- The interface is in French. UI strings are grouped per domain in `src/features/*/messages.ts`
+- The interface is in French. UI strings are grouped per domain in `apps/app/src/lib/messages/<domain>.ts`
   so they can be translated later (English is not required).
 - Dates and numbers: `Intl.DateTimeFormat('fr-FR')` and `Intl.NumberFormat('fr-FR')`.
 - Levels: `beginner` → « Débutant », `intermediate` → « Intermédiaire », `advanced` → « Avancé ».

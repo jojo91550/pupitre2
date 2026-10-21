@@ -3,6 +3,21 @@
 Each batch is a `feature/…` branch and a pull request that can ship on its own. The Astro
 frontend stays in service until the end of batch 5; the reverse proxy then switches to pupitre2.
 
+## Status
+
+| Batch | State |
+| --- | --- |
+| 0 - Foundation | Done, merged into `main` (squash). |
+| 1 - Main learner flow | Done on `feature/learner-flow`: catalogue, course page and enrollment, lesson player (markdown, admonitions, patterns, mermaid), inline and full quizzes with cooldowns, GitLab and local labs, sessions booking, mock handlers. The repository was also restructured as a monorepo (`apps/app`, `packages/ui`) like `ebuildy/pupitre2`. Verified in mock mode, light and dark. |
+| 2 - Learner space | Next. |
+| 3, 4, 5 | Not started. |
+
+Open points:
+
+- The original pupitre CSS has no dark-mode variant for `.mod-row` and the glass cards: they stay
+  light in dark mode. Kept as is (design unchanged) until the user decides whether to fix it.
+- Context: about 1,000 users; the repository is public; pull requests are squash merged.
+
 ## Batch 0 - Foundation
 
 Branch `feature/react-frontend` (this branch).
