@@ -8,12 +8,19 @@ import type {
   MarkdownPattern,
   ModuleDetail,
   ModuleSummary,
+  LeaderboardEntry,
   MyCourse,
+  MyGroup,
+  MyPath,
+  MyXp,
   PublicSettings,
+  PublicUser,
   QuizAnswer,
   QuizResult,
   SessionBooking,
+  SessionInput,
   SkillLevel,
+  SkillModuleStatus,
   UserPublic,
 } from '@/lib/api-types';
 
@@ -32,6 +39,10 @@ export const oidcCallback = (code: string, state: string) =>
   request<AuthResponse>('/auth/oidc/callback', { method: 'POST', body: { code, state }, anonymous: true });
 
 export const getMe = () => request<UserPublic>('/auth/me');
+
+/** Bio or emoji avatar only: username and avatar URLs are not offered (docs/specs/021). */
+export const updateProfile = (body: { bio: string } | { avatarUrl: string }) =>
+  request<UserPublic>('/auth/profile', { method: 'PUT', body });
 
 // ── course-service ──────────────────────────────────────────────────────────
 
@@ -79,18 +90,48 @@ export const myCourses = () => request<{ courses: MyCourse[] }>('/my/courses');
 
 export const mySkills = () => request<{ skills: SkillLevel[] }>('/my/skills');
 
+export const mySkillModules = (skill: string) =>
+  request<{ skill: string; modules: SkillModuleStatus[] }>(`/my/skills/${enc(skill)}`);
+
+export const myPaths = () => request<{ paths: MyPath[] }>('/my/paths');
+
+export const myXp = () => request<MyXp>('/my/xp');
+
+export const myGroups = () => request<{ groups: MyGroup[]; total: number }>('/my/groups');
+
 export const myBadges = () => request<{ badges: EarnedBadge[] }>('/my/badges');
 
 export const mySessionBookings = () => request<{ bookings: SessionBooking[] }>('/my/session-bookings');
 
+// Public routes: sent without the token.
+
+export const leaderboard = () => request<{ leaderboard: LeaderboardEntry[] }>('/leaderboard', { anonymous: true });
+
+export const getPublicUser = (id: string) => request<PublicUser>(`/users/${enc(id)}`, { anonymous: true });
+
+export const userBadges = (id: string) =>
+  request<{ badges: EarnedBadge[] }>(`/users/${enc(id)}/badges`, { anonymous: true });
+
 export const enroll = (slug: string) =>
   request<{ message: string }>(`/enrollments/${enc(slug)}`, { method: 'POST', body: {} });
 
+/** 204 No Content; 409 when the session is full. */
 export const bookSession = (slug: string, sessionId: string) =>
-  request<{ message: string }>(`/session-bookings/${enc(slug)}/${enc(sessionId)}`, { method: 'POST' });
+  request<void>(`/session-bookings/${enc(slug)}/${enc(sessionId)}`, { method: 'POST' });
 
 export const cancelBooking = (slug: string, sessionId: string) =>
-  request<{ message: string }>(`/session-bookings/${enc(slug)}/${enc(sessionId)}`, { method: 'DELETE' });
+  request<void>(`/session-bookings/${enc(slug)}/${enc(sessionId)}`, { method: 'DELETE' });
+
+// Course sessions: admin or manager (docs/specs/022).
+
+export const createSession = (slug: string, body: SessionInput) =>
+  request<unknown>(`/admin/courses/${enc(slug)}/sessions`, { method: 'POST', body });
+
+export const updateSession = (slug: string, sessionId: string, body: SessionInput) =>
+  request<unknown>(`/admin/courses/${enc(slug)}/sessions/${enc(sessionId)}`, { method: 'PUT', body });
+
+export const deleteSession = (slug: string, sessionId: string) =>
+  request<unknown>(`/admin/courses/${enc(slug)}/sessions/${enc(sessionId)}`, { method: 'DELETE' });
 
 /** Requires a signed-in user: the Astro frontend called it anonymously (defect A1). */
 export const listPatterns = () => request<{ patterns: MarkdownPattern[] }>('/patterns');

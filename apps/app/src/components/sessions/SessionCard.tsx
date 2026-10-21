@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
+import { ApiError } from '@/lib/api-client';
 import { bookSession, cancelBooking } from '@/lib/api';
 import type { CourseSession } from '@/lib/api-types';
 import { useSession } from '@/lib/session';
@@ -15,7 +16,12 @@ export function SessionCard({ slug, session, booked }: { slug: string; session: 
   const booking = useMutation({
     mutationFn: () => (booked ? cancelBooking(slug, session.id) : bookSession(slug, session.id)),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['my', 'session-bookings'] }),
-    onError: () => toast.error('Une erreur est survenue, veuillez réessayer.'),
+    onError: (error) =>
+      toast.error(
+        error instanceof ApiError && error.status === 409
+          ? 'Cette session est complète.'
+          : 'Une erreur est survenue, veuillez réessayer.',
+      ),
   });
   return (
     <div className={`session-card ${booked ? 'session-card-booked' : 'session-card-default'}${past ? ' opacity-50' : ''}`}>

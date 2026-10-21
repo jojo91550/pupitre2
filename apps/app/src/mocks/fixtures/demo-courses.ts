@@ -1,8 +1,8 @@
-import type { CourseDefinition } from '@/mocks/model';
+import type { CourseDefinition, PathDefinition } from '@/mocks/model';
 
 // Hand-written courses that cover what the Go seed catalogue does not: every
 // markdown feature, media, every question type, in-person sessions, an XP gate
-// and a private course. Mock mode only (docs/specs/006-mock-mode.md).
+// a private course and a skill path. Mock mode only (docs/specs/006-mock-mode.md).
 
 const inDays = (days: number, hour: number) => {
   const date = new Date();
@@ -252,6 +252,20 @@ Ouvrez une merge request vers \`main\`.
       category: 'security',
       difficulty: 'advanced',
       modules: [{ name: 'Contenu réservé', type: 'text', content: '## Réservé\n\nContenu privé.' }],
+    },
+  },
+];
+
+/** A skill path: the Go seed only has course paths. */
+export const DEMO_PATHS: PathDefinition[] = [
+  {
+    slug: 'parcours-competences-conteneurs',
+    spec: {
+      title: 'Compétences conteneurs',
+      description: 'Les compétences à acquérir avant de passer en production.',
+      kind: 'skill',
+      level: 'beginner',
+      skills: ['linux', 'docker', 'kubernetes'],
     },
   },
 ];

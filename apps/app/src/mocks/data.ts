@@ -1,4 +1,5 @@
 import type { PublicSettings, UserPublic } from '@/lib/api-types';
+import { db } from '@/mocks/db';
 
 // Fixtures of the mock mode (`pnpm dev:mock`). Shapes follow the Go response
 // structs, so a page built against them works unchanged with the real backend.
@@ -82,6 +83,10 @@ export const MOCK_PUBLIC_SETTINGS: PublicSettings = {
   ldap_enabled: 'false',
 };
 
+/** The account, with the profile changes saved by PUT /api/auth/profile. */
 export function findAccount(id: string | null | undefined): MockAccount | undefined {
-  return MOCK_ACCOUNTS.find((account) => account.user.id === id);
+  const account = MOCK_ACCOUNTS.find((candidate) => candidate.user.id === id);
+  if (!account) return undefined;
+  const changes = db().profiles[account.user.id];
+  return changes ? { ...account, user: { ...account.user, ...changes } } : account;
 }

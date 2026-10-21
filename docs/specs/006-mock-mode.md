@@ -36,14 +36,23 @@ shapes copied from the Go structs.
   - labs: step and module checks fail on the first try and pass on the second, so both outcomes
     can be seen; `…/record` echoes the result;
   - user-service: `GET /api/my/courses`, `/my/skills`, `/my/badges`, `/my/session-bookings`,
-    enrolment (with the XP gate: 200 XP per earned badge), session booking, `GET /api/patterns`.
+    enrolment (with the XP gate on the XP earned), session booking (409 once a limited session is
+    full, then 204), `GET /api/patterns`.
+- **Learner space (batch 2)**, in `apps/app/src/mocks/space-handlers.ts`: `GET /api/my/paths`
+  (course and skill paths, with the `completed` / `available` / `locked` statuses of `paths.go`),
+  `/my/skills/{slug}`, `/my/xp` (10 XP per lesson, 25 per passed quiz, 200 per completed course,
+  awarded once), `/my/groups`, the public `GET /api/leaderboard`, `/users/{id}`,
+  `/users/{id}/badges`, `/badges/{slug}`, `PUT /api/auth/profile` (bio and avatar), and the session
+  routes of admins and managers (`POST`, `PUT`, `DELETE /api/admin/courses/{slug}/sessions…`).
 - **Fixtures**: the 17 demo courses and 2 paths of the Go seed (`fixtures/seed-courses.ts`,
   generated from `course-service/internal/db/seed`), plus `fixtures/demo-courses.ts`, which covers
   what the seed does not (admonitions, mermaid, patterns, trap HTML, media, every question type,
-  GitLab lab, in-person sessions, XP gate, private course), and two patterns.
-- **State**: enrolments, viewed lessons, quiz results, cooldowns, bookings and badges are kept in
-  `sessionStorage` (`pupitre.mock.db`): they survive reloads and reset with the tab. `alice` starts
-  enrolled in three courses, with one badge.
+  GitLab lab, in-person sessions, XP gate, private course, a skill path), and two patterns.
+- **State**: enrolments, viewed lessons, quiz results, cooldowns, bookings, badges, XP, path
+  enrolments, profile changes and edited sessions are kept in `sessionStorage` (`pupitre.mock.db`):
+  they survive reloads and reset with the tab. `alice` starts enrolled in three courses (one
+  finished, with its badge and XP) and two paths, and belongs to two groups; `admin` and the trap
+  account hold badges too, so the leaderboard shows the trap account's payloads.
 - Any other `/api/*` route answers **501** « Route non simulée en mode mock », until the batch
   that needs it adds its handler.
 

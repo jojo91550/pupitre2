@@ -20,31 +20,38 @@ Every `/my-*` page and `/skills/:slug` require a signed-in user ([002](002-roles
 ## My learning paths - `/my-paths`
 
 - Data: `GET /api/my/paths` → enrolled paths: `slug`, `title`, `description`, `kind` (`course` or
-  `skill`), `level`, `enrolledAt`, `courses[] {slug, status}` or `skills[]`.
+  `skill`), `enrolledAt`, `courses[] {slug, status}` (for a skill path, `slug` is a skill) and
+  `skills[]`. The response has no `level`: the level badge of the Astro page never shows
+  ([090](090-gaps-and-defects.md) A18) and is not carried over.
 - Subtitle: « N parcours en cours ».
-- List on the left (title, level badge: « Niveau 1 · Débutant », « Niveau 2 · Intermédiaire »,
-  « Niveau 3 · Avancé »), details of the selected path on the right.
+- The list of paths (icon, title, « X/Y cours » or « N compétences », percentage, bar); choosing one
+  shows its details in place of the list, with a « ◂ Mes parcours » back button. The chosen path is
+  in the URL (`/my-paths?path=:slug`).
 - Details: an SVG **progress map** linking the steps of the path, with three states and their
   colours (light / dark):
   - `completed` « Terminé »: green;
   - `available` « Disponible »: blue;
   - `locked` « Verrouillé »: grey.
 - Opening a course from a path stores the way back (`sessionStorage`
-  `pupitre.courseReturnTo = /my-paths`), used at the end of the course
+  `pupitre.courseReturnTo = /my-paths?path=:slug`), used at the end of the course
   ([012](012-lesson-player.md)).
 - Empty state: « Vous n'êtes inscrit à aucun parcours. »
 
 ## My skills - `/my-skills`
 
 - Data: `GET /api/my/skills` → `skills[] {skill, level, completedCourses, totalCourses}`, plus
-  `GET /api/my/courses` and `GET /api/courses` for the skills in progress.
+  `GET /api/my/courses` and `GET /api/courses` for the skills in progress. user-service has a row
+  for a skill once a course teaching it is completed; `level` is the highest difficulty completed,
+  or `maître` once every course of the skill is.
 - One card per skill: name, level, « X/Y cours » with a bar. The card links to `/skills/:slug`.
 - Level: the one returned by the server (`level`). The current frontend **recomputes** it from
   the ratio (≥ 100 % « Maître », ≥ 60 % « Avancé », ≥ 30 % « Intermédiaire », otherwise
   « Débutant »); pupitre2 uses the server value and keeps this computation only as a fallback
   when `level` is missing.
 - The « Maître » level has a gold style.
-- Second section « En cours »: the skills of enrolled courses that have no completed course yet.
+- First section « Acquises »: the skills returned by the server.
+- Second section « En apprentissage » (cards marked « En cours »): the skills of enrolled courses
+  that have no completed course yet.
 
 ## Skill page - `/skills/:slug`
 

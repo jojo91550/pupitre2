@@ -79,6 +79,9 @@ indicated.
 | A15 | A `/admin/[...slug]` route catches every unknown admin URL and shows an old dashboard | `admin/[...slug].astro` | 404 page ([002](002-roles-and-guards.md)) |
 | A16 | The code that marked a lab as done when it was opened (`a[data-lab-slug]`) never runs: no link carries this attribute | `courses/[slug]/index.astro` | Not carried over |
 | A17 | The names `labCount` and `completedLabs` actually mean the number of modules and of completed lessons | API, several pages | Names kept in the types, with a comment |
+| A18 | The path level badge reads `level`, which `GET /api/my/paths` does not return: it never shows | `my-paths.astro` | Not shown; a backend field is needed ([020](020-learner-space.md)) |
+| A19 | The session form requires a capacity of at least 1, while 0 means unlimited | `agenda.astro` | Capacity ≥ 0 ([022](022-agenda-and-sessions.md)) |
+| A20 | Editing a session fills the date field with the UTC time cut from the ISO string: saving it unchanged moves the session by the time zone offset | `agenda.astro` | Local time in the field ([022](022-agenda-and-sessions.md)) |
 
 ## Security
 
