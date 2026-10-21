@@ -4,6 +4,11 @@ import { RequireAuth, RequireRole } from '@/components/RequireAuth';
 import { Layout } from '@/routes/Layout';
 import { AdminLayout } from '@/routes/AdminLayout';
 import { ManagerLayout } from '@/routes/manager/ManagerLayout';
+import { ManagerUsers } from '@/routes/manager/ManagerUsers';
+import { ManagerGroups } from '@/routes/manager/ManagerGroups';
+import { ManagerPaths } from '@/routes/manager/ManagerPaths';
+import { Attendance } from '@/routes/Attendance';
+import { Exports } from '@/routes/admin/Exports';
 import { AuthCallback } from '@/routes/AuthCallback';
 import { Login } from '@/routes/Login';
 import { Catalogue } from '@/routes/Catalogue';
@@ -92,10 +97,20 @@ const routes: RouteObject[] = [
         ),
         children: [
           { index: true, element: <Navigate to="/manager/users" replace /> },
-          { path: 'users', element: soon('Mes membres', '030', 3) },
-          { path: 'groups', element: soon('Mes groupes', '030', 3) },
-          { path: 'paths', element: soon('Parcours', '030', 3) },
+          { path: 'users', element: <ManagerUsers /> },
+          { path: 'groups', element: <ManagerGroups /> },
+          { path: 'paths', element: <ManagerPaths /> },
         ],
+      },
+
+      // The attendance page has no admin sidebar, like the Astro page.
+      {
+        path: 'admin/courses/sessions/:slug/:sessionId',
+        element: (
+          <RequireRole roles={['admin', 'manager']}>
+            <Attendance />
+          </RequireRole>
+        ),
       },
 
       {
@@ -106,11 +121,7 @@ const routes: RouteObject[] = [
           </RequireRole>
         ),
         children: [
-          { path: 'exports', element: soon('Exports CSV', '047', 3) },
-          {
-            path: 'courses/sessions/:slug/:sessionId',
-            element: soon('Présence', '022', 3),
-          },
+          { path: 'exports', element: <Exports /> },
           { element: <RequireRole roles={['admin']} />, children: adminOnlyRoutes },
         ],
       },

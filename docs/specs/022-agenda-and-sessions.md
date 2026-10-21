@@ -45,6 +45,9 @@ Data: `GET /api/courses` (`inPerson` courses and their sessions), `GET /api/my/s
 
 ## Attendance - `/admin/courses/sessions/:slug/:sessionId` (admin or manager)
 
+The page has no admin sidebar (the Astro page uses the learner layout), with a « ← Retour à
+l'agenda » link.
+
 - Data: `GET /api/courses/{slug}` (course and session titles) and the participant list:
   - admin: `GET /api/admin/session-bookings/{slug}/{sessionId}`;
   - manager: `GET /api/manager/session-bookings/{slug}/{sessionId}`.

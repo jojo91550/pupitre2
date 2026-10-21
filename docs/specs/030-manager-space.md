@@ -16,12 +16,14 @@ returns.
 - Data: `GET /api/manager/users` → `{ users[], total, groups[] {id, name, memberIds} }`, and
   `GET /api/courses`, `GET /api/paths` for the choice lists.
 - Table: member (avatar, username, e-mail), enrolled courses, actions.
-- Filter by group (the groups of the scope) and search by name or e-mail.
+- Filter by group (the groups of the scope; the filter of the Astro page never worked,
+  [090](090-gaps-and-defects.md) A21) and search by name or e-mail.
 - « Gérer les inscriptions » opens a panel for the chosen member:
   - enrolled courses: `GET /api/manager/users/{userId}/enrollments`; enroll (« Choisir un
     cours… », « Inscrire ») through `POST /api/manager/enrollments/{slug}` with `{ userId }`;
     unenroll through `DELETE /api/manager/enrollments/{slug}/users/{userId}`;
-  - learning paths: `GET /api/manager/users/{userId}/path-enrollments`; enroll through
+  - learning paths: `GET /api/manager/users/{userId}/path-enrollments` → `pathEnrollments[]` with
+    the Go field names `Slug` and `EnrolledAt` (the struct has no json tags, A22); enroll through
     `POST /api/manager/paths/{slug}/enrollments` with `{ userId }`; unenroll through
     `DELETE /api/manager/paths/{slug}/enrollments/{userId}`.
 - Unenrolling asks for confirmation.
@@ -31,7 +33,9 @@ returns.
 - Data: `GET /api/manager/groups` → groups of the scope (`id`, `name`, `parentId`, `depth`,
   `memberCount`), shown as a tree.
 - « + Nouveau groupe »: `POST /api/manager/groups` with `{ name }` (the manager becomes a member).
-- Subgroup: `POST /api/manager/groups/{groupId}/subgroups` with `{ name }`.
+- Subgroup: `POST /api/manager/groups/{groupId}/subgroups` with `{ name }`. The manager does not
+  become a member of the subgroup, so it leaves their scope and their list ([090](090-gaps-and-defects.md)
+  B1, backend).
 - Delete: confirmation, then `DELETE /api/manager/groups/{groupId}`.
 - Members of the selected group: `GET /api/manager/groups/{groupId}/members`; add (« Choisir un
   utilisateur… », from `/api/manager/users`) through `POST /api/manager/groups/{groupId}/members`

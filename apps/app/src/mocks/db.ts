@@ -33,11 +33,60 @@ type MockDb = {
   profiles: Record<string, { bio?: string; avatarUrl?: string }>;
   /** course slug → sessions, once a trainer changed them */
   sessions: Record<string, CourseSession[]>;
+  /** groups and their members (user-service groups, user_groups) */
+  groups: MockGroup[];
+  /** "slug|sessionId|userId" → present */
+  presence: Record<string, boolean>;
+};
+
+export type MockGroup = {
+  id: string;
+  name: string;
+  source: string;
+  parentId: string;
+  /** Platform role mapped to an identity-provider group (group_role_mappings). */
+  mappedRole?: string;
+  memberIds: string[];
+  courseSlugs: string[];
 };
 
 const ALICE = '7a1c3e52-5f0b-4c2e-9d61-0b8f1a2c3d41';
 const ADMIN = '0f6e2d18-3b7c-4a95-8e24-c1d3b5a7f960';
 const TRAP = '9c8b7a65-4d3e-4f21-b0a9-8e7d6c5b4a39';
+const MARC = '2b9d4f61-8c3a-4e7b-a152-6d0e9f8a7b32';
+
+/**
+ * marc manages « Promo DevOps 2026 » (alice and the trap account) and its
+ * subgroup; « everyone » holds every user and is never part of a scope.
+ */
+const GROUPS: MockGroup[] = [
+  { id: 'a0e8f4c2-0000-4000-8000-000000000001', name: 'everyone', source: 'local', parentId: '', memberIds: [ALICE, MARC, ADMIN, TRAP], courseSlugs: [] },
+  {
+    id: 'b3f1c2d4-0a1b-4c5d-8e9f-101112131415',
+    name: 'Promo DevOps 2026',
+    source: 'local',
+    parentId: '',
+    memberIds: [ALICE, TRAP, MARC],
+    courseSlugs: ['docker-fundamentals', 'kubernetes-basics', 'gitlab-cicd'],
+  },
+  {
+    id: 'd5b3e4f6-2c3d-4e7f-8a1b-222324252627',
+    name: 'Groupe A',
+    source: 'local',
+    parentId: 'b3f1c2d4-0a1b-4c5d-8e9f-101112131415',
+    memberIds: [ALICE, MARC],
+    courseSlugs: [],
+  },
+  {
+    id: 'c4a2d3e5-1b2c-4d6e-9f0a-161718192021',
+    name: 'equipe-plateforme',
+    source: 'keycloak',
+    parentId: '',
+    mappedRole: 'student',
+    memberIds: [ALICE],
+    courseSlugs: [],
+  },
+];
 const daysAgo = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString();
 
 const LINUX_LESSONS = [
@@ -75,7 +124,11 @@ function seed(): MockDb {
       [ALICE]: { 'linux-intro': { 3: { bestScore: 5, maxScore: 5, passed: true, attempts: 1 } } },
     },
     attempts: {},
-    bookings: {},
+    // Two participants for the attendance page of the next Paris session.
+    bookings: {
+      [TRAP]: [{ courseSlug: 'atelier-kubernetes', sessionId: 'paris-1', bookedAt: daysAgo(3) }],
+      [ADMIN]: [{ courseSlug: 'atelier-kubernetes', sessionId: 'paris-1', bookedAt: daysAgo(4) }],
+    },
     badges: {
       [ALICE]: { 'linux-intro': daysAgo(20) },
       [ADMIN]: { 'linux-intro': daysAgo(38), 'docker-fundamentals': daysAgo(30) },
@@ -93,6 +146,8 @@ function seed(): MockDb {
     paths: { [ALICE]: { 'parcours-devops': daysAgo(10), 'parcours-competences-conteneurs': daysAgo(3) } },
     profiles: {},
     sessions: {},
+    groups: structuredClone(GROUPS),
+    presence: {},
   };
 }
 

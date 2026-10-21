@@ -11,8 +11,9 @@ import {
   skillModules,
 } from '@/mocks/course-logic';
 import { MOCK_ACCOUNTS, findAccount } from '@/mocks/data';
-import { db, save } from '@/mocks/db';
+import { db, save, type MockGroup } from '@/mocks/db';
 import { apiError, currentAccount } from '@/mocks/http';
+import type { PathDefinition } from '@/mocks/model';
 import { badgesOf } from '@/mocks/learner-handlers';
 
 // Routes of the learner space (batch 2, docs/specs/020, 021, 022), mirroring
@@ -39,7 +40,7 @@ function skillCompleted(user: UserPublic, skill: string): boolean {
 }
 
 /** paths.go — buildCourseStatuses, used for the skills of a skill path too. */
-function orderedStatuses(slugs: string[], isDone: (slug: string) => boolean): PathMemberStatus[] {
+export function orderedStatuses(slugs: string[], isDone: (slug: string) => boolean): PathMemberStatus[] {
   const out: PathMemberStatus[] = [];
   slugs.forEach((slug, index) => {
     const status: ProgressStatus = isDone(slug)
@@ -52,39 +53,17 @@ function orderedStatuses(slugs: string[], isDone: (slug: string) => boolean): Pa
   return out;
 }
 
-/** The groups of the mock accounts; « Default » is never returned (my_groups.go). */
-const GROUPS: Record<string, MyGroup[]> = {
-  '7a1c3e52-5f0b-4c2e-9d61-0b8f1a2c3d41': [
-    {
-      id: 'b3f1c2d4-0a1b-4c5d-8e9f-101112131415',
-      name: 'Promo DevOps 2026',
-      source: 'local',
-      parentId: '',
-      depth: 0,
-      courseSlugs: ['docker-fundamentals', 'kubernetes-basics', 'gitlab-cicd'],
-    },
-    {
-      id: 'c4a2d3e5-1b2c-4d6e-9f0a-161718192021',
-      name: 'equipe-plateforme',
-      source: 'keycloak',
-      parentId: '',
-      depth: 0,
-      mappedRole: 'student',
-      courseSlugs: [],
-    },
-  ],
-  '2b9d4f61-8c3a-4e7b-a152-6d0e9f8a7b32': [
-    {
-      id: 'b3f1c2d4-0a1b-4c5d-8e9f-101112131415',
-      name: 'Promo DevOps 2026',
-      source: 'local',
-      parentId: '',
-      depth: 0,
-      mappedRole: 'manager',
-      courseSlugs: ['docker-fundamentals', 'kubernetes-basics', 'gitlab-cicd'],
-    },
-  ],
-};
+/** paths.go — the course (or skill) statuses of one path for one user. */
+export function pathMembers(user: UserPublic, path: PathDefinition, done = completedCourses(user)): PathMemberStatus[] {
+  return path.spec.kind === 'skill'
+    ? orderedStatuses(path.spec.skills ?? [], (skill) => skillCompleted(user, skill))
+    : orderedStatuses(path.spec.courses ?? [], (course) => done.has(course));
+}
+
+export function groupDepth(groups: MockGroup[], group: MockGroup): number {
+  const parent = groups.find((g) => g.id === group.parentId);
+  return parent ? groupDepth(groups, parent) + 1 : 0;
+}
 
 function isTrainer(user: UserPublic) {
   return user.role === 'admin' || user.role === 'manager';
@@ -107,10 +86,7 @@ export const spaceHandlers = [
       const path = PATHS.find((p) => p.slug === slug);
       if (!path) return [{ slug, title: slug, enrolledAt, courses: [] }];
       const { spec } = path;
-      const members =
-        spec.kind === 'skill'
-          ? orderedStatuses(spec.skills ?? [], (skill) => skillCompleted(user, skill))
-          : orderedStatuses(spec.courses ?? [], (course) => done.has(course));
+      const members = pathMembers(user, path, done);
       return [{ slug, title: spec.title, description: spec.description, kind: spec.kind, enrolledAt, courses: members, skills: spec.skills }];
     });
     return HttpResponse.json({ paths });
@@ -136,10 +112,22 @@ export const spaceHandlers = [
     return HttpResponse.json({ total, level, levelName: names[level - 1], history });
   }),
 
+  // my_groups.go: every group of the user but « everyone », with its courses.
   http.get('/api/my/groups', ({ request }) => {
     const account = currentAccount(request);
     if (!account) return apiError(401, 'Missing Authorization header');
-    const groups = GROUPS[account.user.id] ?? [];
+    const all = db().groups;
+    const groups: MyGroup[] = all
+      .filter((g) => g.name !== 'everyone' && g.memberIds.includes(account.user.id))
+      .map((g) => ({
+        id: g.id,
+        name: g.name,
+        source: g.source,
+        parentId: g.parentId,
+        depth: groupDepth(all, g),
+        mappedRole: g.mappedRole,
+        courseSlugs: g.courseSlugs,
+      }));
     return HttpResponse.json({ groups, total: groups.length });
   }),
 
