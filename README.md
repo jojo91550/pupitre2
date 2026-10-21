@@ -12,7 +12,25 @@ New React frontend of the pupitre e-learning platform. It replaces the Astro fro
 
 - Node.js 22 LTS or later.
 - pnpm, enabled with `corepack enable`.
-- user-service and course-service running locally (ports 8081 and 8082 by default).
+- For `pnpm dev` only: user-service and course-service running locally (ports 8081 and 8082 by
+  default). `pnpm dev:mock` needs no backend.
+
+## Getting started
+
+```sh
+pnpm install
+pnpm dev:mock   # http://localhost:3000, no backend needed (docs/specs/006-mock-mode.md)
+pnpm dev        # http://localhost:3000, against the Go services
+```
+
+| Command | Effect |
+| --- | --- |
+| `pnpm build` | Type check, then production build in `dist/` |
+| `pnpm test` | Unit and component tests (Vitest) |
+| `pnpm lint` | ESLint, including the security rules of `docs/specs/003-security.md` |
+| `pnpm typecheck` | TypeScript only |
+
+The dev proxy targets can be changed with `VITE_USER_SERVICE_URL` and `VITE_COURSE_SERVICE_URL`.
 
 ## Contributing
 

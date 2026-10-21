@@ -37,6 +37,7 @@ calls.
 | [002](002-roles-and-guards.md) | Roles, page guards, role-dependent UI | F001 |
 | [003](003-security.md) | Frontend security requirements | - |
 | [004](004-api-and-routing.md) | API client, routing to the services, errors, route inventory | F004, F005 |
+| [006](006-mock-mode.md) | Mock mode: running and testing the frontend without the backend | - |
 | [005](005-ui-theme-navigation.md) | Theme, dark mode, navigation, toasts, page states, accessibility | F010-F012, F018 |
 | [010](010-catalogue.md) | Catalogue, filters, course card, "Reprendre" | F040-F044 |
 | [011](011-course-page-and-enrollment.md) | Course page, enrollment, prerequisites, badge, sessions | F045-F050 |
