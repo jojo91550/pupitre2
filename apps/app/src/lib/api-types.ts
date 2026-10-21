@@ -327,3 +327,81 @@ export type PublicUser = { id: string; username: string; avatarUrl: string | nul
 
 /** course-service/internal/handlers/sessions_admin.go — sessionBody */
 export type SessionInput = { title: string; date: string; location: string; capacity: number };
+
+// ── Manager space (user-service manager.go, paths.go, docs/specs/030) ─────
+
+/** user-service/internal/repository/user.go — AdminUserRow */
+export type ScopeUser = {
+  id: string;
+  username: string;
+  email: string;
+  role: Role;
+  isActive: boolean;
+  avatarUrl?: string | null;
+  bio?: string | null;
+  authProvider: string;
+  createdAt: string;
+  enrolledCourses: number;
+};
+
+/** manager.go — groupInfo: a group of the scope with its member ids */
+export type ScopeGroup = { id: string; name: string; memberIds: string[] };
+
+/** manager.go — managerGroup */
+export type ManagerGroup = { id: string; name: string; parentId: string; depth: number; memberCount: number };
+
+/** repository/enrollment.go — EnrollmentRow */
+export type EnrollmentRow = { courseSlug: string; completedLabs: number; totalScore: number; lastActivity?: string };
+
+/**
+ * repository/path_enrollment.go — PathEnrollmentRow. The struct has no json
+ * tags, so Go sends the field names as they are (defect A22).
+ */
+export type PathEnrollmentRow = { Slug: string; EnrolledAt: string };
+
+/** paths.go — enrolledUser */
+export type PathEnrolledUser = {
+  userId: string;
+  email: string;
+  role: string;
+  enrolledAt: string;
+  completedCourses: number;
+  totalCourses: number;
+  courses?: PathMemberStatus[];
+};
+
+/** course-service/internal/content/types.go — Path */
+export type LearningPath = {
+  slug: string;
+  title: string;
+  description?: string;
+  kind: 'course' | 'skill' | string;
+  level?: string;
+  courses?: string[];
+  skills?: string[];
+};
+
+/** repository/session_booking.go — SessionParticipantRow */
+export type SessionParticipant = { userId: string; username: string; email: string; bookedAt: string; present: boolean };
+
+// ── CSV exports (user-service exports.go, course-service exports.go, docs/specs/047) ──
+
+export type ExportFilter = {
+  id: string;
+  label: string;
+  type: 'date' | 'select' | 'text' | string;
+  options?: { value: string; label: string }[];
+};
+
+/** repository/export.go — ExportCategoryMeta (same shape as labExportCategoryMeta) */
+export type ExportCategory = {
+  id: string;
+  label: string;
+  fields: { id: string; label: string }[];
+  defaultFields: string[];
+  filters: ExportFilter[];
+};
+
+export type ExportRequest = { category: string; fields: string[]; filters: Record<string, string> };
+
+export type ExportPreview = { headers: string[]; rows: Record<string, string>[]; totalCount: number };

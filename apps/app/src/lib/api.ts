@@ -1,20 +1,31 @@
-import { request } from '@/lib/api-client';
+import { request, requestBlob } from '@/lib/api-client';
 import type {
   AuthorizeResponse,
   AuthResponse,
   CheckResult,
   Course,
   EarnedBadge,
+  EnrollmentRow,
+  ExportCategory,
+  ExportPreview,
+  ExportRequest,
   MarkdownPattern,
   ModuleDetail,
   ModuleSummary,
   LeaderboardEntry,
+  LearningPath,
+  ManagerGroup,
   MyCourse,
   MyGroup,
   MyPath,
   MyXp,
   PublicSettings,
+  PathEnrolledUser,
+  PathEnrollmentRow,
   PublicUser,
+  ScopeGroup,
+  ScopeUser,
+  SessionParticipant,
   QuizAnswer,
   QuizResult,
   SessionBooking,
@@ -122,6 +133,8 @@ export const bookSession = (slug: string, sessionId: string) =>
 export const cancelBooking = (slug: string, sessionId: string) =>
   request<void>(`/session-bookings/${enc(slug)}/${enc(sessionId)}`, { method: 'DELETE' });
 
+export const listPaths = () => request<{ paths: LearningPath[] }>('/paths');
+
 // Course sessions: admin or manager (docs/specs/022).
 
 export const createSession = (slug: string, body: SessionInput) =>
@@ -135,3 +148,75 @@ export const deleteSession = (slug: string, sessionId: string) =>
 
 /** Requires a signed-in user: the Astro frontend called it anonymously (defect A1). */
 export const listPatterns = () => request<{ patterns: MarkdownPattern[] }>('/patterns');
+
+// ── Manager space (docs/specs/030) ──────────────────────────────────────────
+
+export const managerUsers = () =>
+  request<{ users: ScopeUser[] | null; total: number; groups: ScopeGroup[] }>('/manager/users');
+
+export const managerUserEnrollments = (userId: string) =>
+  request<{ enrollments: EnrollmentRow[] | null }>(`/manager/users/${enc(userId)}/enrollments`);
+
+export const managerUserPathEnrollments = (userId: string) =>
+  request<{ pathEnrollments: PathEnrollmentRow[] }>(`/manager/users/${enc(userId)}/path-enrollments`);
+
+export const managerEnroll = (slug: string, userId: string) =>
+  request<{ message: string }>(`/manager/enrollments/${enc(slug)}`, { method: 'POST', body: { userId } });
+
+export const managerUnenroll = (slug: string, userId: string) =>
+  request<{ message: string }>(`/manager/enrollments/${enc(slug)}/users/${enc(userId)}`, { method: 'DELETE' });
+
+export const managerGroups = () => request<{ groups: ManagerGroup[] }>('/manager/groups');
+
+export const managerCreateGroup = (name: string) =>
+  request<{ id: string }>('/manager/groups', { method: 'POST', body: { name } });
+
+export const managerCreateSubgroup = (groupId: string, name: string) =>
+  request<{ id: string }>(`/manager/groups/${enc(groupId)}/subgroups`, { method: 'POST', body: { name } });
+
+export const managerDeleteGroup = (groupId: string) =>
+  request<{ message: string }>(`/manager/groups/${enc(groupId)}`, { method: 'DELETE' });
+
+export const managerGroupMembers = (groupId: string) =>
+  request<{ members: ScopeUser[] | null }>(`/manager/groups/${enc(groupId)}/members`);
+
+export const managerAddGroupMember = (groupId: string, userId: string) =>
+  request<{ message: string }>(`/manager/groups/${enc(groupId)}/members`, { method: 'POST', body: { userId } });
+
+export const managerRemoveGroupMember = (groupId: string, userId: string) =>
+  request<{ message: string }>(`/manager/groups/${enc(groupId)}/members/${enc(userId)}`, { method: 'DELETE' });
+
+export const managerPathEnrollments = (slug: string) =>
+  request<{ users: PathEnrolledUser[] | null }>(`/manager/paths/${enc(slug)}/enrollments`);
+
+export const managerEnrollPath = (slug: string, userId: string) =>
+  request<{ message: string }>(`/manager/paths/${enc(slug)}/enrollments`, { method: 'POST', body: { userId } });
+
+export const managerUnenrollPath = (slug: string, userId: string) =>
+  request<{ message: string }>(`/manager/paths/${enc(slug)}/enrollments/${enc(userId)}`, { method: 'DELETE' });
+
+// ── Attendance (docs/specs/022): /api/admin/… for an admin, /api/manager/… for a manager ──
+
+type TrainerRole = 'admin' | 'manager';
+
+export const sessionParticipants = (role: TrainerRole, slug: string, sessionId: string) =>
+  request<{ participants: SessionParticipant[] | null }>(`/${role}/session-bookings/${enc(slug)}/${enc(sessionId)}`);
+
+export const markPresence = (role: TrainerRole, slug: string, sessionId: string, userId: string, present: boolean) =>
+  request<{ ok: boolean }>(`/${role}/session-bookings/${enc(slug)}/${enc(sessionId)}/${enc(userId)}/presence`, {
+    method: 'PATCH',
+    body: { present },
+  });
+
+// ── CSV exports (docs/specs/047): user-service and course-service lab checks ──
+
+export type ExportSource = '/admin/exports' | '/admin/exports/lab-checks';
+
+export const exportCategories = (source: ExportSource) =>
+  request<{ categories: ExportCategory[] }>(`${source}/categories`);
+
+export const exportPreview = (source: ExportSource, body: ExportRequest) =>
+  request<ExportPreview>(`${source}/preview`, { method: 'POST', body });
+
+export const exportDownload = (source: ExportSource, body: ExportRequest) =>
+  requestBlob(`${source}/download`, { method: 'POST', body });

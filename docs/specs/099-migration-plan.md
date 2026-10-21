@@ -9,8 +9,9 @@ frontend stays in service until the end of batch 5; the reverse proxy then switc
 | --- | --- |
 | 0 - Foundation | Done, merged into `main` (squash). |
 | 1 - Main learner flow | Done, merged into `main` (squash): catalogue, course page and enrollment, lesson player (markdown, admonitions, patterns, mermaid), inline and full quizzes with cooldowns, GitLab and local labs, sessions booking, mock handlers. The repository was also restructured as a monorepo (`apps/app`, `packages/ui`) like `ebuildy/pupitre2`. Verified in mock mode, light and dark. |
-| 2 - Learner space | Done on `feature/learner-space`: my courses, paths (SVG progress map), skills and skill page, badges, XP, groups, leaderboard, public profile, profile (bio, emoji avatar), agenda with booking and session management, mock handlers. Verified in mock mode, light and dark. The attendance page stays in batch 3. |
-| 3, 4, 5 | Not started. |
+| 2 - Learner space | Done, merged into `main` (squash): my courses, paths (SVG progress map), skills and skill page, badges, XP, groups, leaderboard, public profile, profile (bio, emoji avatar), agenda with booking and session management, mock handlers. Verified in mock mode, light and dark. The attendance page stays in batch 3. |
+| 3 - Manager space | Done on `feature/manager-space`: members (group filter, search, course and path enrollments), groups (tree, create, subgroup, delete, members), paths, session attendance (optimistic, admin or manager routes), CSV exports (both sources, manager notice), mock handlers. Verified in mock mode. |
+| 4, 5 | Not started. |
 
 Open points:
 

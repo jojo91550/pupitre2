@@ -44,6 +44,12 @@ shapes copied from the Go structs.
   awarded once), `/my/groups`, the public `GET /api/leaderboard`, `/users/{id}`,
   `/users/{id}/badges`, `/badges/{slug}`, `PUT /api/auth/profile` (bio and avatar), and the session
   routes of admins and managers (`POST`, `PUT`, `DELETE /api/admin/courses/{slug}/sessions…`).
+- **Manager space (batch 3)**, in `apps/app/src/mocks/manager-handlers.ts`: `GET /api/paths`, every
+  `/api/manager/*` route of [030](030-manager-space.md) with the scope of `manager.go` (members of
+  the manager's groups, « everyone » excepted), attendance under `/api/admin/…` and
+  `/api/manager/…`, and the CSV exports: « Utilisateurs » and « Inscriptions aux cours » for admins
+  and managers, « Lab Checks » for admins only (a UTF-8 CSV with BOM, `;` separator and the
+  server's file name).
 - **Fixtures**: the 17 demo courses and 2 paths of the Go seed (`fixtures/seed-courses.ts`,
   generated from `course-service/internal/db/seed`), plus `fixtures/demo-courses.ts`, which covers
   what the seed does not (admonitions, mermaid, patterns, trap HTML, media, every question type,
@@ -52,7 +58,10 @@ shapes copied from the Go structs.
   enrolments, profile changes and edited sessions are kept in `sessionStorage` (`pupitre.mock.db`):
   they survive reloads and reset with the tab. `alice` starts enrolled in three courses (one
   finished, with its badge and XP) and two paths, and belongs to two groups; `admin` and the trap
-  account hold badges too, so the leaderboard shows the trap account's payloads.
+  account hold badges too, so the leaderboard shows the trap account's payloads. `marc.manager`
+  manages « Promo DevOps 2026 » (alice and the trap account) and its subgroup « Groupe A »; the
+  trap account and `admin` have booked the next Paris session, so its attendance page has
+  participants.
 - Any other `/api/*` route answers **501** « Route non simulée en mode mock », until the batch
   that needs it adds its handler.
 

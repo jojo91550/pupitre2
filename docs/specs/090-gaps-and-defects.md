@@ -82,6 +82,16 @@ indicated.
 | A18 | The path level badge reads `level`, which `GET /api/my/paths` does not return: it never shows | `my-paths.astro` | Not shown; a backend field is needed ([020](020-learner-space.md)) |
 | A19 | The session form requires a capacity of at least 1, while 0 means unlimited | `agenda.astro` | Capacity ≥ 0 ([022](022-agenda-and-sessions.md)) |
 | A20 | Editing a session fills the date field with the UTC time cut from the ISO string: saving it unchanged moves the session by the time zone offset | `agenda.astro` | Local time in the field ([022](022-agenda-and-sessions.md)) |
+| A21 | The group filter of « Mes membres » never works: the buttons have the class `mu-group-filter-btn` but the script listens on `.group-filter-btn` | `manager/users/index.astro` | Working filter ([030](030-manager-space.md)) |
+| A22 | `GET /api/manager/users/{id}/path-enrollments` returns `Slug` and `EnrolledAt`: `PathEnrollmentRow` has no json tags | API (`repository/path_enrollment.go`) | Field names kept as sent; json tags are a backend fix |
+
+## Backend defects found while writing the frontend
+
+Not worked around in the frontend ([`AGENTS.md`](../../AGENTS.md): the Go backend is not changed).
+
+| # | Defect | Where | Effect |
+| --- | --- | --- | --- |
+| B1 | A manager who creates a subgroup is not made a member of it, while the scope is the groups the manager belongs to | `user-service` `ManagerCreateSubgroup` | The new subgroup disappears from « Mes groupes » and can no longer be managed by its creator |
 
 ## Security
 
