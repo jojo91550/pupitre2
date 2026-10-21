@@ -5,7 +5,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'coverage', 'public/mockServiceWorker.js'] },
+  { ignores: ['**/dist', '**/coverage', 'apps/app/public/mockServiceWorker.js'] },
   {
     files: ['**/*.{ts,tsx}'],
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
@@ -34,22 +34,27 @@ export default tseslint.config(
       ],
       'no-restricted-globals': [
         'error',
-        { name: 'localStorage', message: 'Use src/lib/storage.ts, which never throws.' },
+        { name: 'localStorage', message: 'Use @pupitre/ui/lib/storage, which never throws.' },
       ],
     },
   },
   {
     // The only places allowed to touch raw HTML or the storage API directly.
-    files: ['src/components/safe-html.tsx', 'src/lib/storage.ts', 'src/components/ui/**'],
+    files: [
+      'packages/ui/src/components/safe-html.tsx',
+      'packages/ui/src/lib/storage.ts',
+      'packages/ui/src/components/ui/**',
+      'apps/app/src/lib/markdown.ts',
+    ],
     rules: { 'no-restricted-syntax': 'off', 'no-restricted-globals': 'off' },
   },
   {
     // shadcn components export their variants next to the component, by design.
-    files: ['src/components/ui/**'],
+    files: ['packages/ui/src/components/ui/**'],
     rules: { 'react-refresh/only-export-components': 'off' },
   },
   {
-    files: ['vite.config.ts', 'eslint.config.js'],
+    files: ['**/vite.config.ts', '**/vitest.config.ts', 'eslint.config.js'],
     languageOptions: { globals: globals.node },
   },
 );

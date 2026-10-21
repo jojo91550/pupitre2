@@ -25,7 +25,7 @@ finding H4. In pupitre2, the dev proxy forwards only `Authorization`, `Content-T
 
 ## HTTP client
 
-A single client (`src/api/client.ts`):
+A single client (`apps/app/src/lib/api-client.ts`):
 
 - `/api` prefix, JSON in and out;
 - adds `Authorization: Bearer <token>` when a session exists ([001](001-keycloak-authentication.md));
@@ -35,12 +35,12 @@ A single client (`src/api/client.ts`):
 - 403 → an `ApiError` handled by the page (prerequisites not met, access denied…);
 - non-JSON responses (CSV, exported markdown) go through `requestBlob()`.
 
-Each route is exposed by a typed function in `src/api/<domain>.ts`, used through TanStack Query
+Each route is exposed by a typed function in `apps/app/src/lib/api.ts`, used through TanStack Query
 hooks (`useQuery` for reads, `useMutation` with invalidation for writes). No page calls `fetch`
 directly.
 
 Types mirror the Go structs (JSON field names are the ones in the `json:"…"` tags). As the
-OpenAPI documents are incomplete, the types are written by hand in `src/api/types.ts`, and each
+OpenAPI documents are incomplete, the types are written by hand in `apps/app/src/lib/api-types.ts`, and each
 type cites the Go handler it comes from.
 
 ## Routes used by the frontend
