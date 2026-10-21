@@ -28,6 +28,22 @@ theme, declared in `src/styles/globals.css` (`:root` and `.dark`).
   (see [003](003-security.md) S6).
 - The logo is `public/pioupitre.png`, next to the word "pupitre" in Caveat.
 
+## Visual design
+
+**pupitre2 keeps the current pupitre design.** The colours above, the fonts, the radii and the
+look of every screen (cards, badges, category colours, "Reprendre" hero, level colours, lesson
+layout, quiz palette, podium…) are those of the current Astro frontend, not a new design.
+
+- The visual reference of each screen is the current frontend: its page markup and
+  `frontend/src/styles/*.css` (`components.css`, `learning.css`, `gamification.css`,
+  `admonitions.css`, `admin.css`) at commit `3cdf7b2` of `genesary/pupitre`.
+- Those styles are ported to Tailwind classes or to a small CSS layer in `src/styles/`, keeping the
+  same values (colours, spacing, sizes, shadows).
+- shadcn components are restyled with these tokens; their default look does not replace pupitre's.
+- Code reused from the reference rewrite is restyled the same way ([090](090-gaps-and-defects.md),
+  rule 6). Its theme is not imported.
+- A design change is a separate, explicit decision, never a side effect of the rewrite.
+
 ## Light / dark mode
 
 - The preference is stored in `localStorage.theme` (`light` or `dark`). Without a preference, the

@@ -13,9 +13,11 @@ calls.
   `course-service/internal/handlers/router.go`) and the response structs of the handlers. The
   `openapi.yaml` files are not used as a reference: they cover only about a quarter of the
   routes.
-- **Checklist**: the `ebuildy/pupitre2` rewrite (`docs/specs`) was used as a checklist so that no
-  feature is forgotten. Its content is not reused: it describes a different TypeScript backend,
-  and its repository has no license.
+- **Reference rewrite**: [`ebuildy/pupitre2`](https://github.com/ebuildy/pupitre2), a full
+  rewrite with its own TypeScript backend. Its specs were used as a checklist so that no feature
+  is forgotten, and its **frontend code may be reused** with its author's agreement (see
+  "Reusing the reference frontend" in [090](090-gaps-and-defects.md)). Its backend is not: pupitre2
+  keeps the existing Go backend.
 - **Security audit** of 2026-10-20: its frontend requirements are in [003](003-security.md).
 
 ## Conventions

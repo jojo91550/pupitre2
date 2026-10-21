@@ -20,6 +20,41 @@ The reference features that belong to its backend (admin account bootstrap, demo
 server-side performance invariants, health and metrics, rate limiting) do not apply to a frontend
 and are not carried over.
 
+## Reusing the reference frontend
+
+The reference frontend uses the same stack (React 19, Vite, React Router, Tailwind v4, shadcn/ui,
+TanStack Query), and its author agreed that it be reused. Its code is taken over where it helps,
+with these rules:
+
+| Part of the reference | Reuse |
+| --- | --- |
+| `packages/ui` (shadcn components, theme, page blocks) | As is, adjusted to our tokens ([005](005-ui-theme-navigation.md)) |
+| `apps/app`, `apps/admin` pages and components | The interface (JSX, layout, wording); the data layer is rewritten |
+| `packages/i18n` French strings | The wording; French only, as specified |
+| `packages/auth-ui` (better-auth, local login, registration) | Not reused: Keycloak only ([001](001-keycloak-authentication.md)) |
+| `packages/shared` (types of its API) | Not reused: types mirror the Go structs ([004](004-api-and-routing.md)) |
+| `apps/api` (TypeScript backend) | Not reused: the Go backend stays |
+
+When a reference component is taken over:
+
+1. **Data**: its Hono RPC calls (`api.….$get()`, `unwrap()`) are replaced by our API client and the
+   Go routes of [004](004-api-and-routing.md). Field names follow the Go JSON tags.
+2. **HTML**: the reference backend renders and sanitizes markdown on the server, so its components
+   inject HTML directly (`dangerouslySetInnerHTML` in the lesson, quiz and lab components). The Go
+   backend returns **raw** markdown: every such place goes through `renderMarkdown()` and
+   `<SafeHtml>` instead ([003](003-security.md) S1, S2). Copying them unchanged would bring back
+   findings C2 and C3.
+3. **One application**: its learner and admin apps are merged into our single route table
+   ([002](002-roles-and-guards.md)).
+4. **Mock data**: every route a reused page calls gets its handler in `src/mocks`
+   ([006](006-mock-mode.md)).
+5. **Attribution**: a reused file keeps a header comment naming its origin
+   (`// Adapted from ebuildy/pupitre2: apps/app/src/routes/Catalogue.tsx`).
+6. **Design**: the reference is used for structure and behaviour, **never for its look**. Its
+   theme (`packages/ui/src/styles/globals.css`: Inter font, oklch colours, 12 px radius) is not
+   imported. Every reused screen is restyled to match the current pupitre design
+   ([005](005-ui-theme-navigation.md), "Visual design").
+
 ## Defects of the current frontend
 
 Found while reading `genesary/pupitre/frontend` (commit `3cdf7b2`). Each one is fixed by the spec
