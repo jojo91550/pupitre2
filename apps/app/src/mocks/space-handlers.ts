@@ -6,11 +6,11 @@ import {
   completedCourses,
   findCourse,
   isModuleDone,
-  PATHS,
+  paths as pathDefinitions,
   sessionsOf,
   skillModules,
 } from '@/mocks/course-logic';
-import { MOCK_ACCOUNTS, findAccount } from '@/mocks/data';
+import { accounts, findAccount } from '@/mocks/data';
 import { db, save, type MockGroup } from '@/mocks/db';
 import { apiError, currentAccount } from '@/mocks/http';
 import type { PathDefinition } from '@/mocks/model';
@@ -83,7 +83,7 @@ export const spaceHandlers = [
     const done = completedCourses(user);
     const enrolled = db().paths[user.id] ?? {};
     const paths: MyPath[] = Object.entries(enrolled).flatMap(([slug, enrolledAt]): MyPath[] => {
-      const path = PATHS.find((p) => p.slug === slug);
+      const path = pathDefinitions().find((p) => p.slug === slug);
       if (!path) return [{ slug, title: slug, enrolledAt, courses: [] }];
       const { spec } = path;
       const members = pathMembers(user, path, done);
@@ -133,7 +133,7 @@ export const spaceHandlers = [
 
   // ── Public routes ─────────────────────────────────────────────────────────
   http.get('/api/leaderboard', () => {
-    const rows = MOCK_ACCOUNTS.map(({ user }) => ({ user, badges: badgesOf(user.id) }))
+    const rows = accounts().map(({ user }) => ({ user, badges: badgesOf(user.id) }))
       .filter((row) => row.badges.length > 0)
       .sort((a, b) => b.badges.length - a.badges.length || a.user.username.localeCompare(b.user.username));
     const leaderboard = rows.map((row, index) => {

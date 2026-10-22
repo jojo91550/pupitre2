@@ -2,7 +2,8 @@ import { http, HttpResponse } from 'msw';
 
 import { readItem, writeItem } from '@pupitre/ui/lib/storage';
 
-import { findAccount, MOCK_PUBLIC_SETTINGS } from '@/mocks/data';
+import { findAccount } from '@/mocks/data';
+import { adminHandlers, publicSettings } from '@/mocks/admin-handlers';
 import { apiError, currentAccount } from '@/mocks/http';
 import { mockToken } from '@/mocks/jwt';
 import { learnerHandlers } from '@/mocks/learner-handlers';
@@ -39,7 +40,7 @@ const issuedStates = {
 
 
 export const handlers = [
-  http.get('/api/settings/public', () => HttpResponse.json(MOCK_PUBLIC_SETTINGS)),
+  http.get('/api/settings/public', () => HttpResponse.json(publicSettings())),
 
   // The real route returns Keycloak's authorization URL; here it points to the
   // mock Keycloak page, which sends the user back to /auth/callback.
@@ -73,6 +74,7 @@ export const handlers = [
   ...learnerHandlers,
   ...spaceHandlers,
   ...managerHandlers,
+  ...adminHandlers,
 
   // Anything not simulated yet answers clearly instead of reaching the network.
   http.all('/api/*', ({ request }) =>

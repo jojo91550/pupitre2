@@ -1,5 +1,10 @@
 import { request, requestBlob } from '@/lib/api-client';
 import type {
+  AdminGroup,
+  GroupMapping,
+  GroupMember,
+  AdminLeaderboardEntry,
+  AdminStats,
   AuthorizeResponse,
   AuthResponse,
   CheckResult,
@@ -28,6 +33,7 @@ import type {
   SessionParticipant,
   QuizAnswer,
   QuizResult,
+  Role,
   SessionBooking,
   SessionInput,
   SkillLevel,
@@ -220,3 +226,234 @@ export const exportPreview = (source: ExportSource, body: ExportRequest) =>
 
 export const exportDownload = (source: ExportSource, body: ExportRequest) =>
   requestBlob(`${source}/download`, { method: 'POST', body });
+
+// ── Administration (docs/specs/040-047) ─────────────────────────────────────
+
+export const adminStats = () => request<AdminStats>('/admin/stats');
+
+export const adminLeaderboard = () => request<{ leaderboard: AdminLeaderboardEntry[] }>('/admin/leaderboard');
+
+/** Every course, private and hidden ones included. */
+export const adminCourses = () => request<{ courses: Course[]; total: number }>('/admin/courses');
+
+export const adminUsers = () => request<{ users: ScopeUser[] | null; total: number }>('/admin/users');
+
+export const authProviders = () => request<{ providers: { provider: string; count: number }[] | null }>('/admin/users/providers');
+
+/** Role and activation only: username, bio and avatar come from Keycloak or the profile (spec 041). */
+export const updateUserAdmin = (userId: string, body: { role: Role; isActive: boolean }) =>
+  request<UserPublic>(`/admin/users/${enc(userId)}`, { method: 'PUT', body });
+
+export const deleteUser = (userId: string) =>
+  request<{ message: string }>(`/admin/users/${enc(userId)}`, { method: 'DELETE' });
+
+export type PlatformSetting = { key: string; value: string; description: string | null };
+
+export const adminSettings = () => request<{ settings: PlatformSetting[] }>('/admin/settings');
+
+/** Every value is a string; an unknown key is refused with a 400. Returns the updated list. */
+export const updateSettings = (values: Record<string, string>) =>
+  request<{ settings: PlatformSetting[] }>('/admin/settings', { method: 'PUT', body: values });
+
+export type PatternInput = { name: string; label: string; scope: string; html: string; css: string; js: string };
+
+export const createPattern = (body: PatternInput) =>
+  request<MarkdownPattern>('/admin/patterns', { method: 'POST', body });
+
+export const updatePattern = (name: string, body: PatternInput) =>
+  request<MarkdownPattern>(`/admin/patterns/${enc(name)}`, { method: 'PUT', body });
+
+export const deletePattern = (name: string) =>
+  request<{ message: string }>(`/admin/patterns/${enc(name)}`, { method: 'DELETE' });
+
+/** course-service lab_results.go — labCheckRow */
+export type LabCheckRow = {
+  id: number | string;
+  username: string;
+  courseSlug: string;
+  moduleIndex: number;
+  moduleName: string;
+  allow: boolean;
+  violations: string[] | null;
+  /** false for a check the desktop app ran and recorded (« Auto-déclaré »). */
+  verified: boolean;
+  checkedAt: string;
+};
+
+export const labChecks = (course = '') =>
+  request<LabCheckRow[]>(`/admin/lab-checks${course ? `?course=${enc(course)}` : ''}`);
+
+// Groups (user-service groups.go, admin.go — docs/specs/044)
+
+export const adminGroups = () => request<{ groups: AdminGroup[] | null }>('/admin/groups');
+
+export const createGroup = (name: string) => request<{ id: string }>('/admin/groups', { method: 'POST', body: { name } });
+
+export const renameGroup = (groupId: string, name: string) =>
+  request<{ message: string }>(`/admin/groups/${enc(groupId)}`, { method: 'PUT', body: { name } });
+
+export const deleteGroup = (groupId: string) =>
+  request<{ message: string }>(`/admin/groups/${enc(groupId)}`, { method: 'DELETE' });
+
+export const createSubgroup = (groupId: string, name: string) =>
+  request<{ id: string }>(`/admin/groups/${enc(groupId)}/subgroups`, { method: 'POST', body: { name } });
+
+/** parentId null: the group becomes a root. */
+export const moveGroup = (groupId: string, parentId: string | null) =>
+  request<{ message: string }>(`/admin/groups/${enc(groupId)}/parent`, { method: 'PATCH', body: { parentId } });
+
+export const groupMembers = (groupId: string, recursive: boolean) =>
+  request<{ members: GroupMember[] | null; total: number }>(
+    `/admin/groups/${enc(groupId)}/members${recursive ? '?recursive=true' : ''}`,
+  );
+
+export const addGroupMember = (groupId: string, userId: string) =>
+  request<{ message: string }>(`/admin/groups/${enc(groupId)}/members`, { method: 'POST', body: { userId } });
+
+export const removeGroupMember = (groupId: string, userId: string) =>
+  request<{ message: string }>(`/admin/groups/${enc(groupId)}/members/${enc(userId)}`, { method: 'DELETE' });
+
+export const groupMappings = () => request<{ mappings: GroupMapping[] | null }>('/admin/groups/mappings');
+
+/** Creates or updates the mapping of an SSO group name. */
+export const saveGroupMapping = (mapping: GroupMapping) =>
+  request<{ message: string }>('/admin/groups/mappings', { method: 'POST', body: mapping });
+
+export const deleteGroupMapping = (groupName: string) =>
+  request<{ message: string }>(`/admin/groups/mappings/${enc(groupName)}`, { method: 'DELETE' });
+
+// Learning paths (course-service paths_admin.go, user-service paths.go — docs/specs/043)
+
+/** definition.Path */
+export type PathSpec = {
+  title?: string;
+  description?: string;
+  kind?: string;
+  level?: string;
+  courses?: string[];
+  skills?: string[];
+};
+
+/** Read through the admin route: the public one adds the courses' skills (spec 043). */
+export const pathDefinition = (slug: string) =>
+  request<{ slug: string; spec: PathSpec }>(`/admin/courses/paths/${enc(slug)}/definition`);
+
+export const createPath = (slug: string, spec: PathSpec) =>
+  request<{ slug: string }>('/admin/courses/paths', { method: 'POST', body: { slug, spec } });
+
+export const updatePath = (slug: string, spec: PathSpec) =>
+  request<{ slug: string }>(`/admin/courses/paths/${enc(slug)}/definition`, { method: 'PUT', body: { spec } });
+
+export const deletePath = (slug: string) =>
+  request<{ message: string }>(`/admin/courses/paths/${enc(slug)}/definition`, { method: 'DELETE' });
+
+export const adminPathEnrollments = (slug: string) =>
+  request<{ users: PathEnrolledUser[] | null }>(`/admin/paths/${enc(slug)}/enrollments`);
+
+export const adminEnrollPath = (slug: string, userId: string) =>
+  request<{ message: string }>(`/admin/paths/${enc(slug)}/enrollments`, { method: 'POST', body: { userId } });
+
+export const adminUnenrollPath = (slug: string, userId: string) =>
+  request<{ message: string }>(`/admin/paths/${enc(slug)}/enrollments/${enc(userId)}`, { method: 'DELETE' });
+
+// Courses (course-service admin_definition.go, courses_import.go, state.go;
+// user-service admin.go enrollments — docs/specs/042)
+
+/** definition.Course. Unknown fields are kept as read, so a save never drops them. */
+export type CourseSpec = {
+  title?: string;
+  description?: string;
+  public?: boolean;
+  hidden?: boolean;
+  category?: string;
+  difficulty?: string;
+  scope?: string;
+  xpRequired?: number;
+  inPerson?: boolean;
+  badge?: { name: string; icon?: string };
+  modules?: ModuleSpec[];
+  [key: string]: unknown;
+};
+
+/** content.Module, same rule for unknown fields. */
+export type ModuleSpec = {
+  name: string;
+  type: string;
+  content?: string;
+  src?: string;
+  ref?: string;
+  path?: string;
+  hidden?: boolean;
+  inline?: boolean;
+  [key: string]: unknown;
+};
+
+export type CourseDefinition = { slug: string; spec: CourseSpec };
+
+export const courseDefinition = (slug: string) => request<CourseDefinition>(`/admin/courses/${enc(slug)}/definition`);
+
+export const createCourse = (slug: string, spec: CourseSpec) =>
+  request<{ slug: string }>('/admin/courses', { method: 'POST', body: { slug, spec } });
+
+/** Full replacement of the definition. */
+export const updateCourse = (slug: string, spec: CourseSpec) =>
+  request<{ slug: string }>(`/admin/courses/${enc(slug)}/definition`, { method: 'PUT', body: { spec } });
+
+export const deleteCourse = (slug: string) =>
+  request<{ message: string }>(`/admin/courses/${enc(slug)}/definition`, { method: 'DELETE' });
+
+export type ImportRequest = { markdown: string; slug?: string; split?: string; mode: 'create' | 'replace' | 'append' };
+
+export type ImportPreview = {
+  slug: string;
+  mode: string;
+  course: CourseSpec;
+  modules: { name: string; slug: string; type: string; bytes: number; hidden?: boolean; src?: string; path?: string; existing?: boolean }[];
+  warnings?: string[];
+};
+
+export const importPreview = (body: ImportRequest) =>
+  request<ImportPreview>('/admin/courses/import/preview', { method: 'POST', body });
+
+export const importCourse = (body: ImportRequest) =>
+  request<{ slug: string; mode: string; moduleCount: number; warnings?: string[] }>('/admin/courses/import', {
+    method: 'POST',
+    body,
+  });
+
+export const exportCourseMarkdown = (slug: string) => requestBlob(`/admin/courses/${enc(slug)}/export/markdown`);
+
+export const clearAllCache = () => request<{ status: string; reposCleared?: number }>('/admin/cache/clear', { method: 'POST' });
+
+export const clearCourseCache = (slug: string) =>
+  request<{ status: string; reposCleared?: number }>(`/admin/courses/${enc(slug)}/cache/clear`, { method: 'POST' });
+
+export const clearModuleCache = (slug: string, index: number) =>
+  request<{ status: string; reposCleared?: number }>(`/admin/courses/${enc(slug)}/modules/${index}/cache/clear`, {
+    method: 'POST',
+  });
+
+export type CourseEnrollment = { userId: string; username: string; email: string; enrolledAt: string };
+export type GroupEnrollment = { id: string; name: string; source: string; memberCount: number; enrolledAt: string };
+
+export const courseEnrollments = (slug: string) =>
+  request<{ enrollments: CourseEnrollment[] | null }>(`/admin/enrollments/${enc(slug)}`);
+
+export const groupEnrollments = (slug: string) =>
+  request<{ groups: GroupEnrollment[] | null }>(`/admin/enrollments/${enc(slug)}/groups`);
+
+/** The response gives the number of members enrolled. */
+export const enrollGroup = (slug: string, groupId: string) =>
+  request<{ message: string; enrolled: number }>(`/admin/enrollments/${enc(slug)}/groups`, { method: 'POST', body: { groupId } });
+
+export const unenrollGroup = (slug: string, groupId: string) =>
+  request<{ message: string }>(`/admin/enrollments/${enc(slug)}/groups/${enc(groupId)}`, { method: 'DELETE' });
+
+export const searchUsers = (q: string) =>
+  request<{ users: { id: string; username: string; email: string }[] | null }>(`/admin/users/search?q=${enc(q)}`);
+
+export const adminEnrollUser = (slug: string, userId: string) =>
+  request<{ message: string }>(`/admin/enrollments/${enc(slug)}`, { method: 'POST', body: { userId } });
+
+export const adminUnenrollUser = (slug: string, userId: string) =>
+  request<{ message: string }>(`/admin/enrollments/${enc(slug)}/users/${enc(userId)}`, { method: 'DELETE' });

@@ -5,7 +5,7 @@ import type { CheckResult, EarnedBadge, QuizAnswer, SkillLevel, UserPublic } fro
 import {
   canSeeCourse,
   completedCourses,
-  COURSES,
+  courses,
   findCourse,
   isEnrolled,
   listModules,
@@ -82,8 +82,8 @@ export const learnerHandlers = [
   // ── course-service ────────────────────────────────────────────────────────
   http.get('/api/courses', ({ request }) => {
     const user = currentAccount(request)?.user ?? null;
-    const courses = COURSES.filter((course) => canSeeCourse(course, user)).map(toCourseResponse);
-    return HttpResponse.json({ courses, total: courses.length });
+    const list = courses().filter((course) => canSeeCourse(course, user)).map(toCourseResponse);
+    return HttpResponse.json({ courses: list, total: list.length });
   }),
 
   http.get('/api/courses/:slug', ({ request, params }) => {
@@ -173,7 +173,7 @@ export const learnerHandlers = [
     const done = completedCourses(account.user);
     const order = ['beginner', 'intermediate', 'advanced'];
     const skills = new Map<string, SkillLevel>();
-    for (const course of COURSES.filter((c) => c.spec.public && !c.spec.hidden)) {
+    for (const course of courses().filter((c) => c.spec.public && !c.spec.hidden)) {
       const response = toCourseResponse(course);
       for (const skill of response.skills ?? []) {
         const entry = skills.get(skill) ?? { skill, level: '', completedCourses: 0, totalCourses: 0 };
@@ -264,6 +264,6 @@ export const learnerHandlers = [
 
   http.get('/api/patterns', ({ request }) => {
     if (!currentAccount(request)) return apiError(401, 'Missing Authorization header');
-    return HttpResponse.json({ patterns: MOCK_PATTERNS });
+    return HttpResponse.json({ patterns: db().patterns ?? MOCK_PATTERNS });
   }),
 ];

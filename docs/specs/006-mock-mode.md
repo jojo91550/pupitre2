@@ -50,6 +50,11 @@ shapes copied from the Go structs.
   `/api/manager/…`, and the CSV exports: « Utilisateurs » and « Inscriptions aux cours » for admins
   and managers, « Lab Checks » for admins only (a UTF-8 CSV with BOM, `;` separator and the
   server's file name).
+- **Administration (batch 4)**, in `apps/app/src/mocks/admin-handlers.ts`: every `/api/admin/*`
+  route of [040](040-admin-dashboard.md) to [047](047-admin-exports-and-labs.md). Courses, paths,
+  patterns, settings, groups, mappings and user changes are written to the mock state, so they
+  show up on the learner pages too; `GET /api/settings/public` follows the saved settings. The
+  markdown import splits on the chosen heading level; the lab checks are fixtures.
 - **Fixtures**: the 17 demo courses and 2 paths of the Go seed (`fixtures/seed-courses.ts`,
   generated from `course-service/internal/db/seed`), plus `fixtures/demo-courses.ts`, which covers
   what the seed does not (admonitions, mermaid, patterns, trap HTML, media, every question type,

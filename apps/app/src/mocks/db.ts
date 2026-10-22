@@ -1,4 +1,5 @@
-import type { CourseSession, SessionBooking, XpEvent } from '@/lib/api-types';
+import type { CourseSession, MarkdownPattern, Role, SessionBooking, XpEvent } from '@/lib/api-types';
+import type { CourseDefinition, PathDefinition } from '@/mocks/model';
 import { readItem, writeItem } from '@pupitre/ui/lib/storage';
 
 // Learner state of the mock backend: what user-service and course-service keep
@@ -29,8 +30,20 @@ type MockDb = {
   xp: Record<string, XpEvent[]>;
   /** userId → path slug → enrolledAt */
   paths: Record<string, Record<string, string>>;
-  /** userId → profile fields changed with PUT /api/auth/profile */
-  profiles: Record<string, { bio?: string; avatarUrl?: string }>;
+  /** userId → profile fields changed with PUT /api/auth/profile or by an admin */
+  profiles: Record<string, { bio?: string; avatarUrl?: string; role?: Role; isActive?: boolean }>;
+  /** users deleted by an admin */
+  deletedUsers: string[];
+  /** course slug → definition written by an admin, null once deleted */
+  courseDefs: Record<string, CourseDefinition['spec'] | null>;
+  /** path slug → definition written by an admin, null once deleted */
+  pathDefs: Record<string, PathDefinition['spec'] | null>;
+  /** markdown patterns once an admin changed them */
+  patterns: MarkdownPattern[] | null;
+  /** platform_settings rows changed by an admin */
+  settings: Record<string, string>;
+  /** SSO group name → platform role (group_role_mappings) */
+  mappings: Record<string, Role>;
   /** course slug → sessions, once a trainer changed them */
   sessions: Record<string, CourseSession[]>;
   /** groups and their members (user-service groups, user_groups) */
@@ -148,6 +161,12 @@ function seed(): MockDb {
     sessions: {},
     groups: structuredClone(GROUPS),
     presence: {},
+    deletedUsers: [],
+    courseDefs: {},
+    pathDefs: {},
+    patterns: null,
+    settings: {},
+    mappings: { 'equipe-plateforme': 'student' },
   };
 }
 

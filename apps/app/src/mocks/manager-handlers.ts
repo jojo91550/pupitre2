@@ -2,8 +2,8 @@ import { http, HttpResponse } from 'msw';
 
 import type { ExportCategory, PathEnrolledUser, ScopeUser, UserPublic } from '@/lib/api-types';
 
-import { findCourse, myCourses, PATHS } from '@/mocks/course-logic';
-import { findAccount, MOCK_ACCOUNTS } from '@/mocks/data';
+import { findCourse, myCourses, paths } from '@/mocks/course-logic';
+import { accounts, findAccount } from '@/mocks/data';
 import { bucket, db, save, type MockGroup } from '@/mocks/db';
 import { apiError, currentAccount } from '@/mocks/http';
 import { groupDepth, pathMembers } from '@/mocks/space-handlers';
@@ -111,7 +111,7 @@ const USER_EXPORTS: ExportDef[] = [
       },
     ],
     rows: () =>
-      MOCK_ACCOUNTS.map(({ user }) => {
+      accounts().map(({ user }) => {
         const current = findAccount(user.id)!.user;
         return {
           id: current.id,
@@ -246,7 +246,7 @@ function exportHandlers(base: string, defs: ExportDef[], roles: string[]) {
 export const managerHandlers = [
   // course-service paths.go — ListPaths (public)
   http.get('/api/paths', () =>
-    HttpResponse.json({ paths: PATHS.map((p) => ({ slug: p.slug, ...p.spec, kind: p.spec.kind ?? 'course' })) }),
+    HttpResponse.json({ paths: paths().map((p) => ({ slug: p.slug, ...p.spec, kind: p.spec.kind ?? 'course' })) }),
   ),
 
   // ── Members ───────────────────────────────────────────────────────────────
@@ -393,7 +393,7 @@ export const managerHandlers = [
   http.get('/api/manager/paths/:slug/enrollments', ({ request, params }) => {
     const guard = requireRole(request, ['manager']);
     if ('error' in guard) return guard.error;
-    const path = PATHS.find((p) => p.slug === params.slug);
+    const path = paths().find((p) => p.slug === params.slug);
     if (!path) return apiError(404, 'Path not found');
     const scope = scopeUserIds(guard.user.id);
     const users: PathEnrolledUser[] = Object.entries(db().paths).flatMap(([userId, paths]) => {
@@ -420,7 +420,7 @@ export const managerHandlers = [
   http.post('/api/manager/paths/:slug/enrollments', async ({ request, params }) => {
     const guard = requireRole(request, ['manager']);
     if ('error' in guard) return guard.error;
-    const path = PATHS.find((p) => p.slug === params.slug);
+    const path = paths().find((p) => p.slug === params.slug);
     if (!path) return apiError(404, 'Path not found');
     const userId = await userIdOf(request);
     if (!scopeUserIds(guard.user.id).has(userId)) return apiError(403, 'User not in manager scope');

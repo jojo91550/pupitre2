@@ -405,3 +405,43 @@ export type ExportCategory = {
 export type ExportRequest = { category: string; fields: string[]; filters: Record<string, string> };
 
 export type ExportPreview = { headers: string[]; rows: Record<string, string>[]; totalCount: number };
+
+// ── Administration (docs/specs/040-047) ─────────────────────────────────────
+
+/** user-service admin.go — AdminStats. total_labs, total_submissions and success_rate are hard-coded to 0 (defect A3). */
+export type AdminStats = {
+  total_users: number;
+  totalCourses: number;
+  total_enrollments: number;
+  total_labs: number;
+  total_submissions: number;
+  success_rate: string;
+};
+
+/** admin.go — AdminLeaderboard leaderboardRow */
+export type AdminLeaderboardEntry = {
+  id: string;
+  username: string;
+  email: string;
+  avatarUrl: string | null;
+  totalScore: number;
+  passedModules: number;
+  enrolledCourses: number;
+};
+
+/** user-service groups.go — ListGroups row */
+export type AdminGroup = {
+  id: string;
+  name: string;
+  source: string;
+  parentId: string;
+  depth: number;
+  createdAt: string;
+  memberCount: number;
+  mappedRole: string;
+};
+
+/** repository/group.go — GroupMemberRow (members of a group, ?recursive=true) */
+export type GroupMember = ScopeUser & { directMembership?: boolean };
+
+export type GroupMapping = { groupName: string; platformRole: Role };

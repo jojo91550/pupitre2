@@ -23,7 +23,8 @@ frontend labels it "executed after rendering", but runs it nowhere.
 
 - Pattern list: name, label, scope, excerpt of the HTML, actions « Modifier », « ⎈ YAML »,
   « Supprimer ».
-- « + Nouveau pattern » or « Modifier »: form with name (required, locked when editing), label,
+- « + Nouveau pattern » or « Modifier »: form with name (required, locked when editing), label
+  (required by the server on creation; the name is used when it is left empty, A25),
   scope, HTML (required, monospace editor), CSS (monospace editor), JS (monospace editor, with the
   note « non exécuté par la plateforme »).
 - Live **preview**: a block example and an inline example, rendered with the pattern being edited,

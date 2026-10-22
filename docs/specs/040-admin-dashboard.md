@@ -28,10 +28,13 @@ Access: `admin`. Sidebar: [005](005-ui-theme-navigation.md).
 - Data: `GET /api/admin/stats`, `GET /api/admin/courses`, `GET /api/admin/leaderboard`.
 - Same statistic cards as the dashboard.
 - « Aperçu des cours »: table of title, category, number of modules, number of enrolled users,
-  status (public, private, hidden), sorted by enrolled users, descending.
+  access (public or private: the course list does not say whether a course is hidden), sorted by
+  enrolled users, descending.
 - « Top 10 - Classement ».
-- « ⟳ Recalculer la progression » button: confirmation `AlertDialog`, then
-  `POST /api/admin/sync-progress`. Success or error toast, then the data is read again.
+- No « Recalculer la progression » button: `POST /api/admin/sync-progress` marks **one** lesson as
+  completed for one user (body `{ userId, courseSlug, lessonSlug }`), and the Astro button sent no
+  body, so it always failed ([090](090-gaps-and-defects.md) A23). A global recalculation needs a
+  backend route.
 
 ## Leaderboard - `/admin/leaderboard`
 
@@ -39,12 +42,12 @@ Access: `admin`. Sidebar: [005](005-ui-theme-navigation.md).
   `passedModules`, `enrolledCourses`.
 - « Classement général » title, table of rank, user (avatar, username, e-mail), score, passed
   modules, enrolled courses.
-- « ⟳ Recalculer la progression » button, as on the monitoring page.
+- No recalculation button (A23).
 
 ## Acceptance criteria
 
 - No card shows a value the server hard-codes to `0`.
-- Resynchronization asks for confirmation and shows its result.
+- No button calls `POST /api/admin/sync-progress` without its body.
 
 ## Sources
 

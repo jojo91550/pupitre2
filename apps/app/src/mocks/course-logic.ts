@@ -19,9 +19,26 @@ import type { CourseDefinition, ModuleDefinition, PathDefinition, QuestionDefini
 // the Go handlers they mirror (course-service/internal/handlers/modules.go,
 // courses.go, content/scoring.go; user-service enrollments.go).
 
-export const COURSES: CourseDefinition[] = [...DEMO_COURSES, ...SEED_COURSES];
+/** The fixtures with the definitions an admin created, changed or deleted. */
+function withOverrides<T extends { slug: string; spec: object }>(fixtures: T[], overrides: Record<string, T['spec'] | null>): T[] {
+  const list = fixtures.flatMap((item) => {
+    const override = overrides[item.slug];
+    if (override === null) return [];
+    return [override ? ({ ...item, spec: override } as T) : item];
+  });
+  for (const [slug, spec] of Object.entries(overrides)) {
+    if (spec && !fixtures.some((item) => item.slug === slug)) list.push({ slug, spec } as T);
+  }
+  return list;
+}
 
-export const PATHS: PathDefinition[] = [...SEED_PATHS, ...DEMO_PATHS];
+export function courses(): CourseDefinition[] {
+  return withOverrides([...DEMO_COURSES, ...SEED_COURSES], db().courseDefs);
+}
+
+export function paths(): PathDefinition[] {
+  return withOverrides([...SEED_PATHS, ...DEMO_PATHS], db().pathDefs);
+}
 
 /** repository/xp.go amounts. */
 export const XP_AMOUNTS = { lesson: 10, module: 25, course: 200 } as const;
@@ -42,7 +59,7 @@ export function sessionsOf(course: CourseDefinition) {
   return db().sessions[course.slug] ?? course.spec.sessions;
 }
 export function findCourse(slug: string): CourseDefinition | undefined {
-  return COURSES.find((course) => course.slug === slug);
+  return courses().find((course) => course.slug === slug);
 }
 
 /** content.SlugifyModuleName: letters and digits kept, the rest becomes "-". */
@@ -422,7 +439,7 @@ export function completedCourses(user: UserPublic): Set<string> {
 
 /** catalog.go — SkillModules: the visible modules tagged with the skill, course by course. */
 export function skillModules(skill: string) {
-  return COURSES.filter((course) => !course.spec.hidden && course.spec.public).flatMap((course) =>
+  return courses().filter((course) => !course.spec.hidden && course.spec.public).flatMap((course) =>
     visibleModules(course, false).flatMap((module, index) =>
       (module.skills ?? []).includes(skill)
         ? [{ name: module.name, slug: moduleSlug(module.name), index, type: module.type, courseSlug: course.slug, courseTitle: course.spec.title }]
