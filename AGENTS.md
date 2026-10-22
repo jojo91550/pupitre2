@@ -32,27 +32,40 @@ English; they are the source of truth for behaviour.
 
 ## Layout
 
-pnpm monorepo, same layout as `ebuildy/pupitre2`:
+pnpm monorepo, same layout as `ebuildy/pupitre2`: two applications on one origin.
 
 | Path | Package | Content |
 | --- | --- | --- |
-| `apps/app` | `@pupitre/app` | The whole frontend (learner, manager, admin) |
+| `apps/app` | `@pupitre/app` | The learner app: sign-in, catalogue, lessons, quizzes, learner space, agenda |
+| `apps/admin` | `@pupitre/admin` | The admin app, served under `/admin` and `/manager`: administration, manager space, CSV exports, attendance |
+| `packages/core` | `@pupitre/core` | Shared by both apps: API client and types, session, top bar, guards, markdown, mock mode |
 | `packages/ui` | `@pupitre/ui` | Design system: shadcn components, pupitre CSS, security helpers |
 | `docs/specs` | | Specs, one file per feature area |
 | `e2e` | | Playwright tests |
 
-Inside `apps/app/src`:
+Inside `apps/app/src` and `apps/admin/src`:
 
 - `routes/` - one **PascalCase** file per page (`Catalogue.tsx`, `CourseDetail.tsx`), its
-  component named after the file; `admin/` and `manager/` hold their section's pages.
-- `components/` - app components, PascalCase, grouped by domain (`quiz/`, `lab/`, `sessions/`).
-- `lib/` - kebab-case modules: `api.ts` (one function per route), `api-client.ts`,
-  `api-types.ts`, `session.ts`, `markdown.ts`, helpers.
-- `mocks/` - MSW handlers and fixtures.
+  component named after the file; in the admin app, `admin/` and `manager/` hold each side's pages.
+- `components/` - app components, PascalCase, grouped by domain (`quiz/`, `lab/`, `admin/`).
+- `lib/` - kebab-case modules used by that app only.
 
-`packages/ui` never imports from `apps/*`. The app imports it through its exports:
-`@pupitre/ui/components/<name>`, `@pupitre/ui/lib/<name>`, `@pupitre/ui/globals.css`. Inside
-`packages/ui`, imports are relative; after `shadcn add`, rewrite the generated `@/` imports.
+Inside `packages/core/src`:
+
+- `lib/` - `api.ts` (one function per route), `api-client.ts`, `api-types.ts`, `session.ts`,
+  `markdown.ts`, `site.ts` (which app serves a path), shared helpers.
+- `components/` - what both apps show: top bar, side menu, guards, dialogs, page states.
+- `mocks/` - MSW handlers and fixtures, used by both apps.
+
+`packages/ui` and `packages/core` never import from `apps/*`, and `packages/ui` never imports from
+`packages/core`. The apps import them through their exports: `@pupitre/ui/components/<name>`,
+`@pupitre/ui/lib/<name>`, `@pupitre/ui/globals.css`, `@pupitre/core/lib/<name>`,
+`@pupitre/core/components/<Name>`, `@pupitre/core/mocks/<name>`. Inside the packages, imports are
+relative; after `shadcn add`, rewrite the generated `@/` imports.
+
+Both apps share the origin, so the session (sessionStorage) is shared. A link to a page of the
+other app is a page load: use `SiteLink`, `SiteNavLink`, `SiteNavigate` or `useSiteNavigate` from
+`@pupitre/core`, never a router `Link`.
 
 ## Commands
 
@@ -62,10 +75,13 @@ Node 24 (`.nvmrc`), pnpm through corepack (`corepack enable`). From the reposito
 pnpm install
 pnpm dev:mock    # http://localhost:3000, no backend (docs/specs/006-mock-mode.md)
 pnpm dev         # http://localhost:3000, proxied to the Go services
+                 # both start the two apps: the admin app (port 3001) is reached through
+                 # http://localhost:3000/admin and /manager, never on its own port
 pnpm typecheck
 pnpm lint
 pnpm test
 pnpm build
+pnpm test:e2e    # Playwright, against the mock mode (first time: pnpm exec playwright install chromium)
 ```
 
 Run `typecheck`, `lint`, `test` and `build` before handing work back. A UI change is also checked
@@ -79,12 +95,12 @@ are too recent: pick an older version, never add an exclusion.
 [`003`](docs/specs/003-security.md) is enforced by lint and tests:
 
 - No `dangerouslySetInnerHTML`, `innerHTML` or `outerHTML` outside
-  `packages/ui/src/components/safe-html.tsx`, `apps/app/src/lib/markdown.ts` and shadcn's
+  `packages/ui/src/components/safe-html.tsx`, `packages/core/src/lib/markdown.ts` and shadcn's
   `components/ui/`. API data is rendered as JSX text; markdown goes through `renderMarkdown`
   (DOMPurify) and `<SafeHtml>`.
 - URLs from the API go through `safeUrl` / `safeExternalUrl`, redirects through `safeRedirect`
   (`@pupitre/ui/lib/security`).
-- The token lives in `sessionStorage`, behind `apps/app/src/lib/session.ts` only. `localStorage`
+- The token lives in `sessionStorage`, behind `packages/core/src/lib/session.ts` only. `localStorage`
   is reached through `@pupitre/ui/lib/storage` (lint rule).
 - No secret in `VITE_*` variables: they ship to the browser.
 - The dev proxy forwards only the allowed headers (`apps/app/vite.config.ts`).
@@ -92,7 +108,7 @@ are too recent: pick an older version, never add an exclusion.
 ## Mock mode
 
 `pnpm dev:mock` answers `/api/*` with MSW, mirroring the Go handlers. A page that needs a new route
-gets its handler and fixtures in `apps/app/src/mocks/` in the same change. The mock carries no
+gets its handler and fixtures in `packages/core/src/mocks/` in the same change. The mock carries no
 business rule beyond what the Go code does. Test accounts: `alice` (student), `marc.manager`,
 `admin`, and an XSS account whose payloads must never run.
 

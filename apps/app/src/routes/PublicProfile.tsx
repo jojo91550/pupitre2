@@ -2,9 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { Link, useParams } from 'react-router';
 
-import { getPublicUser, userBadges } from '@/lib/api';
+import { getPublicUser, userBadges } from '@pupitre/core/lib/api';
 import { UserAvatar } from '@pupitre/ui/components/user-avatar';
-import { LoadingState } from '@/components/PageStates';
+import { LoadingState } from '@pupitre/core/components/PageStates';
 
 // /users/:id (docs/specs/020-learner-space.md), markup of pupitre's users/[id].astro.
 

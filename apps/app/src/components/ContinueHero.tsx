@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router';
 
-import type { MyCourse } from '@/lib/api-types';
-import { courseIcon } from '@/lib/course-meta';
+import type { MyCourse } from '@pupitre/core/lib/api-types';
+import { courseIcon } from '@pupitre/core/lib/course-meta';
 
 // The « Reprendre » block of the catalogue (docs/specs/010-catalogue.md).
 

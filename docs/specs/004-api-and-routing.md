@@ -19,13 +19,17 @@ table must stay identical to the one in the Helm chart (`pupitre.routeTable`).
 `/uploads/{filename}` (course media) is served by course-service **outside** `/api`: the proxy
 must also route `/uploads/*` to course-service.
 
+The pages are routed the same way: `/admin` and `/admin/*` (the admin app's base is `/admin/`:
+`/admin` alone must get the trailing slash) and `/manager/*` go to the admin app's `index.html` and
+assets, every other page to the learner app's ([000](000-scope-and-stack.md)).
+
 The current Astro proxy (`pages/api/[...path].ts`) forwards **every** client header, which is
 finding H4. In pupitre2, the dev proxy forwards only `Authorization`, `Content-Type` and
 `Accept`, and the production reverse proxy must do the same.
 
 ## HTTP client
 
-A single client (`apps/app/src/lib/api-client.ts`):
+A single client (`packages/core/src/lib/api-client.ts`):
 
 - `/api` prefix, JSON in and out;
 - adds `Authorization: Bearer <token>` when a session exists ([001](001-keycloak-authentication.md));
@@ -35,12 +39,12 @@ A single client (`apps/app/src/lib/api-client.ts`):
 - 403 → an `ApiError` handled by the page (prerequisites not met, access denied…);
 - non-JSON responses (CSV, exported markdown) go through `requestBlob()`.
 
-Each route is exposed by a typed function in `apps/app/src/lib/api.ts`, used through TanStack Query
+Each route is exposed by a typed function in `packages/core/src/lib/api.ts`, used through TanStack Query
 hooks (`useQuery` for reads, `useMutation` with invalidation for writes). No page calls `fetch`
 directly.
 
 Types mirror the Go structs (JSON field names are the ones in the `json:"…"` tags). As the
-OpenAPI documents are incomplete, the types are written by hand in `apps/app/src/lib/api-types.ts`, and each
+OpenAPI documents are incomplete, the types are written by hand in `packages/core/src/lib/api-types.ts`, and each
 type cites the Go handler it comes from.
 
 ## Routes used by the frontend

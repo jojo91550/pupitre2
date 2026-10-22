@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 
-import type { MyPath, ProgressStatus } from '@/lib/api-types';
+import type { MyPath, ProgressStatus } from '@pupitre/core/lib/api-types';
 import { setCourseReturn } from '@/lib/course-return';
 import { MAP, nodePosition, roadPath, viewBox, wrapLabel } from '@/lib/path-map';
 import { useTheme } from '@pupitre/ui/lib/theme';

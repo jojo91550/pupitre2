@@ -2,9 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
-import { myPaths } from '@/lib/api';
-import type { MyPath } from '@/lib/api-types';
-import { LoadError, LoadingState } from '@/components/PageStates';
+import { myPaths } from '@pupitre/core/lib/api';
+import type { MyPath } from '@pupitre/core/lib/api-types';
+import { LoadError, LoadingState } from '@pupitre/core/components/PageStates';
 import { PathMap } from '@/components/paths/PathMap';
 
 // /my-paths (docs/specs/020-learner-space.md), markup of pupitre's my-paths.astro:

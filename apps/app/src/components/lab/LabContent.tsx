@@ -1,11 +1,11 @@
 import { useMutation } from '@tanstack/react-query';
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 
-import { checkModule, checkStep, recordLocalCheck } from '@/lib/api';
-import type { CheckResult, CheckStep, ModuleDetail } from '@/lib/api-types';
-import { MarkdownContent } from '@/components/MarkdownContent';
+import { checkModule, checkStep, recordLocalCheck } from '@pupitre/core/lib/api';
+import type { CheckResult, CheckStep, ModuleDetail } from '@pupitre/core/lib/api-types';
+import { MarkdownContent } from '@pupitre/core/components/MarkdownContent';
 import { isTauri, resolveCheck } from '@/lib/local-check';
-import type { PatternMap, TocEntry } from '@/lib/markdown';
+import type { PatternMap, TocEntry } from '@pupitre/core/lib/markdown';
 import { safeExternalUrl } from '@pupitre/ui/lib/security';
 
 import { renderLab } from '@/lib/render-lab';

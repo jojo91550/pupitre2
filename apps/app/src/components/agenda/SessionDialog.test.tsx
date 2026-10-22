@@ -3,11 +3,11 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { createSession } from '@/lib/api';
-import type { Course } from '@/lib/api-types';
+import { createSession } from '@pupitre/core/lib/api';
+import type { Course } from '@pupitre/core/lib/api-types';
 import { SessionDialog } from '@/components/agenda/SessionDialog';
 
-vi.mock('@/lib/api', () => ({ createSession: vi.fn(), updateSession: vi.fn() }));
+vi.mock('@pupitre/core/lib/api', () => ({ createSession: vi.fn(), updateSession: vi.fn() }));
 
 const course = { slug: 'atelier', title: 'Atelier Kubernetes', inPerson: true } as Course;
 

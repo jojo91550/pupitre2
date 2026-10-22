@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
 
-import { listCourses, myBadges } from '@/lib/api';
-import { LoadError, LoadingState } from '@/components/PageStates';
+import { listCourses, myBadges } from '@pupitre/core/lib/api';
+import { LoadError, LoadingState } from '@pupitre/core/components/PageStates';
 
 // /my-badges (docs/specs/020-learner-space.md), markup of pupitre's my-badges.astro.
 // The possible badges are those of the courses.

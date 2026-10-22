@@ -1,24 +1,7 @@
 import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
 
-import { RequireAuth, RequireRole } from '@/components/RequireAuth';
-import { Layout } from '@/routes/Layout';
-import { AdminLayout } from '@/routes/AdminLayout';
-import { ManagerLayout } from '@/routes/manager/ManagerLayout';
-import { ManagerUsers } from '@/routes/manager/ManagerUsers';
-import { ManagerGroups } from '@/routes/manager/ManagerGroups';
-import { ManagerPaths } from '@/routes/manager/ManagerPaths';
-import { Attendance } from '@/routes/Attendance';
-import { Exports } from '@/routes/admin/Exports';
-import { Dashboard } from '@/routes/admin/Dashboard';
-import { Monitoring } from '@/routes/admin/Monitoring';
-import { AdminLeaderboard } from '@/routes/admin/AdminLeaderboard';
-import { AdminUsers } from '@/routes/admin/AdminUsers';
-import { AdminCourses } from '@/routes/admin/AdminCourses';
-import { AdminPaths } from '@/routes/admin/AdminPaths';
-import { AdminGroups } from '@/routes/admin/AdminGroups';
-import { Patterns } from '@/routes/admin/Patterns';
-import { Settings } from '@/routes/admin/Settings';
-import { Labs } from '@/routes/admin/Labs';
+import { RequireAuth } from '@pupitre/core/components/RequireAuth';
+import { Layout } from '@pupitre/core/components/Layout';
 import { AuthCallback } from '@/routes/AuthCallback';
 import { Login } from '@/routes/Login';
 import { Catalogue } from '@/routes/Catalogue';
@@ -34,9 +17,10 @@ import { MyXp } from '@/routes/MyXp';
 import { MyGroups } from '@/routes/MyGroups';
 import { Profile } from '@/routes/Profile';
 import { Agenda } from '@/routes/Agenda';
-import { NotFound } from '@/routes/NotFound';
+import { NotFound } from '@pupitre/core/components/NotFound';
 
-// Route table of docs/specs/002-roles-and-guards.md.
+// Route table of the learner app (docs/specs/002-roles-and-guards.md). The
+// administration and the manager space are the admin app (apps/admin).
 
 const learnerRoutes: RouteObject[] = [
   // Loaded on demand: the lesson player and the quiz bring the markdown
@@ -60,19 +44,6 @@ const learnerRoutes: RouteObject[] = [
   { path: 'agenda', element: <Agenda /> },
 ];
 
-const adminOnlyRoutes: RouteObject[] = [
-  { index: true, element: <Dashboard /> },
-  { path: 'monitoring', element: <Monitoring /> },
-  { path: 'leaderboard', element: <AdminLeaderboard /> },
-  { path: 'users', element: <AdminUsers /> },
-  { path: 'courses', element: <AdminCourses /> },
-  { path: 'paths', element: <AdminPaths /> },
-  { path: 'groups', element: <AdminGroups /> },
-  { path: 'patterns', element: <Patterns /> },
-  { path: 'settings', element: <Settings /> },
-  { path: 'labs', element: <Labs /> },
-];
-
 const routes: RouteObject[] = [
   { path: '/login', element: <Login /> },
   { path: '/auth/callback', element: <AuthCallback /> },
@@ -92,43 +63,8 @@ const routes: RouteObject[] = [
 
       { element: <RequireAuth />, children: learnerRoutes },
 
-      {
-        path: 'manager',
-        element: (
-          <RequireRole roles={['manager']}>
-            <ManagerLayout />
-          </RequireRole>
-        ),
-        children: [
-          { index: true, element: <Navigate to="/manager/users" replace /> },
-          { path: 'users', element: <ManagerUsers /> },
-          { path: 'groups', element: <ManagerGroups /> },
-          { path: 'paths', element: <ManagerPaths /> },
-        ],
-      },
-
-      // The attendance page has no admin sidebar, like the Astro page.
-      {
-        path: 'admin/courses/sessions/:slug/:sessionId',
-        element: (
-          <RequireRole roles={['admin', 'manager']}>
-            <Attendance />
-          </RequireRole>
-        ),
-      },
-
-      {
-        path: 'admin',
-        element: (
-          <RequireRole roles={['admin', 'manager']}>
-            <AdminLayout />
-          </RequireRole>
-        ),
-        children: [
-          { path: 'exports', element: <Exports /> },
-          { element: <RequireRole roles={['admin']} />, children: adminOnlyRoutes },
-        ],
-      },
+      // /admin/* and /manager/* belong to the admin app (apps/admin), which the
+      // dev proxy and the production reverse proxy serve on the same origin.
 
       { path: '*', element: <NotFound /> },
     ],

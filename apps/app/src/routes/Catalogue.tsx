@@ -2,9 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
-import { listCourses, myCourses, mySkills } from '@/lib/api';
-import type { Course, MyCourse, SkillLevel } from '@/lib/api-types';
-import { useSession } from '@/lib/session';
+import { listCourses, myCourses, mySkills } from '@pupitre/core/lib/api';
+import type { Course, MyCourse, SkillLevel } from '@pupitre/core/lib/api-types';
+import { useSession } from '@pupitre/core/lib/session';
 import { ContinueHero } from '@/components/ContinueHero';
 import { CourseCard } from '@/components/CourseCard';
 
@@ -13,7 +13,7 @@ import {
   categoryLabel,
   DIFFICULTY_LABELS,
   LEVEL_ORDER,
-} from '@/lib/course-meta';
+} from '@pupitre/core/lib/course-meta';
 
 // /courses (docs/specs/010-catalogue.md), markup of pupitre's pages/courses/index.astro.
 

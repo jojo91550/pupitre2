@@ -3,10 +3,10 @@ import { render, screen } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 
-import { leaderboard } from '@/lib/api';
+import { leaderboard } from '@pupitre/core/lib/api';
 import { Leaderboard } from '@/routes/Leaderboard';
 
-vi.mock('@/lib/api', () => ({ leaderboard: vi.fn() }));
+vi.mock('@pupitre/core/lib/api', () => ({ leaderboard: vi.fn() }));
 
 const TRAP_NAME = '<img src=x onerror=alert("xss-username")>';
 

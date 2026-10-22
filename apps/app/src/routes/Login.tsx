@@ -1,10 +1,11 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Navigate, useSearchParams } from 'react-router';
+import { useSearchParams } from 'react-router';
 
-import { getPublicSettings, oidcAuthorize } from '@/lib/api';
+import { getPublicSettings, oidcAuthorize } from '@pupitre/core/lib/api';
 import { rememberFlow } from '@/lib/oidc-flow';
-import { landingPath } from '@/lib/auth-paths';
-import { useSession } from '@/lib/session';
+import { landingPath } from '@pupitre/core/lib/auth-paths';
+import { SiteNavigate } from '@pupitre/core/components/SiteLink';
+import { useSession } from '@pupitre/core/lib/session';
 import { safeExternalUrl, safeRedirect } from '@pupitre/ui/lib/security';
 
 // /login (docs/specs/001), with the card of pupitre's pages/login.astro. Keycloak
@@ -40,7 +41,7 @@ export function Login() {
   });
 
   if (session) {
-    return <Navigate to={redirect || landingPath(session.user)} replace />;
+    return <SiteNavigate to={redirect || landingPath(session.user)} />;
   }
 
   const oidcEnabled = settings.data?.oidc_enabled === 'true';

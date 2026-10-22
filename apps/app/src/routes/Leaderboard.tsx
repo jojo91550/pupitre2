@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
 
-import { leaderboard } from '@/lib/api';
-import type { LeaderboardEntry } from '@/lib/api-types';
+import { leaderboard } from '@pupitre/core/lib/api';
+import type { LeaderboardEntry } from '@pupitre/core/lib/api-types';
 import { UserAvatar } from '@pupitre/ui/components/user-avatar';
-import { LoadError, LoadingState } from '@/components/PageStates';
+import { LoadError, LoadingState } from '@pupitre/core/components/PageStates';
 
 // /leaderboard (docs/specs/020-learner-space.md), markup of pupitre's leaderboard.astro.
 // Usernames and avatars come from other users: rendered as text or through

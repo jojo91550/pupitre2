@@ -1,10 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { ApiError } from '@/lib/api-client';
-import { bookSession, cancelBooking } from '@/lib/api';
-import type { CourseSession } from '@/lib/api-types';
-import { useSession } from '@/lib/session';
+import { ApiError } from '@pupitre/core/lib/api-client';
+import { bookSession, cancelBooking } from '@pupitre/core/lib/api';
+import type { CourseSession } from '@pupitre/core/lib/api-types';
+import { useSession } from '@pupitre/core/lib/session';
 
 // An in-person session of a course, with its booking button (docs/specs/011-course-page-and-enrollment.md).
 

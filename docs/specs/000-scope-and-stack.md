@@ -27,9 +27,13 @@ the manager space and the administration. There is no separate admin application
 | Unit tests | Vitest + Testing Library | |
 | End-to-end tests | Playwright | |
 
-The application is served as static files. In production, a reverse proxy sends `/api/*` to the
-Go services following the table in [004](004-api-and-routing.md), and every other route to
-`index.html`. In development, the Vite proxy does the same.
+The frontend is **two applications** served as static files on **one origin**: the learner app,
+and the admin app (administration and manager space) under `/admin` and `/manager`. In production,
+a reverse proxy sends `/api/*` to the Go services following the table in
+[004](004-api-and-routing.md), `/admin/*` and `/manager/*` to the admin app's `index.html`, and
+every other route to the learner app's `index.html`. In development, the learner app's Vite proxy
+does the same. Sharing the origin shares the session (sessionStorage); going from one app to the
+other is a page load. A learner never downloads the admin app's code.
 
 ## Repository layout
 
@@ -43,20 +47,29 @@ pupitre2/
 ├── AGENTS.md                    # rules for coding agents (CLAUDE.md imports it)
 ├── docs/specs/                  # this folder
 ├── apps/
-│   └── app/                     # @pupitre/app: the whole frontend, learner, manager and admin
-│       ├── index.html
-│       ├── vite.config.ts       # dev proxy (004), mock worker removal (006)
-│       ├── public/              # pioupitre.png, theme-init.js, mockServiceWorker.js
+│   ├── app/                     # @pupitre/app: the learner app
+│   │   ├── index.html
+│   │   ├── vite.config.ts       # dev proxy: /api (004), /admin and /manager to the admin app
+│   │   ├── public/              # pioupitre.png, theme-init.js, mockServiceWorker.js
+│   │   └── src/
+│   │       ├── main.tsx         # entry point, providers (Query, Router, Toaster, Tooltip)
+│   │       ├── router.tsx       # route table and guards
+│   │       ├── routes/          # one PascalCase file per page
+│   │       ├── components/      # <domain>/ folders (quiz/, lab/, sessions/…)
+│   │       └── lib/             # learner-only helpers
+│   └── admin/                   # @pupitre/admin: the admin app, base /admin/
+│       ├── vite.config.ts
 │       └── src/
-│           ├── main.tsx         # entry point, providers (Query, Router, Toaster, Tooltip)
-│           ├── router.tsx       # route table and guards
-│           ├── index.css        # imports @pupitre/ui/globals.css
-│           ├── routes/          # one PascalCase file per page; admin/, manager/ per section
-│           ├── components/      # app components; <domain>/ folders (quiz/, lab/, sessions/…)
-│           ├── lib/             # API client and types, session, markdown, helpers
-│           ├── mocks/           # MSW handlers and fixtures (006)
-│           └── test/            # Vitest setup
+│           ├── main.tsx, router.tsx
+│           ├── routes/          # admin/, manager/, AdminLayout, Attendance
+│           ├── components/admin/
+│           └── lib/             # admin-only helpers (course definition, settings, slug…)
 ├── packages/
+│   ├── core/                    # @pupitre/core: shared by both apps
+│   │   └── src/
+│   │       ├── lib/             # API client and types, session, markdown, site (which app serves a path)
+│   │       ├── components/      # top bar, side menu, guards, dialogs, page states
+│   │       └── mocks/           # MSW handlers and fixtures (006)
 │   └── ui/                      # @pupitre/ui: design system, no app logic
 │       └── src/
 │           ├── components/ui/   # shadcn components
@@ -69,8 +82,9 @@ pupitre2/
 └── tsconfig.base.json
 ```
 
-`packages/ui` never imports from `apps/*`. The app imports it as `@pupitre/ui/components/<name>`,
-`@pupitre/ui/lib/<name>` and `@pupitre/ui/globals.css`.
+`packages/ui` and `packages/core` never import from `apps/*`. The apps import them as
+`@pupitre/ui/components/<name>`, `@pupitre/ui/lib/<name>`, `@pupitre/ui/globals.css`,
+`@pupitre/core/lib/<name>`, `@pupitre/core/components/<Name>` and `@pupitre/core/mocks/<name>`.
 
 ## Configuration
 
@@ -85,10 +99,9 @@ No secret may reach the browser: every `VITE_*` variable is public.
 
 | Command | Effect |
 | --- | --- |
-| `pnpm dev` | Vite dev server with the `/api` proxy |
-| `pnpm dev:mock` | Vite dev server, API answered by MSW ([006](006-mock-mode.md)) |
-| `pnpm build` | Type check, then production build |
-| `pnpm preview` | Serves the build |
+| `pnpm dev` | Both apps' dev servers; open http://localhost:3000 (the admin app through `/admin`) |
+| `pnpm dev:mock` | The same, API answered by MSW ([006](006-mock-mode.md)) |
+| `pnpm build` | Type check, then production build of both apps (`apps/*/dist`) |
 | `pnpm lint` | ESLint, whole repository |
 | `pnpm typecheck` | TypeScript, every package |
 | `pnpm test` | Vitest, every package |

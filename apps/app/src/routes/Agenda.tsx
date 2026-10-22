@@ -3,11 +3,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
 
-import { ApiError } from '@/lib/api-client';
-import { bookSession, cancelBooking, deleteSession, listCourses, mySessionBookings } from '@/lib/api';
-import type { Course, CourseSession } from '@/lib/api-types';
+import { ApiError } from '@pupitre/core/lib/api-client';
+import { bookSession, cancelBooking, deleteSession, listCourses, mySessionBookings } from '@pupitre/core/lib/api';
+import type { Course, CourseSession } from '@pupitre/core/lib/api-types';
 import { dayKey, monthGrid, MONTHS_SHORT } from '@/lib/calendar';
-import { useCurrentUser } from '@/lib/session';
+import { useCurrentUser } from '@pupitre/core/lib/session';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
 } from '@pupitre/ui/components/ui/alert-dialog';
 import { SessionDialog, type SessionEdit } from '@/components/agenda/SessionDialog';
+import { SiteLink } from '@pupitre/core/components/SiteLink';
 
 // /agenda (docs/specs/022-agenda-and-sessions.md), markup of pupitre's agenda.astro:
 // a monthly calendar of the in-person sessions and a side panel to book them.
@@ -89,12 +90,13 @@ function SessionItem({
       )}
       {trainer && (
         <>
-          <Link
+          {/* The attendance page is in the admin app. */}
+          <SiteLink
             to={`/admin/courses/sessions/${course.slug}/${session.id}`}
             className="btn btn-secondary btn-sm w-full text-center no-underline block mt-1.5"
           >
             👥 Présence
-          </Link>
+          </SiteLink>
           <div className="ev-trainer-actions">
             <button className="btn btn-secondary btn-sm flex-1" onClick={onEdit}>
               Modifier

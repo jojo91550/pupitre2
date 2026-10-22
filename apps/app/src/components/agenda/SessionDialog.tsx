@@ -3,8 +3,8 @@ import { Dialog } from 'radix-ui';
 import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 
-import { createSession, updateSession } from '@/lib/api';
-import type { Course, CourseSession, SessionInput } from '@/lib/api-types';
+import { createSession, updateSession } from '@pupitre/core/lib/api';
+import type { Course, CourseSession, SessionInput } from '@pupitre/core/lib/api-types';
 import { toLocalInput } from '@/lib/calendar';
 
 // « Nouvelle session » / « Modifier la session » dialog of the agenda

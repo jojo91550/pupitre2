@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 
-import { ApiError } from '@/lib/api-client';
+import { ApiError } from '@pupitre/core/lib/api-client';
 import {
   enroll,
   getCourse,
@@ -10,12 +10,12 @@ import {
   myBadges,
   myCourses,
   mySessionBookings,
-} from '@/lib/api';
-import type { Course, ModuleSummary } from '@/lib/api-types';
-import { loginPath } from '@/lib/auth-paths';
-import { useSession } from '@/lib/session';
+} from '@pupitre/core/lib/api';
+import type { Course, ModuleSummary } from '@pupitre/core/lib/api-types';
+import { loginPath } from '@pupitre/core/lib/auth-paths';
+import { useSession } from '@pupitre/core/lib/session';
 
-import { COURSE_XP, courseIcon, DIFFICULTY_BADGES, DIFFICULTY_LABELS } from '@/lib/course-meta';
+import { COURSE_XP, courseIcon, DIFFICULTY_BADGES, DIFFICULTY_LABELS } from '@pupitre/core/lib/course-meta';
 import { hostOf, inlineQuizzesByHost, isModuleDone, moduleHref } from '@/lib/module-links';
 import { ModuleRow } from '@/components/ModuleList';
 import { SessionCard } from '@/components/sessions/SessionCard';

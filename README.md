@@ -22,11 +22,13 @@ New React frontend of the pupitre e-learning platform. It replaces the Astro fro
 pnpm install
 pnpm dev:mock   # http://localhost:3000, no backend needed (docs/specs/006-mock-mode.md)
 pnpm dev        # http://localhost:3000, against the Go services
+# Both start the two apps; the admin app is opened through http://localhost:3000/admin
 ```
 
 | Command | Effect |
 | --- | --- |
-| `pnpm build` | Type check, then production build in `apps/app/dist/` |
+| `pnpm build` | Type check, then production build in `apps/app/dist/` and `apps/admin/dist/` |
+| `pnpm test:e2e` | End-to-end tests (Playwright) against the mock mode |
 | `pnpm test` | Unit and component tests (Vitest), every package |
 | `pnpm lint` | ESLint, including the security rules of `docs/specs/003-security.md` |
 | `pnpm typecheck` | TypeScript only, every package |
@@ -37,7 +39,9 @@ The dev proxy targets can be changed with `VITE_USER_SERVICE_URL` and `VITE_COUR
 
 | Path | Package | Content |
 | --- | --- | --- |
-| `apps/app` | `@pupitre/app` | The frontend: pages (`src/routes/`), components, API client, mocks |
+| `apps/app` | `@pupitre/app` | The learner app: sign-in, catalogue, lessons, learner space, agenda |
+| `apps/admin` | `@pupitre/admin` | The admin app, under `/admin` and `/manager`: administration and manager space |
+| `packages/core` | `@pupitre/core` | Shared by both apps: API client, session, top bar, guards, markdown, mocks |
 | `packages/ui` | `@pupitre/ui` | Design system: shadcn components, pupitre CSS, security helpers |
 | `docs/specs` | | Functional and technical specs |
 

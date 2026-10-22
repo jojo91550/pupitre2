@@ -2,9 +2,9 @@ import { useMutation } from '@tanstack/react-query';
 import { useRef } from 'react';
 import { toast } from 'sonner';
 
-import { ApiError } from '@/lib/api-client';
-import { submitQuiz } from '@/lib/api';
-import type { Cooldown, InlineQuiz as InlineQuizData } from '@/lib/api-types';
+import { ApiError } from '@pupitre/core/lib/api-client';
+import { submitQuiz } from '@pupitre/core/lib/api';
+import type { Cooldown, InlineQuiz as InlineQuizData } from '@pupitre/core/lib/api-types';
 
 import { antiCopy } from '@/lib/anti-copy';
 import { CooldownBanner, InlineText, QuestionOptions } from '@/components/quiz/QuizForm';

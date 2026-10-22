@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
 
-import { listCourses, myCourses, mySkills } from '@/lib/api';
-import { LoadError, LoadingState } from '@/components/PageStates';
+import { listCourses, myCourses, mySkills } from '@pupitre/core/lib/api';
+import { LoadError, LoadingState } from '@pupitre/core/components/PageStates';
 
 // /my-skills (docs/specs/020-learner-space.md), markup of pupitre's my-skills.astro.
 

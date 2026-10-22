@@ -8,17 +8,19 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "pnpm --filter @pupitre/app dev",
-    "dev:mock": "pnpm --filter @pupitre/app dev:mock",
-    "build": "pnpm --filter @pupitre/app build",
-    "build:mock": "pnpm --filter @pupitre/app build:mock",
-    "preview": "pnpm --filter @pupitre/app preview",
+    "dev": "pnpm --parallel --filter @pupitre/app --filter @pupitre/admin dev",
+    "dev:mock": "pnpm --parallel --filter @pupitre/app --filter @pupitre/admin dev:mock",
+    "build": "pnpm --filter @pupitre/app --filter @pupitre/admin build",
+    "build:mock": "pnpm --filter @pupitre/app --filter @pupitre/admin build:mock",
     "lint": "eslint .",
-    "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test"
+    "typecheck": "pnpm -r typecheck && tsc -p e2e",
+    "test": "pnpm -r test",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@playwright/test": "1.64.0",
+    "@types/node": "26.6.5",
     "eslint": "10.13.0",
     "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-react-refresh": "0.5.7",
