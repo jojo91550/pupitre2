@@ -9,6 +9,16 @@ import { ManagerGroups } from '@/routes/manager/ManagerGroups';
 import { ManagerPaths } from '@/routes/manager/ManagerPaths';
 import { Attendance } from '@/routes/Attendance';
 import { Exports } from '@/routes/admin/Exports';
+import { Dashboard } from '@/routes/admin/Dashboard';
+import { Monitoring } from '@/routes/admin/Monitoring';
+import { AdminLeaderboard } from '@/routes/admin/AdminLeaderboard';
+import { AdminUsers } from '@/routes/admin/AdminUsers';
+import { AdminCourses } from '@/routes/admin/AdminCourses';
+import { AdminPaths } from '@/routes/admin/AdminPaths';
+import { AdminGroups } from '@/routes/admin/AdminGroups';
+import { Patterns } from '@/routes/admin/Patterns';
+import { Settings } from '@/routes/admin/Settings';
+import { Labs } from '@/routes/admin/Labs';
 import { AuthCallback } from '@/routes/AuthCallback';
 import { Login } from '@/routes/Login';
 import { Catalogue } from '@/routes/Catalogue';
@@ -24,15 +34,9 @@ import { MyXp } from '@/routes/MyXp';
 import { MyGroups } from '@/routes/MyGroups';
 import { Profile } from '@/routes/Profile';
 import { Agenda } from '@/routes/Agenda';
-import { ComingSoon } from '@/components/ComingSoon';
 import { NotFound } from '@/routes/NotFound';
 
-// Route table of docs/specs/002-roles-and-guards.md. Screens of later batches
-// render <ComingSoon> behind their final guards.
-
-const soon = (title: string, spec: string, batch: number) => (
-  <ComingSoon title={title} spec={spec} batch={batch} />
-);
+// Route table of docs/specs/002-roles-and-guards.md.
 
 const learnerRoutes: RouteObject[] = [
   // Loaded on demand: the lesson player and the quiz bring the markdown
@@ -57,16 +61,16 @@ const learnerRoutes: RouteObject[] = [
 ];
 
 const adminOnlyRoutes: RouteObject[] = [
-  { index: true, element: soon('Tableau de bord', '040', 4) },
-  { path: 'monitoring', element: soon('Monitoring', '040', 4) },
-  { path: 'leaderboard', element: soon('Classement', '040', 4) },
-  { path: 'users', element: soon('Utilisateurs', '041', 4) },
-  { path: 'courses', element: soon('Cours', '042', 4) },
-  { path: 'paths', element: soon('Parcours', '043', 4) },
-  { path: 'groups', element: soon('Groupes', '044', 4) },
-  { path: 'patterns', element: soon('Patterns markdown', '045', 4) },
-  { path: 'settings', element: soon('Paramètres', '046', 4) },
-  { path: 'labs', element: soon('Suivi des labs', '047', 4) },
+  { index: true, element: <Dashboard /> },
+  { path: 'monitoring', element: <Monitoring /> },
+  { path: 'leaderboard', element: <AdminLeaderboard /> },
+  { path: 'users', element: <AdminUsers /> },
+  { path: 'courses', element: <AdminCourses /> },
+  { path: 'paths', element: <AdminPaths /> },
+  { path: 'groups', element: <AdminGroups /> },
+  { path: 'patterns', element: <Patterns /> },
+  { path: 'settings', element: <Settings /> },
+  { path: 'labs', element: <Labs /> },
 ];
 
 const routes: RouteObject[] = [

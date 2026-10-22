@@ -16,3 +16,12 @@ describe('group tree', () => {
     expect(buildTree([group('sub', 'elsewhere', 1)]).map((n) => n.id)).toEqual(['sub']);
   });
 });
+
+describe('subtree', () => {
+  it('collects a group and all its descendants', async () => {
+    const { subtreeIds } = await import('@/lib/group-tree');
+    const groups = [group('a'), group('a1', 'a', 1), group('a1x', 'a1', 2), group('b'), group('b1', 'b', 1)];
+    expect([...subtreeIds(groups, 'a')].sort()).toEqual(['a', 'a1', 'a1x']);
+    expect([...subtreeIds(groups, 'b1')]).toEqual(['b1']);
+  });
+});

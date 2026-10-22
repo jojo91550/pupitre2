@@ -83,7 +83,10 @@ indicated.
 | A19 | The session form requires a capacity of at least 1, while 0 means unlimited | `agenda.astro` | Capacity ≥ 0 ([022](022-agenda-and-sessions.md)) |
 | A20 | Editing a session fills the date field with the UTC time cut from the ISO string: saving it unchanged moves the session by the time zone offset | `agenda.astro` | Local time in the field ([022](022-agenda-and-sessions.md)) |
 | A21 | The group filter of « Mes membres » never works: the buttons have the class `mu-group-filter-btn` but the script listens on `.group-filter-btn` | `manager/users/index.astro` | Working filter ([030](030-manager-space.md)) |
-| A22 | `GET /api/manager/users/{id}/path-enrollments` returns `Slug` and `EnrolledAt`: `PathEnrollmentRow` has no json tags | API (`repository/path_enrollment.go`) | Field names kept as sent; json tags are a backend fix |
+| A22 | `GET /api/manager/users/{id}/path-enrollments` returns `Slug` and `EnrolledAt`: `PathEnrollmentRow` has no json tags; the same goes for `GroupRow` in `GET /api/admin/groups/{id}/descendants` | API (`repository/path_enrollment.go`, `repository/group.go`) | Field names kept as sent; descendants computed from the group list ([044](044-admin-groups.md)); json tags are a backend fix |
+| A23 | « Recalculer la progression » posts to `/api/admin/sync-progress` without a body, while the route marks one lesson for one user and requires `userId`, `courseSlug`, `lessonSlug`: it always answers 400 | `admin/monitoring`, `admin/leaderboard` | Button removed ([040](040-admin-dashboard.md)) |
+| A24 | Saving the settings sends every key back, the masked secrets (`********`) included, which overwrites the real secrets, and keys the server refuses | `admin/settings/index.astro` | Changed keys of one section only, secrets only when retyped ([046](046-admin-settings.md)) |
+| A25 | The pattern label is optional in the form, but the server refuses a creation without it (400) | `admin/patterns/index.astro` | The name stands in for an empty label ([045](045-admin-patterns.md)) |
 
 ## Backend defects found while writing the frontend
 

@@ -60,8 +60,8 @@ only), with a « Copier » button.
 
 ## Module editor (Modules tab)
 
-- List: `GET /api/courses/{slug}/modules` (for an admin it also contains hidden modules, with
-  `src`, `ref`, `path`).
+- List: the `modules` of the definition (hidden modules and git sources included), so the list
+  and the changes come from the same read.
 - Each module: type, name, badges (hidden, inline, git), actions « Modifier », « Supprimer », and
   « 🗑 » (clear this module's cache) for a git module.
 - **Edit mode**: a toggle that shows the drag handles for reordering. A changed order is saved in

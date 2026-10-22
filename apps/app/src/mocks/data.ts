@@ -83,10 +83,15 @@ export const MOCK_PUBLIC_SETTINGS: PublicSettings = {
   ldap_enabled: 'false',
 };
 
-/** The account, with the profile changes saved by PUT /api/auth/profile. */
+/** The account, with the changes saved by PUT /api/auth/profile or an admin; none once deleted. */
 export function findAccount(id: string | null | undefined): MockAccount | undefined {
   const account = MOCK_ACCOUNTS.find((candidate) => candidate.user.id === id);
-  if (!account) return undefined;
+  if (!account || db().deletedUsers.includes(account.user.id)) return undefined;
   const changes = db().profiles[account.user.id];
   return changes ? { ...account, user: { ...account.user, ...changes } } : account;
+}
+
+/** Every account that was not deleted, with its changes. */
+export function accounts(): MockAccount[] {
+  return MOCK_ACCOUNTS.flatMap((account) => findAccount(account.user.id) ?? []);
 }

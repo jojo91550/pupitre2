@@ -13,6 +13,7 @@ import { patternCss, renderMarkdown, toPatternMap, type TocEntry } from '@/lib/m
 import { safeUrl } from '@pupitre/ui/lib/security';
 import { readItem, writeItem } from '@pupitre/ui/lib/storage';
 import { takeCourseReturn } from '@/lib/course-return';
+import { usePatternStyles } from '@/lib/use-pattern-styles';
 
 import { LabContent } from '@/components/lab/LabContent';
 
@@ -43,17 +44,6 @@ function treeIcon(module: ModuleSummary): string {
   if (module.type === 'image') return '🖼️';
   if (module.type === 'lab') return '🧪';
   return '📝';
-}
-
-/** Pattern CSS lives in one <style> element per page (spec 003 S2). */
-function usePatternStyles(css: string) {
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.id = 'pattern-styles';
-    style.textContent = css;
-    document.head.appendChild(style);
-    return () => style.remove();
-  }, [css]);
 }
 
 function useReadingMode() {

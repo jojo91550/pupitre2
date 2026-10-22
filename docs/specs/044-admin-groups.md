@@ -25,8 +25,9 @@ to a platform role.
 - Subgroup: `POST /api/admin/groups/{groupId}/subgroups` with `{ name }`.
 - Move: « Déplacer le groupe » dialog, « Nouveau parent » (list without the group and its
   descendants, plus « Racine (aucun parent) »), then `PATCH /api/admin/groups/{groupId}/parent`
-  with `{ parentId }` (`null` for the root). Descendants come from
-  `GET /api/admin/groups/{groupId}/descendants`.
+  with `{ parentId }` (`null` for the root). Descendants are computed from the group list
+  (`parentId`): `GET /api/admin/groups/{groupId}/descendants` returns a struct without json tags
+  ([090](090-gaps-and-defects.md) A22).
 - Delete: confirmation, then `DELETE /api/admin/groups/{groupId}`. Only local groups can be
   deleted (the server returns 404 otherwise): the button is disabled for an SSO group.
 
