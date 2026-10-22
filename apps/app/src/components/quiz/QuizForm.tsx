@@ -1,8 +1,8 @@
 import { useState } from 'react';
 
-import type { QuizQuestion } from '@/lib/api-types';
+import type { QuizQuestion } from '@pupitre/core/lib/api-types';
 import { SafeHtml } from '@pupitre/ui/components/safe-html';
-import { renderInline } from '@/lib/markdown';
+import { renderInline } from '@pupitre/core/lib/markdown';
 
 import type { AnswerValue } from '@/lib/use-quiz';
 

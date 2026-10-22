@@ -54,6 +54,19 @@ function dropMockWorker(mode: string): Plugin {
   };
 }
 
+// The admin app (apps/admin) is served on the same origin under /admin and
+// /manager, so the session in sessionStorage is shared: in development this
+// server forwards those paths to the admin dev server. /manager/* gets the
+// admin app's page, whose router reads the real URL.
+function adminApp(port: number): Record<string, ProxyOptions> {
+  const admin = { target: `http://localhost:${port}`, changeOrigin: true, ws: true };
+  return {
+    // The admin app's base is /admin/: /admin alone gets the trailing slash.
+    '^/admin(/|\\?|$)': { ...admin, rewrite: (path) => path.replace(/^\/admin(?=$|\?)/, '/admin/') },
+    '^/manager(/|$)': { ...admin, rewrite: () => '/admin/' },
+  };
+}
+
 function target(url: string): ProxyOptions {
   return {
     target: url,
@@ -68,18 +81,24 @@ export default defineConfig(({ mode }) => {
   const courseService = env.VITE_COURSE_SERVICE_URL || 'http://localhost:8082';
   const coursePattern = `^/api/(${COURSE_SERVICE_PREFIXES.join('|')})(/|\\?|$)`;
 
+  // Ports can be moved, e.g. by the end-to-end tests (playwright.config.ts).
+  const port = Number(process.env.PUPITRE_APP_PORT || 3000);
+  const adminPort = Number(process.env.PUPITRE_ADMIN_PORT || 3001);
+
   return {
     plugins: [react(), tailwindcss(), dropMockWorker(mode)],
     resolve: {
       alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
     },
     server: {
-      port: 3000,
-      // In mock mode MSW answers in the browser, so nothing is proxied.
+      port,
+      strictPort: true,
+      // In mock mode MSW answers /api in the browser, so only the admin app is proxied.
       proxy:
         mode === 'mock'
-          ? undefined
+          ? adminApp(adminPort)
           : {
+              ...adminApp(adminPort),
               [coursePattern]: target(courseService),
               '/uploads': target(courseService),
               '/api': target(userService),

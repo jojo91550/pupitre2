@@ -2,10 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 
-import { myCourses } from '@/lib/api';
-import type { MyCourse } from '@/lib/api-types';
-import { courseIcon } from '@/lib/course-meta';
-import { LoadError, LoadingState } from '@/components/PageStates';
+import { myCourses } from '@pupitre/core/lib/api';
+import type { MyCourse } from '@pupitre/core/lib/api-types';
+import { courseIcon } from '@pupitre/core/lib/course-meta';
+import { LoadError, LoadingState } from '@pupitre/core/components/PageStates';
 
 // /my-courses (docs/specs/020-learner-space.md), markup of pupitre's my-courses.astro.
 

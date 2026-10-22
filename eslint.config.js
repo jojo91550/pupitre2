@@ -5,7 +5,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['**/dist', '**/coverage', 'apps/app/public/mockServiceWorker.js'] },
+  { ignores: ['**/dist', '**/coverage', 'test-results', 'playwright-report', 'apps/app/public/mockServiceWorker.js'] },
   {
     files: ['**/*.{ts,tsx}'],
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
@@ -44,7 +44,7 @@ export default tseslint.config(
       'packages/ui/src/components/safe-html.tsx',
       'packages/ui/src/lib/storage.ts',
       'packages/ui/src/components/ui/**',
-      'apps/app/src/lib/markdown.ts',
+      'packages/core/src/lib/markdown.ts',
     ],
     rules: { 'no-restricted-syntax': 'off', 'no-restricted-globals': 'off' },
   },

@@ -6,10 +6,10 @@ import { createRoot } from 'react-dom/client';
 import { RouterProvider, type RouteObject } from 'react-router';
 import { toast } from 'sonner';
 
-import { getMe } from '@/lib/api';
-import { ApiError, configureClient } from '@/lib/api-client';
-import { loginPath } from '@/lib/auth-paths';
-import { endSession, getSession, getToken, setSessionEndHandler, updateUser } from '@/lib/session';
+import { getMe } from '@pupitre/core/lib/api';
+import { ApiError, configureClient } from '@pupitre/core/lib/api-client';
+import { loginPath } from '@pupitre/core/lib/auth-paths';
+import { endSession, getSession, getToken, setSessionEndHandler, updateUser } from '@pupitre/core/lib/session';
 import { Toaster } from '@pupitre/ui/components/ui/sonner';
 import { TooltipProvider } from '@pupitre/ui/components/ui/tooltip';
 import { createRouter } from '@/router';
@@ -23,8 +23,8 @@ async function start() {
     // Mock mode (`pnpm dev:mock`): MSW answers /api/* in the browser and a fake
     // Keycloak page stands in for the real one. Nothing of it ships otherwise.
     const [{ worker }, { MockKeycloakPage }] = await Promise.all([
-      import('@/mocks/browser'),
-      import('@/mocks/mock-keycloak-page'),
+      import('@pupitre/core/mocks/browser'),
+      import('@pupitre/core/mocks/mock-keycloak-page'),
     ]);
     await worker.start({ onUnhandledFrame: 'bypass', quiet: true });
     extraRoutes.push({ path: '/mock-keycloak', element: <MockKeycloakPage /> });

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 
-import { oidcCallback } from '@/lib/api';
+import { oidcCallback } from '@pupitre/core/lib/api';
 import { clearFlow, recallFlow } from '@/lib/oidc-flow';
-import { landingPath } from '@/lib/auth-paths';
-import { openSession } from '@/lib/session';
+import { landingPath } from '@pupitre/core/lib/auth-paths';
+import { useSiteNavigate } from '@pupitre/core/lib/site';
+import { openSession } from '@pupitre/core/lib/session';
 import { safeRedirect } from '@pupitre/ui/lib/security';
 
 // /auth/callback — Keycloak comes back here (docs/specs/001). The route must not
@@ -32,7 +33,8 @@ function validate(params: URLSearchParams, expectedState: string | null): string
 
 export function AuthCallback() {
   const [params] = useSearchParams();
-  const navigate = useNavigate();
+  // The destination may be in the admin app (an admin lands on /admin): a page load then.
+  const navigate = useSiteNavigate();
   const [error, setError] = useState<string | null>(() => validate(params, recallFlow().state));
   // The authorization code is single-use, and React runs effects twice in
   // development: exchange it exactly once.

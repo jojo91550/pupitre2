@@ -3,9 +3,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 
-import { ApiError } from '@/lib/api-client';
-import { getCourse, getModule, listModules, submitQuiz } from '@/lib/api';
-import type { Cooldown, ModuleDetail, ModuleSummary } from '@/lib/api-types';
+import { ApiError } from '@pupitre/core/lib/api-client';
+import { getCourse, getModule, listModules, submitQuiz } from '@pupitre/core/lib/api';
+import type { Cooldown, ModuleDetail, ModuleSummary } from '@pupitre/core/lib/api-types';
 import { hostOf, moduleHref } from '@/lib/module-links';
 
 import { antiCopy } from '@/lib/anti-copy';

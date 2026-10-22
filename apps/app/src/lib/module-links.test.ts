@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ModuleSummary } from '@/lib/api-types';
+import type { ModuleSummary } from '@pupitre/core/lib/api-types';
 
 import { hostOf, inlineQuizzesByHost, isModuleDone, moduleHref } from '@/lib/module-links';
 

@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
 
-import { listCourses, myCourses, myXp } from '@/lib/api';
-import { COURSE_XP } from '@/lib/course-meta';
+import { listCourses, myCourses, myXp } from '@pupitre/core/lib/api';
+import { COURSE_XP } from '@pupitre/core/lib/course-meta';
 import { XP_LEVELS, XP_SOURCE_ICONS, XP_SOURCE_LABELS, xpProgress } from '@/lib/xp';
-import { LoadError, LoadingState } from '@/components/PageStates';
+import { LoadError, LoadingState } from '@pupitre/core/components/PageStates';
 
 // /my-xp (docs/specs/020-learner-space.md), markup of pupitre's my-xp.astro.
 

@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router';
 
-import type { ModuleSummary } from '@/lib/api-types';
+import type { ModuleSummary } from '@pupitre/core/lib/api-types';
 import { moduleHref, moduleIcon } from '@/lib/module-links';
 
 // Module rows of the course page (docs/specs/011-course-page-and-enrollment.md).

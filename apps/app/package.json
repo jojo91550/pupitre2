@@ -19,6 +19,7 @@
     ]
   },
   "dependencies": {
+    "@pupitre/core": "workspace:*",
     "@pupitre/ui": "workspace:*",
     "@tanstack/react-query": "5.104.5",
     "@tauri-apps/api": "2.11.1",

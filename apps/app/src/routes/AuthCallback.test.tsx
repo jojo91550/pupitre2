@@ -2,15 +2,16 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { oidcCallback } from '@/lib/api';
+import { oidcCallback } from '@pupitre/core/lib/api';
 import { rememberFlow } from '@/lib/oidc-flow';
-import { endSession, getSession } from '@/lib/session';
-import { MOCK_ACCOUNTS } from '@/mocks/data';
-import { mockToken } from '@/mocks/jwt';
+import { endSession, getSession } from '@pupitre/core/lib/session';
+import { pageLoad } from '@pupitre/core/lib/site';
+import { MOCK_ACCOUNTS } from '@pupitre/core/mocks/data';
+import { mockToken } from '@pupitre/core/mocks/jwt';
 
 import { AuthCallback } from '@/routes/AuthCallback';
 
-vi.mock('@/lib/api', () => ({ oidcCallback: vi.fn() }));
+vi.mock('@pupitre/core/lib/api', () => ({ oidcCallback: vi.fn() }));
 
 const admin = MOCK_ACCOUNTS.find((a) => a.user.role === 'admin')!.user;
 const student = MOCK_ACCOUNTS.find((a) => a.user.role === 'student')!.user;
@@ -45,11 +46,15 @@ describe('AuthCallback', () => {
     expect(await screen.findByText('Accès refusé : vous avez annulé la connexion.')).toBeInTheDocument();
   });
 
-  it('opens the session and lands an admin on /admin', async () => {
+  it('opens the session and sends an admin to the admin app, /admin', async () => {
+    // /admin is served by the admin app: a page load, not a router navigation.
+    const go = vi.spyOn(pageLoad, 'go').mockImplementation(() => {});
     rememberFlow('s1', null);
     vi.mocked(oidcCallback).mockResolvedValue({ token: mockToken(admin.id, 'admin'), user: admin });
     const router = renderCallback('?code=abc&state=s1');
-    await waitFor(() => expect(router.state.location.pathname).toBe('/admin'));
+    await waitFor(() => expect(go).toHaveBeenCalledWith('/admin', true));
+    expect(router.state.location.pathname).toBe('/auth/callback');
+    go.mockRestore();
     expect(getSession()?.user.role).toBe('admin');
     expect(oidcCallback).toHaveBeenCalledTimes(1);
   });

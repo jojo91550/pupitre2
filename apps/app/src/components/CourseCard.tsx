@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 import { Link } from 'react-router';
 
-import type { Course } from '@/lib/api-types';
+import type { Course } from '@pupitre/core/lib/api-types';
 import {
   categoryIcon,
   categoryLabel,
@@ -9,7 +9,7 @@ import {
   DIFFICULTY_BADGES,
   DIFFICULTY_LABELS,
   type CategoryColor,
-} from '@/lib/course-meta';
+} from '@pupitre/core/lib/course-meta';
 
 // A course card of the catalogue grid (docs/specs/010-catalogue.md).
 

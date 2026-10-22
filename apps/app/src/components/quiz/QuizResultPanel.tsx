@@ -1,4 +1,4 @@
-import type { QuestionResult, QuizQuestion } from '@/lib/api-types';
+import type { QuestionResult, QuizQuestion } from '@pupitre/core/lib/api-types';
 
 import { InlineText } from '@/components/quiz/QuizForm';
 

@@ -1,4 +1,4 @@
-import type { CheckResult } from '@/lib/api-types';
+import type { CheckResult } from '@pupitre/core/lib/api-types';
 
 // Local lab checks of the pupitre-desktop app (docs/specs/014-labs.md). Same
 // behaviour and signature as pupitre's frontend/src/lib/local-check.ts, so the

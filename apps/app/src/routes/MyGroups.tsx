@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
 
-import { listCourses, myGroups } from '@/lib/api';
-import type { Course, MyGroup } from '@/lib/api-types';
-import { courseIcon } from '@/lib/course-meta';
-import { LoadError } from '@/components/PageStates';
+import { listCourses, myGroups } from '@pupitre/core/lib/api';
+import type { Course, MyGroup } from '@pupitre/core/lib/api-types';
+import { courseIcon } from '@pupitre/core/lib/course-meta';
+import { LoadError } from '@pupitre/core/components/PageStates';
 
 // /my-groups (docs/specs/020-learner-space.md), markup of pupitre's my-groups.astro.
 

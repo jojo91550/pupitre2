@@ -1,4 +1,4 @@
-import type { ModuleSummary } from '@/lib/api-types';
+import type { ModuleSummary } from '@pupitre/core/lib/api-types';
 
 // Module navigation rules shared by the course page, the lesson player and the
 // quiz page (docs/specs/011, 012).

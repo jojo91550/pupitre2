@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from 'react-router';
 
-import { listCourses, myCourses, mySkillModules } from '@/lib/api';
-import type { Course } from '@/lib/api-types';
-import { LoadError, LoadingState } from '@/components/PageStates';
+import { listCourses, myCourses, mySkillModules } from '@pupitre/core/lib/api';
+import type { Course } from '@pupitre/core/lib/api-types';
+import { LoadError, LoadingState } from '@pupitre/core/components/PageStates';
 
 // /skills/:slug (docs/specs/020-learner-space.md), markup of pupitre's skills/[slug].astro.
 

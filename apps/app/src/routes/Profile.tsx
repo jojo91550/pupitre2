@@ -3,11 +3,11 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
-import { getMe, myBadges, updateProfile } from '@/lib/api';
-import type { UserPublic } from '@/lib/api-types';
-import { updateUser } from '@/lib/session';
+import { getMe, myBadges, updateProfile } from '@pupitre/core/lib/api';
+import type { UserPublic } from '@pupitre/core/lib/api-types';
+import { updateUser } from '@pupitre/core/lib/session';
 import { UserAvatar } from '@pupitre/ui/components/user-avatar';
-import { LoadError, LoadingState } from '@/components/PageStates';
+import { LoadError, LoadingState } from '@pupitre/core/components/PageStates';
 
 // /profile (docs/specs/021-profile.md), markup of pupitre's profile.astro.
 // Keycloak owns the username, the e-mail and the password: only the bio and an

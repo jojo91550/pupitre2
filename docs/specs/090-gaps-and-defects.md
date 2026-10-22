@@ -8,7 +8,7 @@ server-side sessions). pupitre2 only rewrites the frontend. The specs therefore 
 | Topic | Reference | pupitre2 |
 | --- | --- | --- |
 | Backend | Rewritten in TypeScript (routes `/api/me`, `/api/sessions`…) | **Unchanged**: the specs call the existing Go routes ([004](004-api-and-routing.md)) |
-| Applications | Two applications (learner and admin) | **One** application, admin included |
+| Applications | Two applications (learner and admin) | **Two** applications too, on one origin: the learner app, and the admin app (administration and manager space) under `/admin` and `/manager`, sharing `@pupitre/core` |
 | Authentication | Local login, OAuth, OIDC, LDAP | **Keycloak OIDC only** ([001](001-keycloak-authentication.md)), plus the backend settings to turn off (H7) |
 | Session | Server-side session cookie | The backend JWT, isolated in one module so it can move to a cookie later |
 | Security | Fixes built into the new backend | Explicit frontend requirements from the audit ([003](003-security.md)): sanitization, avatar, redirects, CSP |
@@ -44,9 +44,9 @@ When a reference component is taken over:
    backend returns **raw** markdown: every such place goes through `renderMarkdown()` and
    `<SafeHtml>` instead ([003](003-security.md) S1, S2). Copying them unchanged would bring back
    findings C2 and C3.
-3. **One application**: its learner and admin apps are merged into our single route table
-   ([002](002-roles-and-guards.md)).
-4. **Mock data**: every route a reused page calls gets its handler in `apps/app/src/mocks`
+3. **Two applications**: a reused learner page goes to `apps/app`, an admin page to `apps/admin`;
+   the manager space is in the admin app here ([002](002-roles-and-guards.md)).
+4. **Mock data**: every route a reused page calls gets its handler in `packages/core/src/mocks`
    ([006](006-mock-mode.md)).
 5. **Attribution**: a reused file keeps a header comment naming its origin
    (`// Adapted from ebuildy/pupitre2: apps/app/src/routes/Catalogue.tsx`).

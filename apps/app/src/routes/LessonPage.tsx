@@ -3,17 +3,17 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 
-import { ApiError } from '@/lib/api-client';
-import { completeLesson, getCourse, getModule, listModules, listPatterns } from '@/lib/api';
-import type { ModuleDetail, ModuleSummary } from '@/lib/api-types';
-import { MarkdownContent } from '@/components/MarkdownContent';
+import { ApiError } from '@pupitre/core/lib/api-client';
+import { completeLesson, getCourse, getModule, listModules, listPatterns } from '@pupitre/core/lib/api';
+import type { ModuleDetail, ModuleSummary } from '@pupitre/core/lib/api-types';
+import { MarkdownContent } from '@pupitre/core/components/MarkdownContent';
 import { hostOf, isModuleDone, moduleHref } from '@/lib/module-links';
 import { InlineQuiz } from '@/components/quiz/InlineQuiz';
-import { patternCss, renderMarkdown, toPatternMap, type TocEntry } from '@/lib/markdown';
+import { patternCss, renderMarkdown, toPatternMap, type TocEntry } from '@pupitre/core/lib/markdown';
 import { safeUrl } from '@pupitre/ui/lib/security';
 import { readItem, writeItem } from '@pupitre/ui/lib/storage';
 import { takeCourseReturn } from '@/lib/course-return';
-import { usePatternStyles } from '@/lib/use-pattern-styles';
+import { usePatternStyles } from '@pupitre/core/lib/use-pattern-styles';
 
 import { LabContent } from '@/components/lab/LabContent';
 
