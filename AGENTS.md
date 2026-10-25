@@ -13,6 +13,10 @@ English; they are the source of truth for behaviour.
 - Never commit or push to `main`, never force-push, never rewrite published history. Changes reach
   `main` through a pull request, squash merged by the user.
 - Before committing, `typecheck`, `lint`, `test` and `build` pass.
+- Git hooks (prek, `.pre-commit-config.yaml`, installed by `mise run setup:prek`) refuse commits
+  on `main`, run lint and build on commit, check the Conventional Commits message, and refuse to
+  push unsigned commits.
+  Never bypass them (`--no-verify`): fix the cause instead.
 
 ## Constraints
 

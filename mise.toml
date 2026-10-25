@@ -2,12 +2,19 @@
 node = "24"
 # Same version as "packageManager" in package.json
 pnpm = "12.14.0"
+# Git hooks of .pre-commit-config.yaml
+prek = "0.5.6"
 
 [tasks.install]
 description = "Install the workspace dependencies"
 run = "pnpm install"
 sources = ["package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "apps/*/package.json", "packages/*/package.json"]
 outputs = ["node_modules/.modules.yaml"]
+
+[tasks."setup:prek"]
+description = "Install the Git hooks of .pre-commit-config.yaml (signing, lint, build, Conventional Commits) with prek"
+# Uninstalling first drops the hook types no longer in the config
+run = ["prek uninstall --all", "prek install"]
 
 [tasks.dev]
 description = "Run both apps against the Go services (http://localhost:3000, admin under /admin)"

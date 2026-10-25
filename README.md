@@ -25,7 +25,8 @@ They replace the Astro frontend and the three Go services of
 task installs the dependencies first when needed.
 
 ```sh
-mise install          # Node.js 24 and pnpm, versions from mise.toml
+mise install          # Node.js 24, pnpm and prek, versions from mise.toml
+mise run setup:prek        # Git hooks, see "Contributing"
 mise run dev:mock     # http://localhost:3000, no backend needed (docs/specs/006-mock-mode.md)
 mise run dev          # http://localhost:3000, against the Go services
 # Both start the two apps; the admin app is opened through http://localhost:3000/admin
@@ -88,3 +89,15 @@ Details: [`docs/specs/000-scope-and-stack.md`](docs/specs/000-scope-and-stack.md
 - Commits: [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`,
   `docs:`…).
 - No direct commit on `main`.
+- Commits are signed (`git config commit.gpgsign true`).
+
+`mise run setup:prek` installs the Git hooks of `.pre-commit-config.yaml`, run by
+[prek](https://github.com/j178/prek):
+
+| Hook | Checks |
+| --- | --- |
+| `pre-commit` | No commit on `main`; `mise run lint` and `mise run build` when code changes |
+| `commit-msg` | [Conventional Commits](https://www.conventionalcommits.org/) subject (`feat(scope): …`) |
+| `pre-push` | Every pushed commit has a valid signature |
+
+`mise x -- prek run --all-files` runs the pre-commit checks by hand (prek 0.5.6 or later, from mise.toml).
