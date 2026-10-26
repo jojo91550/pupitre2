@@ -1,9 +1,12 @@
-# pupitre2 frontend specs
+# pupitre2 specs
 
 This folder describes the **new React frontend** of pupitre. It replaces the Astro frontend of
 [`genesary/pupitre`](https://github.com/genesary/pupitre) (`frontend/`) **without changing the Go
 backend**: the specs describe what the interface must do and which routes of the existing API it
 calls.
+
+Specs 100 to 199 describe the **backend**: the Go services of `genesary/pupitre` move into
+`apps/api` as one application (a modular monolith), keeping every route, table and rule.
 
 ## Sources
 
@@ -61,10 +64,25 @@ calls.
 | [090](090-gaps-and-defects.md) | Differences from the reference, defects of the current frontend | - |
 | [099](099-migration-plan.md) | Migration plan in batches | - |
 
+### Backend
+
+| Spec | Topic |
+| --- | --- |
+| [100](100-backend-scope-and-architecture.md) | Scope, why one application, target layout, invariants |
+| [101](101-backend-configuration.md) | Merged configuration: keys, defaults, removed keys |
+| [102](102-backend-data-and-migrations.md) | Tables, migrations, start-up seeding, connection pool |
+| [103](103-backend-http-api.md) | Router, middleware, body limits, inventory of every route |
+| [104](104-backend-in-process-calls.md) | Calls between services that become function calls |
+| [105](105-backend-authentication.md) | Tokens, guards, OIDC, OAuth, LDAP, local accounts |
+| [106](106-backend-courses-and-content.md) | Courses, modules, git, markdown import, quizzes, progress, XP, skills, paths |
+| [107](107-backend-labs-and-checker.md) | Labs, the checker, OPA limits |
+| [108](108-backend-operations-and-testing.md) | Tooling, image, deployment, tests, CI |
+| [190](190-backend-defects.md) | Known backend defects, kept during the move and fixed after |
+| [199](199-backend-migration-plan.md) | Backend migration plan in batches |
+
 ## Out of scope
 
-- The backend (user-service, course-service, checker-service) stays as it is. The server-side
-  security fixes found by the audit are listed in [003](003-security.md) for reference, but they
-  are made in `genesary/pupitre`.
+- For the frontend specs (000-099), the backend API is the one of `3cdf7b2`: the move of specs
+  100-199 keeps it unchanged. Server-side fixes are listed in [190](190-backend-defects.md).
 - Local registration, local login, GitHub and LDAP: the platform signs in only with OIDC through
   Keycloak (see [001](001-keycloak-authentication.md)).
