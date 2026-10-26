@@ -105,7 +105,9 @@ func (s *State) startOAuthState(writer http.ResponseWriter, provider, redirectBa
 		return "", err
 	}
 
-	http.SetCookie(writer, &http.Cookie{
+	// Secure follows the redirect base: local development serves the
+	// frontend over plain HTTP, where a Secure cookie would not come back.
+	http.SetCookie(writer, &http.Cookie{ //nolint:gosec // G124: Secure is set whenever the site is HTTPS, see above
 		Name:     oauthStateCookie,
 		Value:    nonce,
 		Path:     oauthStateCookiePath,
@@ -132,7 +134,7 @@ func (s *State) checkOAuthState(writer http.ResponseWriter, request *http.Reques
 		return "", false
 	}
 
-	http.SetCookie(writer, &http.Cookie{
+	http.SetCookie(writer, &http.Cookie{ //nolint:gosec // G124: clears the cookie with the Secure flag it was set with
 		Name:     oauthStateCookie,
 		Value:    "",
 		Path:     oauthStateCookiePath,
