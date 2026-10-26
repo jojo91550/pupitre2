@@ -69,6 +69,11 @@ target, `VITE_API_URL` (default `http://localhost:8080`). `VITE_USER_SERVICE_URL
   merging the three, `/api` and `/uploads` routed to the API by one prefix rule, the internal
   secret and the service URLs removed.
 - Probes: `/health` for liveness and readiness. Graceful shutdown in 15 s on `SIGTERM`.
+- `JWT_SECRET` must be set to a real secret of at least 32 characters: the reference chart's
+  default (`change-me-in-production-…`) is refused at start-up ([190](190-backend-defects.md) B4).
+- `/metrics` stays public in the API, as in the reference. The reference chart routes it from the
+  ingress; the API's chart should not, since Prometheus scrapes the pod directly
+  ([190](190-backend-defects.md), "Kept as the reference").
 - Uploads (`UPLOADS_DIR`): the chart sets `/data/uploads` but mounts no volume there, on a read-only
   root filesystem ([190](190-backend-defects.md) B22). The API's chart mounts a volume at
   `/data/uploads` (a `PersistentVolumeClaim`, `ReadWriteMany` when the API has several replicas).

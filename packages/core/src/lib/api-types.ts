@@ -226,7 +226,6 @@ export type QuestionResult = {
   isCorrect: boolean;
   pointsEarned: number;
   pointsMax: number;
-  correctAnswer?: unknown;
   feedback?: string;
   sourceRefs?: SourceRef[];
 };

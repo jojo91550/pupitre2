@@ -4,7 +4,7 @@ import { InlineText } from '@/components/quiz/QuizForm';
 
 // The « Correction » of a submitted quiz (docs/specs/013-quizzes.md).
 
-/** « Correction ». `correctAnswer` is never shown to a learner (audit L4). */
+/** « Correction ». The API sends no correct answer (docs/specs/190-backend-defects.md B17). */
 export function QuizReview({ questions, results }: { questions: QuizQuestion[]; results: QuestionResult[] }) {
   return (
     <>

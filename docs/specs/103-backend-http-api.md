@@ -13,7 +13,12 @@ Applied to every route, in this order, as both services did:
 2. `RealIP` (the API runs behind a trusted reverse proxy; the IP is used for logs and rate limits)
 3. Request logger (off in tests)
 4. `Recoverer`
-5. CORS: origins from `CORS_ORIGINS`, methods `GET POST PUT PATCH DELETE OPTIONS`, headers
+5. Security headers ([190](190-backend-defects.md) B15): `X-Content-Type-Options: nosniff`,
+   `Referrer-Policy: no-referrer`, and `Content-Security-Policy: default-src 'none';
+   frame-ancestors 'none'` with `X-Frame-Options: DENY`; on `/uploads/*`,
+   `Content-Security-Policy: script-src 'none'; frame-ancestors 'self'` with
+   `X-Frame-Options: SAMEORIGIN`, so an uploaded SVG or HTML file runs no script.
+6. CORS: origins from `CORS_ORIGINS`, methods `GET POST PUT PATCH DELETE OPTIONS`, headers
    `Accept Authorization Content-Type`, credentials allowed, preflight cached 300 s.
 
 The **body limit** is set per route group, not globally: **1 MB** for every route, except the

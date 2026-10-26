@@ -174,3 +174,21 @@ func TestSubmitModule_ResolvedFromGit(t *testing.T) {
 		t.Errorf("expected a passing git-quiz submission")
 	}
 }
+
+// TestSubmitModule_NoCorrectAnswer is the regression test of defect B17
+// (docs/specs/190-backend-defects.md): a wrong submission does not reveal
+// the correct answers.
+func TestSubmitModule_NoCorrectAnswer(t *testing.T) {
+	t.Parallel()
+
+	s := newStateWith(&config.Config{JWTSecret: "test-secret", JWTExpiryH: 24}, quizCourse())
+
+	rec := submitQuiz(t, s, `{"answers":{"q1":{"single":"b"},"q2":{"boolean":false}}}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("want 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	if strings.Contains(rec.Body.String(), "correctAnswer") {
+		t.Errorf("the submission reveals the correct answers: %s", rec.Body.String())
+	}
+}

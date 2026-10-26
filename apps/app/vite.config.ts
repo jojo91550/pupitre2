@@ -18,6 +18,8 @@ const FORWARDED_HEADERS = new Set([
   'authorization',
   'content-type',
   'content-length',
+  // The OAuth state cookie, the API's only cookie (docs/specs/190-backend-defects.md B13).
+  'cookie',
   'host',
 ]);
 

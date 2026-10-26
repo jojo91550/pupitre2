@@ -40,7 +40,8 @@ Submission: `POST /api/courses/{slug}/modules/{index}/submit` with
 
 Response: `{ totalScore, maxScore, passed, questionResults[], cooldowns }`. Each
 `questionResults` entry contains `questionId`, `isCorrect`, `pointsEarned`, `pointsMax`,
-`feedback`, `sourceRefs`, and may contain `correctAnswer`.
+`feedback` and `sourceRefs`. It never contains the correct answer
+([190](190-backend-defects.md) B17).
 
 ## Quiz page
 
@@ -59,9 +60,8 @@ Response: `{ totalScore, maxScore, passed, questionResults[], cooldowns }`. Each
 - Actions: « Module suivant ▸ » if passed and a next unlocked module exists; « Recommencer » if
   failed and no question is cooling down or locked; « Retour au cours ».
 - **Review** (« Correction »): for each question, ✓ or ✗, the question text, « X/Y pt(s) » and
-  `feedback`. `correctAnswer` is **not** shown to a learner, even when the API returns it (the
-  audit notes that it lets learners learn the answers by trial and error; finding L4, to be
-  removed server side as well).
+  `feedback`. The correct answer is not shown: the API no longer sends it, so that a learner
+  cannot read it and submit again (audit finding L4).
 - `sourceRefs` may produce « Revoir : <module> » links to the cited lesson and anchor.
 
 ## Cooldowns and locking

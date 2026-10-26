@@ -142,7 +142,7 @@ func (s *State) OIDCAuthorize(writer http.ResponseWriter, request *http.Request)
 		return
 	}
 
-	stateToken, err := makeOAuthState(oidcProviderKey, s.oauthStateSecret())
+	stateToken, err := s.startOAuthState(writer, oidcProviderKey, cfg.RedirectBase)
 	if err != nil {
 		s.Error(writer, http.StatusInternalServerError, "State token error")
 
@@ -294,7 +294,7 @@ func (s *State) OIDCCallback(writer http.ResponseWriter, request *http.Request) 
 		return
 	}
 
-	provider, validState := decodeOAuthState(req.State, s.oauthStateSecret())
+	provider, validState := s.checkOAuthState(writer, request, req.State)
 	if !validState || provider != oidcProviderKey {
 		s.Error(writer, http.StatusUnauthorized, "Invalid or expired OIDC state")
 

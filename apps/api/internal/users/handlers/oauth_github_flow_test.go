@@ -95,7 +95,7 @@ func TestOAuthCallback_GitHubFlow(t *testing.T) { //nolint:paralleltest // swaps
 		t.Fatalf("makeOAuthState: %v", err)
 	}
 
-	rec := htDo(t, r, http.MethodPost, "/api/auth/oauth/callback",
+	rec := htDoOAuth(t, r, http.MethodPost, "/api/auth/oauth/callback",
 		`{"code":"any","state":"`+state+`"}`, "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("want 200, got %d: %s", rec.Code, rec.Body.String())
@@ -128,7 +128,7 @@ func TestOAuthCallback_GitHubEmailFromAPI(t *testing.T) { //nolint:paralleltest 
 	s := &State{Config: &config.Config{OAuthStateSecret: "oauth-state-secret"}}
 	state, _ := makeOAuthState("github", s.oauthStateSecret())
 
-	rec := htDo(t, r, http.MethodPost, "/api/auth/oauth/callback",
+	rec := htDoOAuth(t, r, http.MethodPost, "/api/auth/oauth/callback",
 		`{"code":"any","state":"`+state+`"}`, "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("want 200, got %d: %s", rec.Code, rec.Body.String())
@@ -143,7 +143,7 @@ func TestOAuthCallback_GitHubNoToken(t *testing.T) { //nolint:paralleltest // sw
 	s := &State{Config: &config.Config{OAuthStateSecret: "oauth-state-secret"}}
 	state, _ := makeOAuthState("github", s.oauthStateSecret())
 
-	rec := htDo(t, r, http.MethodPost, "/api/auth/oauth/callback",
+	rec := htDoOAuth(t, r, http.MethodPost, "/api/auth/oauth/callback",
 		`{"code":"any","state":"`+state+`"}`, "")
 	if rec.Code != http.StatusUnauthorized {
 		t.Errorf("want 401, got %d", rec.Code)
@@ -163,7 +163,7 @@ func TestOAuthCallback_GitHubNoVerifiedEmail(t *testing.T) { //nolint:parallelte
 	s := &State{Config: &config.Config{OAuthStateSecret: "oauth-state-secret"}}
 	state, _ := makeOAuthState("github", s.oauthStateSecret())
 
-	rec := htDo(t, r, http.MethodPost, "/api/auth/oauth/callback",
+	rec := htDoOAuth(t, r, http.MethodPost, "/api/auth/oauth/callback",
 		`{"code":"any","state":"`+state+`"}`, "")
 	if rec.Code != http.StatusUnauthorized {
 		t.Errorf("want 401, got %d", rec.Code)

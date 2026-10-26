@@ -2605,7 +2605,7 @@ func TestOAuthCallback_InvalidJSON(t *testing.T) {
 
 	r := newOAuthRouter()
 
-	rec := htDo(t, r, "POST", "/api/auth/oauth/callback", "not-json", "")
+	rec := htDoOAuth(t, r, "POST", "/api/auth/oauth/callback", "not-json", "")
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("want 400, got %d", rec.Code)
 	}
@@ -2619,7 +2619,7 @@ func TestOAuthCallback_InvalidState(t *testing.T) {
 	r := newOAuthRouter()
 	body := `{"code":"some-code","state":"invalid-state-token"}`
 
-	rec := htDo(t, r, "POST", "/api/auth/oauth/callback", body, "")
+	rec := htDoOAuth(t, r, "POST", "/api/auth/oauth/callback", body, "")
 	if rec.Code != http.StatusUnauthorized {
 		t.Errorf("want 401, got %d", rec.Code)
 	}
@@ -3648,7 +3648,7 @@ func TestOIDCCallback_InvalidState(t *testing.T) {
 
 	r := newTestRouter()
 
-	rec := htDo(t, r, "POST", "/api/auth/oidc/callback", `{"code":"c","state":"bad-state"}`, "")
+	rec := htDoOAuth(t, r, "POST", "/api/auth/oidc/callback", `{"code":"c","state":"bad-state"}`, "")
 	if rec.Code != http.StatusUnauthorized {
 		t.Errorf("want 401, got %d", rec.Code)
 	}
@@ -3660,7 +3660,7 @@ func TestOIDCCallback_InvalidJSON(t *testing.T) {
 
 	r := newTestRouter()
 
-	rec := htDo(t, r, "POST", "/api/auth/oidc/callback", "not-json", "")
+	rec := htDoOAuth(t, r, "POST", "/api/auth/oidc/callback", "not-json", "")
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("want 400, got %d", rec.Code)
 	}
@@ -3693,6 +3693,7 @@ func TestOAuthCallback_GithubProviderFetchFails(t *testing.T) {
 	body := fmt.Sprintf(`{"code":"invalid-code","state":%q}`, state)
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/api/auth/oauth/callback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
+	withStateCookie(req, body)
 
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -3720,7 +3721,7 @@ func TestOAuthCallback_ValidStateUnknownProvider(t *testing.T) {
 	stateToken, _ := makeOAuthState("unknown-provider", htSecret)
 	body := fmt.Sprintf(`{"code":"test-code","state":%q}`, stateToken)
 
-	rec := htDo(t, r, "POST", "/api/auth/oauth/callback", body, "")
+	rec := htDoOAuth(t, r, "POST", "/api/auth/oauth/callback", body, "")
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("want 400 (unknown provider), got %d: %s", rec.Code, rec.Body.String())
 	}
@@ -4305,7 +4306,7 @@ func TestOIDCCallback_OIDCDisabled(t *testing.T) {
 	state, _ := makeOAuthState("oidc", htSecret)
 	body := fmt.Sprintf(`{"code":"auth-code","state":%q}`, state)
 
-	rec := htDo(t, r, "POST", "/api/auth/oidc/callback", body, "")
+	rec := htDoOAuth(t, r, "POST", "/api/auth/oidc/callback", body, "")
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("want 400 (OIDC disabled), got %d: %s", rec.Code, rec.Body.String())
 	}
@@ -4333,7 +4334,7 @@ func TestOIDCCallback_ProviderUnreachable(t *testing.T) {
 	state, _ := makeOAuthState("oidc", htSecret)
 	body := fmt.Sprintf(`{"code":"code","state":%q}`, state)
 
-	rec := htDo(t, r, "POST", "/api/auth/oidc/callback", body, "")
+	rec := htDoOAuth(t, r, "POST", "/api/auth/oidc/callback", body, "")
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("want 500, got %d: %s", rec.Code, rec.Body.String())
 	}
