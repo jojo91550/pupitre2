@@ -37,6 +37,11 @@ type State struct {
 	// monolith (docs/specs/104-backend-in-process-calls.md).
 	Courses CourseSource
 
+	// Sessions, when set, is checked by every guard on every request
+	// (docs/specs/190-backend-defects.md B7). The monolith sets it to
+	// CheckSession.
+	Sessions middleware.SessionCheck
+
 	catalogOnce sync.Once
 }
 

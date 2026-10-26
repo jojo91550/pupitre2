@@ -46,10 +46,11 @@ func remoteIP(r *http.Request) (string, error) {
 // middleware, no /health or /metrics and no internal route: the monolith's
 // router owns those (docs/specs/103-backend-http-api.md).
 func RegisterRoutes(router chi.Router, state *State, cfg *config.Config) {
-	authMW := apimiddleware.Auth(cfg.JWTSecret)
-	adminMW := apimiddleware.Admin(cfg.JWTSecret)
-	managerMW := apimiddleware.Manager(cfg.JWTSecret)
-	exportMW := apimiddleware.ManagerOrAdmin(cfg.JWTSecret)
+	sessions := apimiddleware.WithSessionCheck(state.Sessions)
+	authMW := apimiddleware.Auth(cfg.JWTSecret, sessions)
+	adminMW := apimiddleware.Admin(cfg.JWTSecret, sessions)
+	managerMW := apimiddleware.Manager(cfg.JWTSecret, sessions)
+	exportMW := apimiddleware.ManagerOrAdmin(cfg.JWTSecret, sessions)
 
 	router.Group(func(group chi.Router) {
 		group.Use(chiMiddleware.RequestSize(maxRequestBodyBytes))
@@ -77,7 +78,11 @@ func registerPublicRoutes(router chi.Router, state *State, cfg *config.Config) {
 	// Rate-limited auth endpoints — set AUTH_RATE_LIMIT_REQUESTS=0 to disable.
 	router.Group(func(group chi.Router) {
 		if cfg.AuthRateLimitRequests > 0 {
-			group.Use(httprate.LimitBy(cfg.AuthRateLimitRequests, time.Duration(cfg.AuthRateLimitWindowSeconds)*time.Second, remoteIP))
+			window := time.Duration(cfg.AuthRateLimitWindowSeconds) * time.Second
+			group.Use(httprate.LimitBy(cfg.AuthRateLimitRequests, window, remoteIP))
+			// The same limit per email, whatever the address the attempts
+			// come from (docs/specs/190-backend-defects.md B12).
+			group.Use(limitByEmail(cfg.AuthRateLimitRequests, window))
 		}
 
 		group.Post("/api/auth/register", state.Register)
@@ -89,11 +94,12 @@ func registerPublicRoutes(router chi.Router, state *State, cfg *config.Config) {
 }
 
 // registerAuthenticatedRoutes wires routes that require a valid session.
-func registerAuthenticatedRoutes(router chi.Router, state *State, authMW func(http.Handler) http.Handler) { //nolint:dupl // authenticated and manager route groups share structural shape but serve different auth layers
+func registerAuthenticatedRoutes(router chi.Router, state *State, authMW func(http.Handler) http.Handler) {
 	router.Group(func(group chi.Router) {
 		group.Use(authMW)
 
 		group.Get("/api/auth/me", state.Me)
+		group.Post("/api/auth/logout", state.Logout)
 		group.Put("/api/auth/profile", state.UpdateProfile)
 		group.Put("/api/auth/password", state.ChangePassword)
 
@@ -174,7 +180,7 @@ func registerAdminRoutes(router chi.Router, state *State, adminMW func(http.Hand
 }
 
 // registerManagerRoutes wires routes restricted to manager users.
-func registerManagerRoutes(router chi.Router, state *State, managerMW func(http.Handler) http.Handler) { //nolint:dupl // see registerAuthenticatedRoutes
+func registerManagerRoutes(router chi.Router, state *State, managerMW func(http.Handler) http.Handler) {
 	router.Group(func(group chi.Router) {
 		group.Use(managerMW)
 

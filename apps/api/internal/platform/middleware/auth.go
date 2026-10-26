@@ -116,13 +116,48 @@ func GetClaims(req *http.Request) *Claims {
 	return nil
 }
 
+// Session is a signed-in user's state on the server, read on each request.
+type Session struct {
+	// Valid is false when the user no longer exists, is deactivated, or
+	// revoked the sessions the token belongs to.
+	Valid bool
+	// Role is the user's current role: it wins over the role in the token,
+	// so a demotion takes effect at once.
+	Role string
+}
+
+// SessionCheck reads the session of the user subject for a token issued at
+// issuedAt (docs/specs/190-backend-defects.md B7).
+type SessionCheck func(ctx context.Context, subject string, issuedAt time.Time) (Session, error)
+
+// Option tunes a guard.
+type Option func(*guardOptions)
+
+// guardOptions are the settings an Option changes.
+type guardOptions struct {
+	check SessionCheck
+}
+
+// WithSessionCheck makes the guard check, on every request, that the
+// token's user may still use it. A nil check is ignored.
+func WithSessionCheck(check SessionCheck) Option {
+	return func(options *guardOptions) {
+		options.check = check
+	}
+}
+
 // guard is the single authentication path used by every exported middleware
 // in this package: it verifies the bearer token, rejects a token that
 // carries no subject, and optionally enforces that the token's role is one
 // of allowedRoles. Keeping one implementation is deliberate — the previous
 // per-service copies of this logic drifted, and only some of them checked
 // the subject. An empty allowedRoles means authentication only.
-func guard(secret, forbiddenMsg string, allowedRoles ...string) func(http.Handler) http.Handler {
+func guard(secret, forbiddenMsg string, allowedRoles []string, opts []Option) func(http.Handler) http.Handler {
+	var options guardOptions
+	for _, opt := range opts {
+		opt(&options)
+	}
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
 			auth := req.Header.Get("Authorization")
@@ -149,6 +184,10 @@ func guard(secret, forbiddenMsg string, allowedRoles ...string) func(http.Handle
 				return
 			}
 
+			if options.check != nil && !applySession(resp, req, claims, options.check) {
+				return
+			}
+
 			if len(allowedRoles) > 0 && !slices.Contains(allowedRoles, claims.Role) {
 				httperr.Write(resp, http.StatusForbidden, forbiddenMsg)
 
@@ -161,25 +200,54 @@ func guard(secret, forbiddenMsg string, allowedRoles ...string) func(http.Handle
 	}
 }
 
+// applySession runs the session check of a verified token. It writes the
+// error response and returns false when the session is not valid; otherwise
+// it replaces the token's role with the user's current one.
+func applySession(resp http.ResponseWriter, req *http.Request, claims *Claims, check SessionCheck) bool {
+	var issuedAt time.Time
+	if claims.IssuedAt != nil {
+		issuedAt = claims.IssuedAt.Time
+	}
+
+	session, err := check(req.Context(), claims.Subject, issuedAt)
+	if err != nil {
+		zap.L().Error("session check failed", zap.Error(err))
+		httperr.Write(resp, http.StatusInternalServerError, "Session check failed")
+
+		return false
+	}
+
+	if !session.Valid {
+		httperr.Write(resp, http.StatusUnauthorized, "Session expired")
+
+		return false
+	}
+
+	// The role of the database, not the one frozen in the token.
+	claims.Role = session.Role
+
+	return true
+}
+
 // Auth returns middleware that requires a valid bearer token.
-func Auth(secret string) func(http.Handler) http.Handler {
-	return guard(secret, "")
+func Auth(secret string, opts ...Option) func(http.Handler) http.Handler {
+	return guard(secret, "", nil, opts)
 }
 
 // Manager returns middleware that requires a valid bearer token whose
 // claims carry the manager role.
-func Manager(secret string) func(http.Handler) http.Handler {
-	return guard(secret, "Manager access required", roleManager)
+func Manager(secret string, opts ...Option) func(http.Handler) http.Handler {
+	return guard(secret, "Manager access required", []string{roleManager}, opts)
 }
 
 // Admin returns middleware that requires a valid bearer token whose
 // claims carry the admin role.
-func Admin(secret string) func(http.Handler) http.Handler {
-	return guard(secret, "Admin access required", roleAdmin)
+func Admin(secret string, opts ...Option) func(http.Handler) http.Handler {
+	return guard(secret, "Admin access required", []string{roleAdmin}, opts)
 }
 
 // ManagerOrAdmin returns middleware that requires a valid bearer token whose
 // claims carry either the manager or admin role.
-func ManagerOrAdmin(secret string) func(http.Handler) http.Handler {
-	return guard(secret, "Manager or admin access required", roleManager, roleAdmin)
+func ManagerOrAdmin(secret string, opts ...Option) func(http.Handler) http.Handler {
+	return guard(secret, "Manager or admin access required", []string{roleManager, roleAdmin}, opts)
 }

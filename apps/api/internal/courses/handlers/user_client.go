@@ -62,6 +62,9 @@ type UserProgress interface {
 	MarkCourseComplete(ctx context.Context, completion CourseCompletion) error
 	// RecordModule records a quiz or lab result and its XP.
 	RecordModule(ctx context.Context, result ModuleResult) error
+	// LabIdentity returns the login the identity provider gave the user,
+	// or "" (docs/specs/190-backend-defects.md B11).
+	LabIdentity(ctx context.Context, userID string) (string, error)
 }
 
 // ProgressOverview is one learner's progress in one course, as
@@ -136,6 +139,9 @@ func (noUsers) MarkCourseComplete(context.Context, CourseCompletion) error { ret
 
 // RecordModule implements UserProgress.
 func (noUsers) RecordModule(context.Context, ModuleResult) error { return errNoUsers }
+
+// LabIdentity implements UserProgress.
+func (noUsers) LabIdentity(context.Context, string) (string, error) { return "", errNoUsers }
 
 // postInternalTimeout bounds a detached write to user-service, so a slow or
 // unreachable dependency cannot leak goroutines indefinitely.

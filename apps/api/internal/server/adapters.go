@@ -105,6 +105,11 @@ func (a *usersProgress) MarkCourseComplete(ctx context.Context, completion cours
 	})
 }
 
+// LabIdentity implements courseshandlers.UserProgress.
+func (a *usersProgress) LabIdentity(ctx context.Context, userID string) (string, error) {
+	return a.users.LabIdentity(ctx, userID) //nolint:wrapcheck // same-process call, already wrapped
+}
+
 // RecordModule implements courseshandlers.UserProgress.
 func (a *usersProgress) RecordModule(ctx context.Context, result courseshandlers.ModuleResult) error {
 	return a.users.RecordModuleProgress(ctx, usershandlers.ModuleResult{ //nolint:wrapcheck // same-process call, already wrapped

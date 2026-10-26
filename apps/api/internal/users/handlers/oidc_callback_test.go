@@ -465,3 +465,47 @@ func TestOIDCCallback_UserInfoEnrichment(t *testing.T) {
 		t.Errorf("email = %q, want the UserInfo value", resp.User.Email)
 	}
 }
+
+// TestOIDCCallback_RecordsIdentityName checks defect B11: an OIDC sign-in
+// records the provider's preferred_username, the lab identity, which the
+// user cannot change afterwards by editing their profile username.
+func TestOIDCCallback_RecordsIdentityName(t *testing.T) {
+	t.Parallel()
+
+	idp := newMockIdP(t)
+	idp.idTokenClaims = jwt.MapClaims{
+		"sub":                "oidc-user-77",
+		"email":              "lab.learner@example.com",
+		"name":               "Lab Learner",
+		"preferred_username": "lab.learner",
+	}
+
+	s := oidcTestState(idp)
+	router := BuildRouter(s, s.Config, false)
+
+	state, err := makeOAuthState(oidcProviderKey, s.oauthStateSecret())
+	if err != nil {
+		t.Fatalf("makeOAuthState: %v", err)
+	}
+
+	rec := htDo(t, router, http.MethodPost, "/api/auth/oidc/callback", `{"code":"c","state":"`+state+`"}`, "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("callback: %d %s", rec.Code, rec.Body.String())
+	}
+
+	var resp struct {
+		User struct {
+			ID string `json:"id"`
+		} `json:"user"`
+	}
+
+	err = json.NewDecoder(rec.Body).Decode(&resp)
+	if err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+
+	name, err := s.LabIdentity(t.Context(), resp.User.ID)
+	if err != nil || name != "lab.learner" {
+		t.Fatalf("LabIdentity = %q, %v; want lab.learner", name, err)
+	}
+}

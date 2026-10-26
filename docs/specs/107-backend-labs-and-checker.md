@@ -48,7 +48,10 @@ pipelineStatus, commits[] {message}}`, `mergedMrCount`, `files {name: content}`.
 | `gitlab_conventional_commit_on_branch` | a conventional commit exists on the branch |
 
 The project's last path segment must be the learner's username, and only MRs authored by the
-learner count. GitLab lists are paginated by 100 and read to the end. The base branch defaults to
+learner count. That username is the login the identity provider gave at the learner's last OIDC
+sign-in (`preferred_username`, stored as `identityname`), never the profile username, which the
+learner can change; a learner without one gets `403` ([190](190-backend-defects.md) B11). The same
+username fills the `{{ .Username }}` of `check.yaml` and of the step parameters. GitLab lists are paginated by 100 and read to the end. The base branch defaults to
 `main`. Messages are the French messages of `step.go`.
 
 ## Isolation and limits

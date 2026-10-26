@@ -3,6 +3,8 @@ package db
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"strings"
@@ -20,11 +22,11 @@ const (
 	defaultAdminEmail = "admin@pupitre.local"
 	// defaultAdminUsername is the username of the bootstrapped admin account.
 	defaultAdminUsername = "admin"
-	// defaultAdminHash is the bcrypt hash of "Admin@1234" (cost 12).
-	// Used only as a last-resort fallback when no ADMIN_PASSWORD is configured.
-	defaultAdminHash = "$2y$12$U6BVYjCKzHaIu2VrJNHDhuBUNTiOrcP0xoovwKbGSvOMd29qwZz.y"
 	// bcryptCost is the work factor used when hashing a cleartext password.
 	bcryptCost = 12
+	// randomAdminPasswordBytes is the entropy of the password given to an
+	// admin account created without ADMIN_PASSWORD.
+	randomAdminPasswordBytes = 32
 	// adminPasswordPollInterval is how often WatchAdminPassword rereads the
 	// admin password file for changes.
 	adminPasswordPollInterval = 30 * time.Second
@@ -79,6 +81,24 @@ func WatchAdminPassword(ctx context.Context, users repository.UserRepository, fi
 	}
 }
 
+// randomPasswordHash returns the bcrypt hash of a random password that is
+// discarded at once.
+func randomPasswordHash() (string, error) {
+	secret := make([]byte, randomAdminPasswordBytes)
+
+	_, err := rand.Read(secret)
+	if err != nil {
+		return "", fmt.Errorf("generate admin password: %w", err)
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(base64.RawURLEncoding.EncodeToString(secret)), bcryptCost)
+	if err != nil {
+		return "", fmt.Errorf("hash admin password: %w", err)
+	}
+
+	return string(hash), nil
+}
+
 // SeedAdmin ensures the default admin user exists and carries the configured
 // password hash.  It is called once at startup, after migrations.
 //
@@ -88,14 +108,16 @@ func WatchAdminPassword(ctx context.Context, users repository.UserRepository, fi
 //     pre-hashed value under the same ADMIN_PASSWORD key).
 //  2. If adminPassword is a non-empty plaintext string it is bcrypt-hashed
 //     (cost 12) before being stored.
-//  3. If adminPassword is empty the hardcoded default hash is used and a loud
-//     warning is logged — intended only for local development.
+//  3. If adminPassword is empty, an admin account created now gets a random
+//     password that nobody knows, and a warning says to set ADMIN_PASSWORD.
+//     There is no default password any more (docs/specs/190-backend-defects.md
+//     B5): the well-known Admin@1234 opened every unconfigured instance.
 //
 // Behaviour on conflict (admin email already exists):
 //   - If a custom password was provided (cases 1 or 2) the hash is always
 //     updated so deployers can rotate the credential by restarting the pod.
 //   - If no password was provided (case 3) the existing row is left untouched
-//     so a previously changed password is not overwritten.
+//     so a previously set password is not overwritten.
 func SeedAdmin(ctx context.Context, users repository.UserRepository, adminPassword string) error {
 	var hash string
 
@@ -120,12 +142,18 @@ func SeedAdmin(ctx context.Context, users repository.UserRepository, adminPasswo
 		zap.L().Info("admin seeding: hashed ADMIN_PASSWORD, updating admin account")
 
 	default:
-		// No password configured — fall back to the hardcoded default.
-		hash = defaultAdminHash
+		// No password configured: a random one, never shown, so the account
+		// cannot be signed into until ADMIN_PASSWORD is set.
+		random, err := randomPasswordHash()
+		if err != nil {
+			return err
+		}
+
+		hash = random
 		useDefault = true
 
-		zap.L().Warn("ADMIN_PASSWORD is not set — using the default password 'Admin@1234'. " +
-			"Set ADMIN_PASSWORD to a strong secret before going to production.")
+		zap.L().Warn("ADMIN_PASSWORD is not set: the admin account keeps its password, " +
+			"or gets a random one if it is created now. Set ADMIN_PASSWORD to sign in as admin.")
 	}
 
 	if useDefault {

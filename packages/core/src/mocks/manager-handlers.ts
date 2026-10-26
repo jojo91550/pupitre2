@@ -209,7 +209,10 @@ function exportHandlers(base: string, defs: ExportDef[], roles: string[]) {
     const def = defs.find((d) => d.id === body.category);
     if (!def) return { error: apiError(400, body.category ? `unknown category: ${body.category}` : 'Catégorie requise') };
     const fields = (body.fields?.length ? body.fields : def.defaultFields).filter((f) => def.fields.some((d) => d.id === f));
-    return { def, fields, rows: filtered(def, body.filters ?? {}) };
+    // A manager exports the members of their groups only (exports.go — exportScope).
+    const scope = guard.user.role === 'manager' ? scopeUserIds(guard.user.id) : null;
+    const rows = filtered(def, body.filters ?? {}).filter((row) => !scope || scope.has(row.id ?? row.userid ?? ''));
+    return { def, fields, rows };
   };
   return [
     http.get(`${base}/categories`, ({ request }) => {
@@ -366,14 +369,15 @@ export const managerHandlers = [
     return HttpResponse.json({ members: group.memberIds.flatMap((id) => toScopeUser(id) ?? []) });
   }),
 
-  // Like the Go handler, any existing user id is accepted (audit finding H2).
+  // Like the Go handler, only a user already in the manager's scope (manager.go — callerScope).
   http.post('/api/manager/groups/:groupId/members', async ({ request, params }) => {
     const guard = requireRole(request, ['manager']);
     if ('error' in guard) return guard.error;
     const group = ownedGroup(guard.user.id, String(params.groupId));
     if (!group) return apiError(403, 'Group not in manager scope');
     const userId = await userIdOf(request);
-    if (!findAccount(userId)) return apiError(404, 'User not found');
+    if (!userId) return apiError(400, 'userId required');
+    if (!scopeUserIds(guard.user.id).has(userId)) return apiError(403, 'User not in manager scope');
     if (!group.memberIds.includes(userId)) group.memberIds.push(userId);
     save();
     return HttpResponse.json({ message: 'Member added' });
@@ -446,13 +450,19 @@ export const managerHandlers = [
     http.get(`/api/${role}/session-bookings/:slug/:sessionId`, ({ request, params }) => {
       const guard = requireRole(request, [role]);
       if ('error' in guard) return guard.error;
-      return HttpResponse.json({ participants: participants(String(params.slug), String(params.sessionId)) });
+      // A manager sees the participants of their scope only (sessions.go).
+      const scope = role === 'manager' ? scopeUserIds(guard.user.id) : null;
+      const list = participants(String(params.slug), String(params.sessionId)).filter((p) => !scope || scope.has(p.userId));
+      return HttpResponse.json({ participants: list });
     }),
     http.patch(`/api/${role}/session-bookings/:slug/:sessionId/:userId/presence`, async ({ request, params }) => {
       const guard = requireRole(request, [role]);
       if ('error' in guard) return guard.error;
       const body = (await request.json().catch(() => null)) as { present?: unknown } | null;
       if (!body || typeof body.present !== 'boolean') return apiError(400, 'Invalid request body');
+      if (role === 'manager' && !scopeUserIds(guard.user.id).has(String(params.userId))) {
+        return apiError(403, 'User not in manager scope');
+      }
       db().presence[`${params.slug}|${params.sessionId}|${params.userId}`] = body.present;
       save();
       return HttpResponse.json({ ok: true });

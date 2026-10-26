@@ -123,7 +123,7 @@ type Config struct {
 	//  1. ADMIN_PASSWORD_FILE — path to a mounted secret file (K8s volume).
 	//     The file is watched for changes so no pod restart is needed.
 	//  2. ADMIN_PASSWORD — direct env var (set once at startup).
-	//  3. Neither set — hardcoded default "Admin@1234" with a loud warning.
+	//  3. Neither set — a new admin account gets a random, unknown password.
 	AdminPassword     string `yaml:"-"`
 	AdminPasswordFile string `yaml:"-"` // path to the mounted secret file, if any
 	// OIDC holds deploy-time OIDC configuration (Helm). Seeded into

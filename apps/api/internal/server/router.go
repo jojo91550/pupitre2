@@ -13,6 +13,7 @@ import (
 	"go.uber.org/zap"
 
 	courseshandlers "github.com/jojo91550/pupitre2/apps/api/internal/courses/handlers"
+	"github.com/jojo91550/pupitre2/apps/api/internal/platform/clientip"
 	"github.com/jojo91550/pupitre2/apps/api/internal/platform/config"
 	"github.com/jojo91550/pupitre2/apps/api/internal/platform/metrics"
 	usershandlers "github.com/jojo91550/pupitre2/apps/api/internal/users/handlers"
@@ -36,8 +37,9 @@ type Domains struct {
 func BuildRouter(domains Domains, cfg *config.Config, withLogger bool) *chi.Mux {
 	router := chi.NewRouter()
 	router.Use(chiMiddleware.RequestID)
-	//nolint:staticcheck // SA1019: RealIP deprecation acknowledged — the API runs behind a trusted reverse proxy that sets X-Forwarded-For; the value is used for logging/rate-limiting only.
-	router.Use(chiMiddleware.RealIP)
+	// The client address, from the forwarding headers of trusted proxies
+	// only (docs/specs/190-backend-defects.md B12).
+	router.Use(clientip.Middleware(cfg.TrustedProxies))
 
 	if withLogger {
 		router.Use(chiMiddleware.Logger)

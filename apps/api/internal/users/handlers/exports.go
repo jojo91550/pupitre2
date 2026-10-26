@@ -73,7 +73,12 @@ func (s *State) ExportPreview(writer http.ResponseWriter, req *http.Request) {
 	sqlFields, virtualFields := splitVirtualFields(body.Fields)
 	fetchFields, helperFields := buildFetchFields(sqlFields, virtualFields)
 
-	headers, rows, total, err := s.Repos.Export.FetchRows(req.Context(), body.Category, fetchFields, body.Filters, previewLimit)
+	scope, ok := s.exportScope(writer, req)
+	if !ok {
+		return
+	}
+
+	headers, rows, total, err := s.Repos.Export.FetchRows(req.Context(), body.Category, fetchFields, body.Filters, scope, previewLimit)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "unknown") {
 			s.Error(writer, http.StatusBadRequest, err.Error())
@@ -100,6 +105,26 @@ func (s *State) ExportPreview(writer http.ResponseWriter, req *http.Request) {
 	})
 }
 
+// exportScope is what the caller may export: everything for an admin, the
+// members of their groups for a manager (docs/specs/190-backend-defects.md
+// B6). It writes the error response and returns ok=false on failure.
+func (s *State) exportScope(writer http.ResponseWriter, req *http.Request) (repository.ExportScope, bool) {
+	claims := s.claims(req)
+	if claims.Role != groupsRoleManager {
+		return repository.Unrestricted, true
+	}
+
+	groups, err := s.Repos.Groups.GetGroupsByUserID(req.Context(), claims.Subject)
+	if err != nil {
+		zap.L().Error("load manager scope for export", zap.Error(err))
+		s.Error(writer, http.StatusInternalServerError, "Database error")
+
+		return repository.ExportScope{}, false
+	}
+
+	return repository.ExportScope{Restricted: true, GroupIDs: managerScopeIDs(groups)}, true
+}
+
 // ExportDownload streams the full dataset as UTF-8 CSV and logs the download.
 func (s *State) ExportDownload(writer http.ResponseWriter, req *http.Request) {
 	claims := s.claims(req)
@@ -119,6 +144,11 @@ func (s *State) ExportDownload(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	scope, ok := s.exportScope(writer, req)
+	if !ok {
+		return
+	}
+
 	filename := fmt.Sprintf("%s-export-%s.csv", body.Category, time.Now().Format(time.DateOnly))
 
 	writer.Header().Set("Content-Type", "text/csv; charset=utf-8")
@@ -133,9 +163,9 @@ func (s *State) ExportDownload(writer http.ResponseWriter, req *http.Request) {
 	var writeErr error
 
 	if len(virtualFields) == 0 {
-		rowCount, writeErr = s.Repos.Export.WriteCSV(req.Context(), writer, body.Category, body.Fields, body.Filters)
+		rowCount, writeErr = s.Repos.Export.WriteCSV(req.Context(), writer, body.Category, body.Fields, body.Filters, scope)
 	} else {
-		rowCount, writeErr = s.writeEnrichedCSV(req.Context(), writer, body.Category, body.Fields, sqlFields, virtualFields, body.Filters)
+		rowCount, writeErr = s.writeEnrichedCSV(req.Context(), writer, body.Category, body.Fields, sqlFields, virtualFields, body.Filters, scope)
 	}
 
 	if writeErr != nil {
@@ -176,6 +206,7 @@ func (s *State) writeEnrichedCSV(
 	sqlFields []string,
 	virtualFields []string,
 	filters map[string]string,
+	scope repository.ExportScope,
 ) (int, error) {
 	fetchFields, _ := buildFetchFields(sqlFields, virtualFields)
 	enrich := s.rowEnricher(ctx, virtualFields)
@@ -191,7 +222,7 @@ func (s *State) writeEnrichedCSV(
 	rowCount := 0
 	record := make([]string, len(origFields))
 
-	_, streamErr := s.Repos.Export.StreamRows(ctx, category, fetchFields, filters,
+	_, streamErr := s.Repos.Export.StreamRows(ctx, category, fetchFields, filters, scope,
 		func(rowData map[string]string) error {
 			enrich(rowData)
 

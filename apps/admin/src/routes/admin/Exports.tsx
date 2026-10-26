@@ -4,7 +4,6 @@ import { toast } from 'sonner';
 
 import { exportCategories, exportDownload, exportPreview, type ExportSource } from '@pupitre/core/lib/api';
 import type { ExportCategory, ExportRequest } from '@pupitre/core/lib/api-types';
-import { useCurrentUser } from '@pupitre/core/lib/session';
 
 // /admin/exports (docs/specs/047-admin-exports-and-labs.md), markup of pupitre's
 // admin/exports/index.astro. Two sources: user-service and the lab checks of
@@ -71,7 +70,6 @@ function FilterControl({
 }
 
 export function Exports() {
-  const isManager = useCurrentUser()?.role === 'manager';
   // A source the user may not read (lab checks are admin-only) is left out.
   const sources = useQueries({
     queries: SOURCES.map((source) => ({
@@ -128,12 +126,6 @@ export function Exports() {
           {download.isPending ? 'Téléchargement…' : '⬇ Télécharger'}
         </button>
       </div>
-
-      {isManager && (
-        <div className="sso-notice mb-5" role="note">
-          Cet export n'est pas encore limité à votre périmètre.
-        </div>
-      )}
 
       {loading ? (
         <div className="loading-state !py-12 !px-0">

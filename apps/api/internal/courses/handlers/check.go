@@ -60,17 +60,6 @@ func (s *State) CheckModule(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// preferred_username from Keycloak maps to the GitLab username
-	username := claims.PreferredUsername
-	if username == "" {
-		username = claims.Subject
-	}
-	// display name for traceability: prefer email over opaque UUID
-	displayName := claims.Email
-	if displayName == "" {
-		displayName = username
-	}
-
 	mod, idx, success := s.resolveLabModule(writer, req, course, indexStr)
 	if !success {
 		return
@@ -79,6 +68,17 @@ func (s *State) CheckModule(writer http.ResponseWriter, req *http.Request) {
 	spec, success := s.fetchCheckSpec(req.Context(), writer, mod)
 	if !success {
 		return
+	}
+
+	username, identified := s.labUsername(writer, req)
+	if !identified {
+		return
+	}
+
+	// display name for traceability: prefer email over opaque UUID
+	displayName := claims.Email
+	if displayName == "" {
+		displayName = username
 	}
 
 	token := s.tokenForRepo(mod.Src)
@@ -166,6 +166,28 @@ func (s *State) fetchCheckSpec(ctx context.Context, writer http.ResponseWriter, 
 	return spec, true
 }
 
+// labUsername is the learner's GitLab username: the login the identity
+// provider gave them, not the profile username, which they can change
+// (docs/specs/190-backend-defects.md B11). It writes the error response and
+// returns ok=false when there is none.
+func (s *State) labUsername(writer http.ResponseWriter, req *http.Request) (string, bool) {
+	name, err := s.users().LabIdentity(req.Context(), s.claims(req).Subject)
+	if err != nil {
+		zap.L().Error("load lab identity", zap.Error(err))
+		s.Error(writer, http.StatusInternalServerError, internalErrorMessage)
+
+		return "", false
+	}
+
+	if name == "" {
+		s.Error(writer, http.StatusForbidden, "GitLab labs need a sign-in through the identity provider")
+
+		return "", false
+	}
+
+	return name, true
+}
+
 // callChecker sends req to checker-service's /evaluate route and returns
 // the decoded response, writing an HTTP error and returning ok=false on
 // any failure.
@@ -215,16 +237,10 @@ func (s *State) CheckModuleStep(writer http.ResponseWriter, req *http.Request) {
 	courseSlug := param(req, "slug")
 	indexStr := param(req, "index")
 	stepIndexStr := param(req, "stepIndex")
-	claims := s.claims(req)
 
 	course, found := s.course(writer, req, courseSlug)
 	if !found {
 		return
-	}
-
-	username := claims.PreferredUsername
-	if username == "" {
-		username = claims.Subject
 	}
 
 	mod, _, success := s.resolveLabModule(writer, req, course, indexStr)
@@ -242,6 +258,11 @@ func (s *State) CheckModuleStep(writer http.ResponseWriter, req *http.Request) {
 	if err != nil || stepIdx < 0 || stepIdx >= len(mod.Steps) {
 		s.Error(writer, http.StatusNotFound, "Step not found")
 
+		return
+	}
+
+	username, identified := s.labUsername(writer, req)
+	if !identified {
 		return
 	}
 

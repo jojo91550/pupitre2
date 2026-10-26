@@ -72,7 +72,7 @@ this is checked by a test against a database migrated by the `3cdf7b2` code
 
 | Step | Condition | Origin | Effect |
 | --- | --- | --- | --- |
-| Bootstrap admin | Always | user-service `SeedAdmin` | Creates or updates the `admin` account from `ADMIN_PASSWORD` (clear text or a bcrypt hash); without it, uses `Admin@1234` and logs a warning |
+| Bootstrap admin | Always | user-service `SeedAdmin` | Creates or updates the `admin` account from `ADMIN_PASSWORD` (clear text or a bcrypt hash); without it, creates the account with a random password nobody knows, logs a warning, and leaves an existing account as it is |
 | Admin password watch | `ADMIN_PASSWORD_FILE` set | user-service `WatchAdminPassword` | Re-applies the password when the mounted file changes |
 | OIDC settings | Always | user-service `SeedOIDC` | Writes the `oidc_*` settings from `OIDC_*` variables ([105](105-backend-authentication.md)) |
 | Demo users and progress | `SEED_MOCK_DATA=true` | user-service `SeedMockData` | Errors are logged, not fatal |
@@ -81,7 +81,9 @@ this is checked by a test against a database migrated by the `3cdf7b2` code
 The order is: migrations, then courses seed, then users seed, so demo progress can refer to demo
 courses. Every step stays idempotent.
 
-The default admin password is a known defect ([190](190-backend-defects.md) B5).
+The fixes of [190](190-backend-defects.md) added two nullable columns to `users`, created by
+AutoMigrate: `sessionsvalidafter` (B7, the revocation date of the user's tokens) and
+`identityname` (B11, the identity provider's login).
 
 ## Connection pool
 

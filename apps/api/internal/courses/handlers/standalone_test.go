@@ -40,7 +40,9 @@ func checkerAt(baseURL string) LabChecker { //nolint:ireturn // test helper
 }
 
 // withPeers attaches the test servers standing in for the other domains to
-// a State; an empty URL leaves that domain unwired.
+// a State; an empty URL leaves that domain unwired. With a checker, the
+// student of authHeader also gets the identity-provider login lab checks
+// need (docs/specs/190-backend-defects.md B11).
 func withPeers(s *State, usersURL, checkerURL string) *State {
 	if usersURL != "" {
 		s.Users = usersAt(usersURL)
@@ -48,9 +50,32 @@ func withPeers(s *State, usersURL, checkerURL string) *State {
 
 	if checkerURL != "" {
 		s.Checker = checkerAt(checkerURL)
+
+		base := s.Users
+		if base == nil {
+			base = noUsers{}
+		}
+
+		s.Users = identityUsers{UserProgress: base, name: testLabIdentity}
 	}
 
 	return s
+}
+
+// testLabIdentity is the identity-provider login of the student of
+// authHeader, the same as their username.
+const testLabIdentity = "testuser"
+
+// identityUsers adds a learner's identity-provider login to a users domain.
+type identityUsers struct {
+	UserProgress
+
+	name string
+}
+
+// LabIdentity implements UserProgress.
+func (u identityUsers) LabIdentity(context.Context, string) (string, error) {
+	return u.name, nil
 }
 
 // BuildRouter constructs the course-service chi router, wiring public
@@ -173,6 +198,12 @@ func (c *httpUserProgress) MarkCourseComplete(ctx context.Context, completion Co
 // RecordModule implements UserProgress.
 func (c *httpUserProgress) RecordModule(ctx context.Context, result ModuleResult) error {
 	return c.postInternal(ctx, "/internal/progress/module", result)
+}
+
+// LabIdentity implements UserProgress: user-service had no such route; the
+// tests that need an identity use withPeers with a checker.
+func (c *httpUserProgress) LabIdentity(context.Context, string) (string, error) {
+	return "", nil
 }
 
 // internalURL builds a user-service internal URL with the given query

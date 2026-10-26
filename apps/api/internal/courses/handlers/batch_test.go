@@ -141,3 +141,38 @@ func TestBatchRoutes_RejectTooManySlugs(t *testing.T) {
 		t.Errorf("want 400 past the slug cap, got %d", status)
 	}
 }
+
+// TestBatchCourses_PublicRouteHidesPrivateCourses is the regression test for
+// defect B10: the public batch route listed private courses, while the
+// in-process lookup of the users domain must still see them.
+func TestBatchCourses_PublicRouteHidesPrivateCourses(t *testing.T) {
+	t.Parallel()
+
+	courses := []*content.Course{
+		{Slug: "open", Title: "Open", IsPublic: true},
+		{Slug: "closed", Title: "Closed", IsPublic: false},
+	}
+
+	status, body := getJSON(t, batchRouter(courses...), "/api/batch/courses?slugs=open,closed")
+	if status != http.StatusOK {
+		t.Fatalf("batch courses: status %d", status)
+	}
+
+	var listed []CourseResponse
+
+	err := json.Unmarshal(body["courses"], &listed)
+	if err != nil {
+		t.Fatalf("decode courses: %v", err)
+	}
+
+	if len(listed) != 1 || listed[0].Slug != "open" {
+		t.Fatalf("public batch route listed %+v, want the public course only", listed)
+	}
+
+	cfg := &config.Config{JWTSecret: "test-secret"}
+
+	all, err := newStateWith(cfg, courses...).BatchCourses(t.Context(), []string{"open", "closed"})
+	if err != nil || len(all) != 2 {
+		t.Fatalf("in-process BatchCourses = %d courses, %v; want both", len(all), err)
+	}
+}

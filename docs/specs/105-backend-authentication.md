@@ -33,6 +33,21 @@ Guards, one implementation for every route:
 Roles are `student`, `manager` and `admin`. Group roles (manager of a group) are checked by the
 handlers, not by the guards.
 
+### Session check and revocation
+
+Since [190](190-backend-defects.md) B7, every guard also reads the user's row (one primary-key
+read per request):
+
+- an unknown or deactivated user, or a token issued at or before the user's
+  `sessionsvalidafter`, is refused with `401 Session expired`;
+- the role checked is the row's, not the token's, so a role change takes effect at once;
+- `POST /api/auth/logout`, a password change and a deactivation set `sessionsvalidafter` to now:
+  every token issued until then stops working. JWT times have a one-second resolution, so a token
+  issued in the same second is revoked too.
+
+Tokens issued before the fix have no revocation date to compare with and stay valid until they
+expire.
+
 ## Sign-in methods
 
 All the routes are in [103](103-backend-http-api.md), under `/api/auth`.
@@ -92,9 +107,15 @@ For OIDC, UserInfo claims win over ID token claims.
 
 ## Rate limits
 
-`register`, `login`, `oauth/callback`, `oidc/callback` and `ldap/login` are limited per client IP
-(after `RealIP`): `AUTH_RATE_LIMIT_REQUESTS` per `AUTH_RATE_LIMIT_WINDOW_SECONDS`, 10 per 60 s
-by default, `429` beyond. The limiter is in memory, per replica, as before.
+`register`, `login`, `oauth/callback`, `oidc/callback` and `ldap/login` are limited per client IP:
+`AUTH_RATE_LIMIT_REQUESTS` per `AUTH_RATE_LIMIT_WINDOW_SECONDS`, 10 per 60 s by default, `429`
+beyond. The same limit applies per email named in the body, whatever the address the attempts come
+from. The limiters are in memory, per replica.
+
+The client IP is the peer's address, unless the peer is in `TRUSTED_PROXIES`: then it is the
+right-most address of `X-Forwarded-For` that is not a trusted proxy, or `X-Real-IP`
+([190](190-backend-defects.md) B12). A client cannot choose its address by sending the header
+itself.
 
 ## Acceptance criteria
 

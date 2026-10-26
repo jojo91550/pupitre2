@@ -635,12 +635,37 @@ func TestManagerAddGroupMember_MissingUserID(t *testing.T) {
 func TestManagerAddGroupMember_Success(t *testing.T) {
 	t.Parallel()
 
+	// A second group of the manager: the student, in scope through the
+	// first group, may be added to it.
 	repos := seedManagerRepos(t)
+
+	groups, ok := repos.Groups.(*fake.GroupRepository)
+	if !ok {
+		t.Fatal("seedManagerRepos must use the fake group repository")
+	}
+
+	secondGroup := uuid.MustParse("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee")
+	groups.Groups = append(groups.Groups, models.Group{ID: secondGroup, Name: "team-b", Source: "local"})
+	groups.UserGroup = append(groups.UserGroup, models.UserGroup{UserID: htManagerID, GroupID: secondGroup})
+
 	r := newTestRouterWithRepos(repos)
 
-	rec := htDo(t, r, "POST", "/api/manager/groups/"+htGroupID+"/members", `{"userId":"`+htOutsideID+`"}`, htAuthHeaderForSubject(t, "manager", htManagerID))
+	rec := htDo(t, r, "POST", "/api/manager/groups/"+secondGroup.String()+"/members", `{"userId":"`+htStudentID+`"}`, htAuthHeaderForSubject(t, "manager", htManagerID))
 	if rec.Code != http.StatusOK {
 		t.Errorf("want 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+// TestManagerAddGroupMember_OutOfScope is the regression test for defect B6:
+// a manager cannot pull a user from outside their scope into their group.
+func TestManagerAddGroupMember_OutOfScope(t *testing.T) {
+	t.Parallel()
+
+	r := newTestRouterWithRepos(seedManagerRepos(t))
+
+	rec := htDo(t, r, "POST", "/api/manager/groups/"+htGroupID+"/members", `{"userId":"`+htOutsideID+`"}`, htAuthHeaderForSubject(t, "manager", htManagerID))
+	if rec.Code != http.StatusForbidden {
+		t.Errorf("want 403, got %d: %s", rec.Code, rec.Body.String())
 	}
 }
 

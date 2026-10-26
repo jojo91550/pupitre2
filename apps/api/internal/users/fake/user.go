@@ -365,6 +365,85 @@ func (f *UserRepository) LinkProviderIdentity(
 	return &cp, nil
 }
 
+// SessionState returns the session fields of the user, or ErrUserNotFound.
+func (f *UserRepository) SessionState(_ context.Context, userID uuid.UUID) (*repository.SessionState, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if f.Err != nil {
+		return nil, f.Err
+	}
+
+	idx := f.findIndexByID(userID)
+	if idx < 0 {
+		return nil, repository.ErrUserNotFound
+	}
+
+	user := f.users[idx]
+
+	return &repository.SessionState{Role: user.Role, IsActive: user.IsActive, SessionsValidAfter: user.SessionsValidAfter}, nil
+}
+
+// RevokeSessions records the revocation date of the user.
+func (f *UserRepository) RevokeSessions(_ context.Context, userID uuid.UUID, validAfter time.Time) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if f.Err != nil {
+		return f.Err
+	}
+
+	idx := f.findIndexByID(userID)
+	if idx < 0 {
+		return repository.ErrUserNotFound
+	}
+
+	f.users[idx].SessionsValidAfter = &validAfter
+
+	return nil
+}
+
+// SetIdentityName records the identity name of the user signed in through
+// provider as providerUserID.
+func (f *UserRepository) SetIdentityName(_ context.Context, provider, providerUserID, name string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if f.Err != nil {
+		return f.Err
+	}
+
+	for idx := range f.users {
+		user := &f.users[idx]
+		if user.AuthProvider == provider && user.ProviderUserID != nil && *user.ProviderUserID == providerUserID {
+			user.IdentityName = &name
+		}
+	}
+
+	return nil
+}
+
+// IdentityName returns the identity name of the user, or "".
+func (f *UserRepository) IdentityName(_ context.Context, userID uuid.UUID) (string, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if f.Err != nil {
+		return "", f.Err
+	}
+
+	idx := f.findIndexByID(userID)
+	if idx < 0 {
+		return "", repository.ErrUserNotFound
+	}
+
+	if f.users[idx].IdentityName == nil {
+		return "", nil
+	}
+
+	return *f.users[idx].IdentityName, nil
+}
+
 // UpdateSSORole synchronizes a role derived from an SSO identity provider.
 func (f *UserRepository) UpdateSSORole(_ context.Context, userID uuid.UUID, role string) (*models.User, error) {
 	f.mu.Lock()
