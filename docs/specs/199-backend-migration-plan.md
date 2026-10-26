@@ -62,6 +62,9 @@ B5, B6, B7, B12, B11, B10, then the others. Each one updates 190.
 
 ## B4 - Deployment
 
+- First, the images: the frontend image and the release workflows that publish both images to
+  GHCR on a tag ([108](108-backend-operations-and-testing.md), "Releases"). A first tag gives the
+  chart versions to pin.
 - The Helm chart (its own repository) deploys one API and the frontend image
   ([108](108-backend-operations-and-testing.md)).
 - Switch-over on an existing installation: deploy the monolith on the same database with the

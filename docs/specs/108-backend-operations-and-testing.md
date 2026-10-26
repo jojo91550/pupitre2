@@ -53,14 +53,21 @@ target, `VITE_API_URL` (default `http://localhost:8080`). `VITE_USER_SERVICE_URL
 
 ## Image
 
-- One `apps/api/Dockerfile`, built from `apps/api`: build stage on `golang:1.26.7-alpine` with
+- One `apps/api/Dockerfile`, built from `apps/api`: build stage on `golang:1.26.10-alpine` with
   module and build caches, `CGO_ENABLED=0`, `-ldflags="-s -w"`; runtime stage `FROM scratch`
   with the CA certificates, user `1000:1000`, `EXPOSE 8080`, no `ENV` defaults (they live in the
   code, [101](101-backend-configuration.md)). About 46 MB.
 - The deployment mounts the writable paths: `/tmp` (git cache) and `UPLOADS_DIR`.
 - Image name `pupitre-api`. It replaces `user-service`, `course-service` and `checker-service`.
-- The frontend image (the two apps behind one static server) is a separate deliverable, specified
-  with the deployment batch of [199](199-backend-migration-plan.md).
+- The frontend image, `pupitre-front`: `docker/front/Dockerfile`, built from the repository root
+  (`docker build -f docker/front/Dockerfile .`). A `node:24` stage installs the two apps with
+  pnpm and builds them; the runtime stage is `nginx-unprivileged` (user 101), listening on
+  **3000** like the reference's frontend, with no configuration at run time (the apps read none).
+  `docker/front/nginx.conf` routes `/admin/*` and `/manager/*` to the admin app's page and every
+  other path to the learner app's ([000](000-scope-and-stack.md)), sends the headers of
+  [003](003-security.md) S6 on every response, never caches the pages and caches the hashed
+  assets for a year. `/api` and `/uploads` are routed to `pupitre-api` by the ingress, not by this
+  server. The root filesystem can be read-only with `/tmp` mounted. About 75 MB.
 
 ## Deployment
 
@@ -112,7 +119,29 @@ Three workflows, in `.github/workflows`:
 - `web.yaml`, on changes outside `apps/api` and the docs: `typecheck`, `lint`, `test`, `build`,
   and Playwright against the mock mode.
 - `fullstack.yaml`, on every change: `pnpm api:up`, then Playwright against the real backend.
-- Image build and release are specified with batch B4.
+- `containers.yaml`, on `main`, on tags `v*` and on pull requests that touch the apps, the
+  packages or `docker/`: KICS scans both Dockerfiles (fails on high or medium findings), and
+  both images are built. On a tag, they are pushed to GHCR and scanned by Trivy (fails on a
+  critical or high vulnerability that has a fix).
+- `release.yaml`, on tags `v*`: the GitHub Release, with the changelog of the commits since the
+  previous tag (git-cliff, `cliff.toml`); `-rc`, `-beta` and `-alpha` tags are pre-releases.
+
+Both are adapted from the reference's `ci-containers.yaml` and `release.yaml`.
+
+## Releases
+
+A release is a tag `v<major>.<minor>.<patch>` pushed on `main`, by hand, as in the reference:
+`git tag v0.1.0` then `git push origin v0.1.0`, or a release published in GitHub's interface
+with a new tag. It publishes:
+
+| Image | Tags |
+| --- | --- |
+| `ghcr.io/<owner>/pupitre-api` | `0.1.0`, `0.1`, `0`, `latest`, short commit SHA |
+| `ghcr.io/<owner>/pupitre-front` | the same |
+
+The packages are private on their first push; a cluster that pulls them without credentials
+needs them made public in the packages' settings on GitHub. The deployment chart pins a version
+tag, never `latest`.
 
 ## Acceptance criteria
 

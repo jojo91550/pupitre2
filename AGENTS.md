@@ -47,6 +47,7 @@ pnpm monorepo, same layout as `ebuildy/pupitre2`: two applications on one origin
 | `packages/ui` | `@pupitre/ui` | Design system: shadcn components, pupitre CSS, security helpers |
 | `docs/specs` | | Specs, one file per feature area |
 | `e2e` | | Playwright tests |
+| `docker/front` | | The frontend image: both apps behind nginx ([`108`](docs/specs/108-backend-operations-and-testing.md)) |
 
 Inside `apps/app/src` and `apps/admin/src`:
 
