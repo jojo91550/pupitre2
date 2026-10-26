@@ -9,12 +9,12 @@ import (
 	"testing"
 )
 
-// courseToken obtains a fresh student JWT for course-service tests.
+// courseToken obtains a fresh student JWT for the course tests.
 func courseToken(t *testing.T) string {
 	t.Helper()
 
 	email := uniqueEmail("course-tok")
-	resp := doJSON(t, http.MethodPost, globalCfg.UserURL+"/api/auth/register", map[string]string{
+	resp := doJSON(t, http.MethodPost, globalCfg.APIURL+"/api/auth/register", map[string]string{
 		"email":    email,
 		"username": strings.Split(email, "@")[0],
 		"password": "Password123!",
@@ -30,11 +30,10 @@ func courseToken(t *testing.T) string {
 	return reg.Token
 }
 
-// TestCourseServiceHealth checks the course-service health endpoint.
+// TestCourseServiceHealth checks the health endpoint the course routes share.
 func TestCourseServiceHealth(t *testing.T) {
-	skipIfNoCourseService(t)
 
-	resp := doJSON(t, http.MethodGet, globalCfg.CourseURL+"/health", nil, "")
+	resp := doJSON(t, http.MethodGet, globalCfg.APIURL+"/health", nil, "")
 	mustStatus(t, resp, http.StatusOK)
 
 	var out struct {
@@ -50,9 +49,8 @@ func TestCourseServiceHealth(t *testing.T) {
 
 // TestListCourses verifies that the public course list returns a valid JSON array.
 func TestListCourses(t *testing.T) {
-	skipIfNoCourseService(t)
 
-	resp := doJSON(t, http.MethodGet, globalCfg.CourseURL+"/api/courses", nil, "")
+	resp := doJSON(t, http.MethodGet, globalCfg.APIURL+"/api/courses", nil, "")
 	mustStatus(t, resp, http.StatusOK)
 
 	var out struct {
@@ -71,11 +69,10 @@ func TestListCourses(t *testing.T) {
 
 // TestGetCourse checks that a known course is retrievable.
 func TestGetCourse(t *testing.T) {
-	skipIfNoCourseService(t)
 
 	slug := "linux-intro"
 
-	resp := doJSON(t, http.MethodGet, fmt.Sprintf("%s/api/courses/%s", globalCfg.CourseURL, slug), nil, "")
+	resp := doJSON(t, http.MethodGet, fmt.Sprintf("%s/api/courses/%s", globalCfg.APIURL, slug), nil, "")
 	mustStatus(t, resp, http.StatusOK)
 
 	var out struct {
@@ -91,19 +88,17 @@ func TestGetCourse(t *testing.T) {
 
 // TestGetCourseNotFound checks that a non-existent course returns 404.
 func TestGetCourseNotFound(t *testing.T) {
-	skipIfNoCourseService(t)
 
-	resp := doJSON(t, http.MethodGet, globalCfg.CourseURL+"/api/courses/does-not-exist-xyz", nil, "")
+	resp := doJSON(t, http.MethodGet, globalCfg.APIURL+"/api/courses/does-not-exist-xyz", nil, "")
 	mustStatus(t, resp, http.StatusNotFound)
 	resp.Body.Close()
 }
 
 // TestListModulesRequiresAuth checks that listing modules requires a JWT.
 func TestListModulesRequiresAuth(t *testing.T) {
-	skipIfNoCourseService(t)
 
 	resp := doJSON(t, http.MethodGet,
-		fmt.Sprintf("%s/api/courses/linux-intro/modules", globalCfg.CourseURL),
+		fmt.Sprintf("%s/api/courses/linux-intro/modules", globalCfg.APIURL),
 		nil, "")
 	mustStatus(t, resp, http.StatusUnauthorized)
 	resp.Body.Close()
@@ -111,13 +106,11 @@ func TestListModulesRequiresAuth(t *testing.T) {
 
 // TestListModulesAuthenticated verifies that a valid token can list modules.
 func TestListModulesAuthenticated(t *testing.T) {
-	skipIfNoCourseService(t)
-	skipIfNoUserService(t)
 
 	tok := courseToken(t)
 
 	resp := doJSON(t, http.MethodGet,
-		fmt.Sprintf("%s/api/courses/linux-intro/modules", globalCfg.CourseURL),
+		fmt.Sprintf("%s/api/courses/linux-intro/modules", globalCfg.APIURL),
 		nil, tok)
 	mustStatus(t, resp, http.StatusOK)
 
@@ -137,10 +130,9 @@ func TestListModulesAuthenticated(t *testing.T) {
 
 // TestListLessonsRequiresAuth checks that the lessons endpoint rejects unauthenticated requests.
 func TestListLessonsRequiresAuth(t *testing.T) {
-	skipIfNoCourseService(t)
 
 	resp := doJSON(t, http.MethodGet,
-		fmt.Sprintf("%s/api/courses/linux-intro/lessons", globalCfg.CourseURL),
+		fmt.Sprintf("%s/api/courses/linux-intro/lessons", globalCfg.APIURL),
 		nil, "")
 	mustStatus(t, resp, http.StatusUnauthorized)
 	resp.Body.Close()
@@ -148,9 +140,8 @@ func TestListLessonsRequiresAuth(t *testing.T) {
 
 // TestListPaths checks the public path list endpoint.
 func TestListPaths(t *testing.T) {
-	skipIfNoCourseService(t)
 
-	resp := doJSON(t, http.MethodGet, globalCfg.CourseURL+"/api/paths", nil, "")
+	resp := doJSON(t, http.MethodGet, globalCfg.APIURL+"/api/paths", nil, "")
 	mustStatus(t, resp, http.StatusOK)
 
 	var out struct {

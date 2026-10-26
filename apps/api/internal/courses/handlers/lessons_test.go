@@ -15,9 +15,9 @@ func newSkillCatalogState(t *testing.T) *State {
 	mock := newUserServiceMock()
 	t.Cleanup(mock.Close)
 
-	cfg := &config.Config{JWTSecret: "test-secret", UserServiceURL: mock.URL}
+	cfg := &config.Config{JWTSecret: "test-secret"}
 
-	return newStateWith(cfg,
+	return withPeers(newStateWith(cfg,
 		&content.Course{
 			Slug:       "go-basics",
 			Title:      "Go Basics",
@@ -39,7 +39,7 @@ func newSkillCatalogState(t *testing.T) *State {
 			IsPublic:   true,
 			Skills:     []string{"docker", "backend"},
 		},
-	)
+	), mock.URL, "")
 }
 
 // TestSkillTotals_NoMatch verifies zero is returned for a skill that no

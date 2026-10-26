@@ -37,14 +37,14 @@ func labCheckFixture(t *testing.T, checkerURL string) *State {
 		"labs/mr/policy.rego": "package checker.lab\n\ndefault allow := true\n",
 	})
 
-	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24, CheckerServiceURL: checkerURL}
+	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24}
 
-	return newStateWith(cfg, &content.Course{
+	return withPeers(newStateWith(cfg, &content.Course{
 		Slug: "devops-101", Title: "DevOps 101", IsPublic: true,
 		Modules: []content.Module{
 			{Name: "MR lab", Type: "lab", Src: repoDir, Ref: "main", Path: "labs/mr/module.md"},
 		},
-	})
+	}), "", checkerURL)
 }
 
 // postCheck fires the module-check endpoint for module 0 of devops-101.

@@ -12,7 +12,7 @@ func TestLoad_Defaults(t *testing.T) { //nolint:paralleltest // t.Setenv is call
 	// os.Unsetenv) keeps this test's env mutation properly scoped and
 	// automatically restored, matching the other tests in this file.
 	for _, k := range []string{"JWT_SECRET", "PORT", "CORS_ORIGINS", "GIT_CACHE_TTL",
-		"UPLOADS_DIR", "USER_SERVICE_URL", "GIT_TOKEN",
+		"UPLOADS_DIR", "GIT_TOKEN",
 		"GIT_CREDENTIALS_PATH", "JWT_EXPIRY_HOURS", "CONFIG_PATH"} {
 		t.Setenv(k, "")
 	}
@@ -52,7 +52,6 @@ func TestLoad_EnvOverrides(t *testing.T) {
 	t.Setenv("JWT_EXPIRY_HOURS", "48")
 	t.Setenv("CORS_ORIGINS", "http://a.com,http://b.com")
 	t.Setenv("UPLOADS_DIR", "/tmp/uploads")
-	t.Setenv("USER_SERVICE_URL", "http://user:9000")
 	t.Setenv("GIT_TOKEN", "tok123")
 	t.Setenv("GIT_CREDENTIALS_PATH", "/etc/creds.yaml")
 	t.Setenv("GIT_CACHE_TTL", "30")
@@ -77,10 +76,6 @@ func TestLoad_EnvOverrides(t *testing.T) {
 
 	if c.UploadsDir != "/tmp/uploads" {
 		t.Errorf("expected UploadsDir=/tmp/uploads, got %q", c.UploadsDir)
-	}
-
-	if c.UserServiceURL != "http://user:9000" {
-		t.Errorf("expected UserServiceURL, got %q", c.UserServiceURL)
 	}
 
 	if c.GitToken != "tok123" {

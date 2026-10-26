@@ -15,9 +15,7 @@ import (
 
 // testCfg holds service URLs and credentials loaded from the environment.
 type testCfg struct {
-	UserURL    string
-	CourseURL  string
-	CheckerURL string
+	APIURL     string
 	AdminEmail string
 	AdminPass  string
 	adminToken string // populated by TestMain after admin login
@@ -25,9 +23,7 @@ type testCfg struct {
 
 func loadConfig() testCfg {
 	return testCfg{
-		UserURL:    envOr("USER_SERVICE_URL", "http://localhost:8081"),
-		CourseURL:  os.Getenv("COURSE_SERVICE_URL"),
-		CheckerURL: envOr("CHECKER_SERVICE_URL", "http://localhost:8083"),
+		APIURL:     envOr("API_URL", "http://localhost:8080"),
 		AdminEmail: envOr("ADMIN_EMAIL", "admin@pupitre.local"),
 		AdminPass:  envOr("ADMIN_PASSWORD", "admin"),
 	}

@@ -32,14 +32,14 @@ func prereqState(t *testing.T, summaryHandler http.HandlerFunc) *State {
 	})
 	t.Cleanup(userSrv.Close)
 
-	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24, UserServiceURL: userSrv.URL}
+	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24}
 
-	return NewState(cfg, &repository.Repositories{
+	return withPeers(NewState(cfg, &repository.Repositories{
 		Courses:      fake.NewCourseRepository(prereqCourse()),
 		Paths:        fake.NewPathRepository(),
 		QuizAttempts: fake.NewQuizAttemptRepository(),
 		LabChecks:    fake.NewLabCheckRepository(),
-	})
+	}), userSrv.URL, "")
 }
 
 // getModules issues an authenticated student module-list request.

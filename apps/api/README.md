@@ -13,14 +13,19 @@ checker-service on one port, with the domains calling each other in-process. See
 | `internal/server` | Wiring: migrations, router, in-process adapters, start-up |
 | `internal/users`, `internal/courses`, `internal/checker` | The three domains, as they were in their services |
 | `internal/platform` | Shared plumbing: merged configuration, JWT guards, HTTP helpers, metrics |
-| `user-service`, `course-service`, `checker-service` | The old entry points, kept until batch B2 |
+| `e2e` | Go end-to-end tests against a running API (`API_URL`) |
+| `compose.yaml`, `infra/keycloak` | Local PostgreSQL and Keycloak with a test realm |
+| `infra/kind`, `infra/manifests` | The kind cluster of the old chart, until batch B4 |
+
+From the repository root:
 
 ```sh
-go run ./cmd/pupitre-api          # http://localhost:8080, needs DATABASE_URL
-go build ./...
-go vet ./...
-golangci-lint run ./...
-go test ./... -race
-TEST_DATABASE_URL=postgres://pupitre:pupitre@localhost:5432/pupitre?sslmode=disable \
-  go test -tags integration -p 1 ./...
+pnpm api:up      # PostgreSQL and Keycloak
+pnpm api:dev     # the API on http://localhost:8080, settings in apps/api/.env
+pnpm api:test    # go test -race ./...
+pnpm api:lint    # golangci-lint run ./...
+pnpm api:build   # go build and go vet
 ```
+
+Or, in `apps/api`, the `Makefile`: `make build test lint`, `make test-integration` (needs
+PostgreSQL), `make test-e2e` (needs a running API), `make image`.

@@ -104,16 +104,3 @@ func TestInternalCheckPathEnrollment_DBError(t *testing.T) {
 		t.Errorf("want 500, got %d", rec.Code)
 	}
 }
-
-// TestInternalCheckPathEnrollment_NoSecret is rejected without the internal
-// secret header.
-func TestInternalCheckPathEnrollment_NoSecret(t *testing.T) {
-	t.Parallel()
-
-	r := newTestRouter()
-
-	rec := htDo(t, r, http.MethodGet, "/internal/paths/check?userId=x&pathSlugs=y", "", "")
-	if rec.Code != http.StatusUnauthorized {
-		t.Errorf("want 401, got %d", rec.Code)
-	}
-}

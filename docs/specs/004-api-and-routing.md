@@ -5,19 +5,14 @@ Features: F004 (API routing, single hostname), F005 (HTTP conventions).
 ## Single origin
 
 The browser calls only `/api/*` on the application origin. The reverse proxy (production) or the
-Vite proxy (development) sends the request to the right service:
+Vite proxy (development) sends all of `/api` to the backend, which is one application
+(`pupitre-api`, [100](100-backend-scope-and-architecture.md)). `/uploads/{filename}` (course media)
+is served by the same application **outside** `/api`: the proxy also sends `/uploads/*` to it.
 
-| Prefix (after `/api/`) | Service |
-| --- | --- |
-| `courses`, `paths`, `skills`, `batch`, `uploads` | course-service |
-| `admin/courses`, `admin/cache`, `admin/lab-checks`, `admin/exports/lab-checks` | course-service |
-| anything else | user-service |
-
-Prefixes match whole segments (`courses` matches `courses` and `courses/…`, not `coursesX`). This
-table must stay identical to the one in the Helm chart (`pupitre.routeTable`).
-
-`/uploads/{filename}` (course media) is served by course-service **outside** `/api`: the proxy
-must also route `/uploads/*` to course-service.
+Until the backend became one application, `/api` was split between user-service and
+course-service by prefix (`courses`, `paths`, `skills`, `batch`, `uploads`, `admin/courses`,
+`admin/cache`, `admin/lab-checks`, `admin/exports/lab-checks` to course-service). The split is
+gone: the route inventory below still names the service each route came from.
 
 The pages are routed the same way: `/admin` and `/admin/*` (the admin app's base is `/admin/`:
 `/admin` alone must get the trailing slash) and `/manager/*` go to the admin app's `index.html` and
@@ -105,8 +100,7 @@ returned by the API (see [090](090-gaps-and-defects.md)).
 ## Acceptance criteria
 
 - `grep -r "fetch(" src` finds only the HTTP client.
-- A call to `/api/admin/courses/x/definition` reaches course-service, a call to `/api/admin/users`
-  reaches user-service (dev proxy test).
+- With `pnpm dev`, every `/api/*` and `/uploads/*` request reaches `VITE_API_URL`.
 - An error `{ "error": "Course not found" }` with a 404 status shows this message in the page's
   error state.
 

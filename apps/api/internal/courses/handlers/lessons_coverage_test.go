@@ -153,13 +153,11 @@ func TestMarkLessonComplete_UserServiceUnreachable(t *testing.T) {
 	t.Parallel()
 
 	cfg := &config.Config{
-		JWTSecret: "test-secret", JWTExpiryH: 24,
-		UserServiceURL: "http://127.0.0.1:1",
-	}
-	s := newStateWith(cfg, &content.Course{
+		JWTSecret: "test-secret", JWTExpiryH: 24}
+	s := withPeers(newStateWith(cfg, &content.Course{
 		Slug: "c1", Title: "C1", IsPublic: true,
 		Modules: []content.Module{{Name: "Intro", Type: "text", InlineContent: "hi"}},
-	})
+	}), "http://127.0.0.1:1", "")
 
 	rec := completeLesson(t, s, "c1", "intro")
 	if rec.Code != http.StatusInternalServerError {
@@ -179,11 +177,11 @@ func TestMarkLessonComplete_UserServiceRejects(t *testing.T) {
 	})
 	defer mock.Close()
 
-	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24, UserServiceURL: mock.URL}
-	s := newStateWith(cfg, &content.Course{
+	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24}
+	s := withPeers(newStateWith(cfg, &content.Course{
 		Slug: "c2", Title: "C2", IsPublic: true,
 		Modules: []content.Module{{Name: "Intro", Type: "text", InlineContent: "hi"}},
-	})
+	}), mock.URL, "")
 
 	rec := completeLesson(t, s, "c2", "intro")
 	if rec.Code != http.StatusInternalServerError {
@@ -208,12 +206,12 @@ func TestMarkLessonComplete_CourseCompleteNotified(t *testing.T) {
 	})
 	defer mock.Close()
 
-	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24, UserServiceURL: mock.URL}
-	s := newStateWith(cfg, &content.Course{
+	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24}
+	s := withPeers(newStateWith(cfg, &content.Course{
 		Slug: "c3", Title: "C3", IsPublic: true, Difficulty: "beginner",
 		Skills:  []string{"linux", "docker"},
 		Modules: []content.Module{{Name: "Only", Type: "text", InlineContent: "hi"}},
-	})
+	}), mock.URL, "")
 
 	rec := completeLesson(t, s, "c3", "only")
 	if rec.Code != http.StatusOK {

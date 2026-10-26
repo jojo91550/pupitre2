@@ -90,8 +90,7 @@ pupitre2/
 
 | Variable | Use | Development default |
 | --- | --- | --- |
-| `VITE_USER_SERVICE_URL` | Dev proxy target for user-service | `http://localhost:8081` |
-| `VITE_COURSE_SERVICE_URL` | Dev proxy target for course-service | `http://localhost:8082` |
+| `VITE_API_URL` | Dev proxy target for `/api` and `/uploads` (the backend, [108](108-backend-operations-and-testing.md)) | `http://localhost:8080` |
 
 No secret may reach the browser: every `VITE_*` variable is public.
 

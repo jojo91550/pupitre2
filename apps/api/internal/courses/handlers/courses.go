@@ -357,6 +357,39 @@ func (s *State) GetCourse(writer http.ResponseWriter, req *http.Request) {
 	s.JSON(writer, http.StatusOK, toCourseResponse(course))
 }
 
+// PublicCourseTitles returns the title of every public course, by slug, as
+// the anonymous GET /api/courses lists them. The users domain labels its
+// CSV exports with it.
+func (s *State) PublicCourseTitles(ctx context.Context) (map[string]string, error) {
+	courses, err := s.Repos.Courses.List(ctx, repository.CourseFilter{PublicOnly: true})
+	if err != nil {
+		return nil, fmt.Errorf("list public courses: %w", err)
+	}
+
+	titles := make(map[string]string, len(courses))
+	for _, course := range courses {
+		titles[course.Slug] = course.Title
+	}
+
+	return titles, nil
+}
+
+// PathTitles returns the title of every path, by slug, as GET /api/paths
+// lists them.
+func (s *State) PathTitles(ctx context.Context) (map[string]string, error) {
+	paths, err := s.Repos.Paths.List(ctx, 0, 0)
+	if err != nil {
+		return nil, fmt.Errorf("list paths: %w", err)
+	}
+
+	titles := make(map[string]string, len(paths))
+	for _, path := range paths {
+		titles[path.Slug] = path.Title
+	}
+
+	return titles, nil
+}
+
 // PublicCourse returns a course as GET /api/courses/{slug} shows it to an
 // anonymous visitor: repository.ErrNotFound for a private or unknown
 // course. The users domain reads session capacities through it.

@@ -274,13 +274,11 @@ func newSkillModulesRouter(t *testing.T, repos *repository.Repositories, courseS
 	t.Helper()
 
 	cfg := &config.Config{
-		JWTSecret:        htSecret,
-		JWTExpiryH:       htExpiry,
-		CORSOrigins:      []string{"*"},
-		InternalSecret:   htInternalSecret,
-		CourseServiceURL: courseServiceURL,
+		JWTSecret:   htSecret,
+		JWTExpiryH:  htExpiry,
+		CORSOrigins: []string{"*"},
 	}
-	s := &State{Repos: repos, Config: cfg}
+	s := &State{Repos: repos, Config: cfg, Courses: courseSourceAt(courseServiceURL)}
 
 	return BuildRouter(s, cfg, false)
 }

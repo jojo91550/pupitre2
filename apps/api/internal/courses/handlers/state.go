@@ -143,9 +143,8 @@ type State struct {
 	GitCreds *content.GitCredentialStore
 	GitCache *content.GitCache
 
-	// Users and Checker are the other domains this one calls. The monolith
-	// sets them to in-process implementations; left nil, the standalone
-	// binary reaches user-service and checker-service over HTTP.
+	// Users and Checker are the other domains this one calls, wired in by
+	// the monolith (docs/specs/104-backend-in-process-calls.md).
 	Users   UserProgress
 	Checker LabChecker
 }

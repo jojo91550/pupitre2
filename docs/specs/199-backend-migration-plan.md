@@ -40,12 +40,17 @@ Branch `chore/api-cleanup`.
 - Delete the old `main.go` files, the internal handlers, `internalauth`, the `httpx` user-service
   client, the `/evaluate` and `/check-step` handlers, the three Dockerfiles and the per-service
   config packages.
-- One `Dockerfile`, `compose.yaml`, the `Makefile` and `infra/` for one image; root scripts
-  `pnpm api:*`; the single-target dev proxy and [004](004-api-and-routing.md)
-  ([108](108-backend-operations-and-testing.md)).
+- One `Dockerfile`, `compose.yaml` (PostgreSQL, Keycloak and its test realm), the `Makefile` for
+  one image; root scripts `pnpm api:*`; the single-target dev proxy and
+  [004](004-api-and-routing.md) ([108](108-backend-operations-and-testing.md)). The kind and Helm
+  targets wait for the chart of B4.
+- The Go e2e suite targets `API_URL`; the tests of the internal routes become tests of the routes
+  that replaced them.
 - `AGENTS.md` and `README.md` describe the API; the CI workflows.
-- The Playwright suite also runs against the monolith, with the `compose.yaml` PostgreSQL and
-  Keycloak (its test realm and `groups` scope) and a seeded database, besides the mock mode.
+- A Playwright suite runs against the monolith (`e2e/backend`), with the `compose.yaml`
+  PostgreSQL and Keycloak and the demo seed, besides the mock suite: each role signs in through
+  the real Keycloak and opens its pages, and a learner takes a course to the badge. The mock
+  suite keeps the cases that need its fixtures (XSS accounts, prepared sessions).
 - Done when no `USER_SERVICE_URL`, `COURSE_SERVICE_URL`, `CHECKER_SERVICE_URL`,
   `INTERNAL_SERVICE_SECRET` or `/internal/` route remains, and Playwright passes against the
   monolith.

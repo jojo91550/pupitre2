@@ -21,8 +21,8 @@ func newAdminState(t *testing.T) (*State, http.Handler) {
 	mock := newUserServiceMock()
 	t.Cleanup(mock.Close)
 
-	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24, UserServiceURL: mock.URL}
-	state := newStateWith(cfg)
+	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24}
+	state := withPeers(newStateWith(cfg), mock.URL, "")
 
 	return state, BuildRouter(state, cfg, false)
 }

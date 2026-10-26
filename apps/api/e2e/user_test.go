@@ -12,13 +12,12 @@ import (
 // TestRegisterAndLogin covers user registration followed by login and
 // profile retrieval.
 func TestRegisterAndLogin(t *testing.T) {
-	skipIfNoUserService(t)
 
 	email := uniqueEmail("reg")
 	pass := "Password123!"
 
 	t.Run("register", func(t *testing.T) {
-		resp := doJSON(t, http.MethodPost, globalCfg.UserURL+"/api/auth/register", map[string]string{
+		resp := doJSON(t, http.MethodPost, globalCfg.APIURL+"/api/auth/register", map[string]string{
 			"email":    email,
 			"username": strings.Split(email, "@")[0],
 			"password": pass,
@@ -48,7 +47,7 @@ func TestRegisterAndLogin(t *testing.T) {
 	})
 
 	t.Run("login", func(t *testing.T) {
-		resp := doJSON(t, http.MethodPost, globalCfg.UserURL+"/api/auth/login", map[string]string{
+		resp := doJSON(t, http.MethodPost, globalCfg.APIURL+"/api/auth/login", map[string]string{
 			"email":    email,
 			"password": pass,
 		}, "")
@@ -64,7 +63,7 @@ func TestRegisterAndLogin(t *testing.T) {
 		}
 
 		t.Run("me", func(t *testing.T) {
-			resp2 := doJSON(t, http.MethodGet, globalCfg.UserURL+"/api/auth/me", nil, out.Token)
+			resp2 := doJSON(t, http.MethodGet, globalCfg.APIURL+"/api/auth/me", nil, out.Token)
 			mustStatus(t, resp2, http.StatusOK)
 
 			var me struct {
@@ -79,7 +78,7 @@ func TestRegisterAndLogin(t *testing.T) {
 	})
 
 	t.Run("login_wrong_password", func(t *testing.T) {
-		resp := doJSON(t, http.MethodPost, globalCfg.UserURL+"/api/auth/login", map[string]string{
+		resp := doJSON(t, http.MethodPost, globalCfg.APIURL+"/api/auth/login", map[string]string{
 			"email":    email,
 			"password": "wrong",
 		}, "")
@@ -90,16 +89,14 @@ func TestRegisterAndLogin(t *testing.T) {
 
 // TestAuthMeUnauthorized checks that /api/auth/me rejects missing tokens.
 func TestAuthMeUnauthorized(t *testing.T) {
-	skipIfNoUserService(t)
 
-	resp := doJSON(t, http.MethodGet, globalCfg.UserURL+"/api/auth/me", nil, "")
+	resp := doJSON(t, http.MethodGet, globalCfg.APIURL+"/api/auth/me", nil, "")
 	mustStatus(t, resp, http.StatusUnauthorized)
 	resp.Body.Close()
 }
 
 // TestRegisterValidation checks that missing fields are rejected.
 func TestRegisterValidation(t *testing.T) {
-	skipIfNoUserService(t)
 
 	cases := []struct {
 		name string
@@ -112,7 +109,7 @@ func TestRegisterValidation(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			resp := doJSON(t, http.MethodPost, globalCfg.UserURL+"/api/auth/register", tc.body, "")
+			resp := doJSON(t, http.MethodPost, globalCfg.APIURL+"/api/auth/register", tc.body, "")
 			if resp.StatusCode == http.StatusCreated {
 				t.Fatalf("expected error for %s, got 201", tc.name)
 			}
@@ -125,12 +122,11 @@ func TestRegisterValidation(t *testing.T) {
 // TestAdminUserCRUD exercises the admin user management endpoints using
 // the shared admin token from TestMain.
 func TestAdminUserCRUD(t *testing.T) {
-	skipIfNoUserService(t)
 
 	email := uniqueEmail("admin-crud")
 
 	// Create user via register, then manage via admin endpoints
-	resp := doJSON(t, http.MethodPost, globalCfg.UserURL+"/api/auth/register", map[string]string{
+	resp := doJSON(t, http.MethodPost, globalCfg.APIURL+"/api/auth/register", map[string]string{
 		"email":    email,
 		"username": strings.Split(email, "@")[0],
 		"password": "Password123!",
@@ -153,7 +149,7 @@ func TestAdminUserCRUD(t *testing.T) {
 
 	t.Run("get_user", func(t *testing.T) {
 		resp := doJSON(t, http.MethodGet,
-			fmt.Sprintf("%s/api/admin/users/%s", globalCfg.UserURL, userID),
+			fmt.Sprintf("%s/api/admin/users/%s", globalCfg.APIURL, userID),
 			nil, globalCfg.adminToken)
 		mustStatus(t, resp, http.StatusOK)
 
@@ -169,7 +165,7 @@ func TestAdminUserCRUD(t *testing.T) {
 
 	t.Run("update_user", func(t *testing.T) {
 		resp := doJSON(t, http.MethodPut,
-			fmt.Sprintf("%s/api/admin/users/%s", globalCfg.UserURL, userID),
+			fmt.Sprintf("%s/api/admin/users/%s", globalCfg.APIURL, userID),
 			map[string]string{"role": "admin"},
 			globalCfg.adminToken)
 		mustStatus(t, resp, http.StatusOK)
@@ -178,7 +174,7 @@ func TestAdminUserCRUD(t *testing.T) {
 
 	t.Run("delete_user", func(t *testing.T) {
 		resp := doJSON(t, http.MethodDelete,
-			fmt.Sprintf("%s/api/admin/users/%s", globalCfg.UserURL, userID),
+			fmt.Sprintf("%s/api/admin/users/%s", globalCfg.APIURL, userID),
 			nil, globalCfg.adminToken)
 		mustStatus(t, resp, http.StatusOK)
 		resp.Body.Close()
@@ -186,7 +182,7 @@ func TestAdminUserCRUD(t *testing.T) {
 
 	t.Run("get_deleted_user_returns_404", func(t *testing.T) {
 		resp := doJSON(t, http.MethodGet,
-			fmt.Sprintf("%s/api/admin/users/%s", globalCfg.UserURL, userID),
+			fmt.Sprintf("%s/api/admin/users/%s", globalCfg.APIURL, userID),
 			nil, globalCfg.adminToken)
 		mustStatus(t, resp, http.StatusNotFound)
 		resp.Body.Close()
@@ -195,9 +191,8 @@ func TestAdminUserCRUD(t *testing.T) {
 
 // TestAdminListUsers checks pagination of the admin users list.
 func TestAdminListUsers(t *testing.T) {
-	skipIfNoUserService(t)
 
-	resp := doJSON(t, http.MethodGet, globalCfg.UserURL+"/api/admin/users?limit=5", nil, globalCfg.adminToken)
+	resp := doJSON(t, http.MethodGet, globalCfg.APIURL+"/api/admin/users?limit=5", nil, globalCfg.adminToken)
 	mustStatus(t, resp, http.StatusOK)
 
 	var out struct {
@@ -215,11 +210,10 @@ func TestAdminListUsers(t *testing.T) {
 
 // TestAdminRequiresAuth verifies that admin endpoints reject non-admin tokens.
 func TestAdminRequiresAuth(t *testing.T) {
-	skipIfNoUserService(t)
 
 	email := uniqueEmail("noadmin")
 
-	resp := doJSON(t, http.MethodPost, globalCfg.UserURL+"/api/auth/register", map[string]string{
+	resp := doJSON(t, http.MethodPost, globalCfg.APIURL+"/api/auth/register", map[string]string{
 		"email":    email,
 		"username": strings.Split(email, "@")[0],
 		"password": "Password123!",
@@ -231,18 +225,17 @@ func TestAdminRequiresAuth(t *testing.T) {
 	}
 	decodeBody(t, resp, &reg)
 
-	resp2 := doJSON(t, http.MethodGet, globalCfg.UserURL+"/api/admin/users", nil, reg.Token)
+	resp2 := doJSON(t, http.MethodGet, globalCfg.APIURL+"/api/admin/users", nil, reg.Token)
 	mustStatus(t, resp2, http.StatusForbidden)
 	resp2.Body.Close()
 }
 
 // TestEnrollment covers course enrollment and unenrollment for a student.
 func TestEnrollment(t *testing.T) {
-	skipIfNoUserService(t)
 
 	// Register a student
 	email := uniqueEmail("enroll")
-	resp := doJSON(t, http.MethodPost, globalCfg.UserURL+"/api/auth/register", map[string]string{
+	resp := doJSON(t, http.MethodPost, globalCfg.APIURL+"/api/auth/register", map[string]string{
 		"email":    email,
 		"username": strings.Split(email, "@")[0],
 		"password": "Password123!",
@@ -259,7 +252,7 @@ func TestEnrollment(t *testing.T) {
 
 	t.Run("enroll", func(t *testing.T) {
 		resp := doJSON(t, http.MethodPost,
-			fmt.Sprintf("%s/api/enrollments/%s", globalCfg.UserURL, slug),
+			fmt.Sprintf("%s/api/enrollments/%s", globalCfg.APIURL, slug),
 			nil, tok)
 		// 200 (enrolled) or 409 (already enrolled) are both acceptable
 		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusConflict {
@@ -271,7 +264,7 @@ func TestEnrollment(t *testing.T) {
 	})
 
 	t.Run("my_courses_includes_enrollment", func(t *testing.T) {
-		resp := doJSON(t, http.MethodGet, globalCfg.UserURL+"/api/my/courses", nil, tok)
+		resp := doJSON(t, http.MethodGet, globalCfg.APIURL+"/api/my/courses", nil, tok)
 		mustStatus(t, resp, http.StatusOK)
 
 		var out struct {
@@ -293,7 +286,7 @@ func TestEnrollment(t *testing.T) {
 
 	t.Run("unenroll", func(t *testing.T) {
 		resp := doJSON(t, http.MethodDelete,
-			fmt.Sprintf("%s/api/enrollments/%s", globalCfg.UserURL, slug),
+			fmt.Sprintf("%s/api/enrollments/%s", globalCfg.APIURL, slug),
 			nil, tok)
 		mustStatus(t, resp, http.StatusOK)
 		resp.Body.Close()
@@ -302,11 +295,10 @@ func TestEnrollment(t *testing.T) {
 
 // TestPathEnrollment covers admin-driven path enrollment and the my/paths endpoint.
 func TestPathEnrollment(t *testing.T) {
-	skipIfNoUserService(t)
 
 	// Register a student
 	email := uniqueEmail("path-enroll")
-	resp := doJSON(t, http.MethodPost, globalCfg.UserURL+"/api/auth/register", map[string]string{
+	resp := doJSON(t, http.MethodPost, globalCfg.APIURL+"/api/auth/register", map[string]string{
 		"email":    email,
 		"username": strings.Split(email, "@")[0],
 		"password": "Password123!",
@@ -326,7 +318,7 @@ func TestPathEnrollment(t *testing.T) {
 
 	t.Run("admin_enroll_in_path", func(t *testing.T) {
 		resp := doJSON(t, http.MethodPost,
-			fmt.Sprintf("%s/api/admin/paths/%s/enrollments", globalCfg.UserURL, pathSlug),
+			fmt.Sprintf("%s/api/admin/paths/%s/enrollments", globalCfg.APIURL, pathSlug),
 			map[string]string{"userId": reg.User.ID},
 			globalCfg.adminToken)
 		mustStatus(t, resp, http.StatusOK)
@@ -334,7 +326,7 @@ func TestPathEnrollment(t *testing.T) {
 	})
 
 	t.Run("my_paths_includes_enrollment", func(t *testing.T) {
-		resp := doJSON(t, http.MethodGet, globalCfg.UserURL+"/api/my/paths", nil, reg.Token)
+		resp := doJSON(t, http.MethodGet, globalCfg.APIURL+"/api/my/paths", nil, reg.Token)
 		mustStatus(t, resp, http.StatusOK)
 
 		var out struct {
@@ -356,7 +348,7 @@ func TestPathEnrollment(t *testing.T) {
 
 	t.Run("admin_unenroll_from_path", func(t *testing.T) {
 		resp := doJSON(t, http.MethodDelete,
-			fmt.Sprintf("%s/api/admin/paths/%s/enrollments/%s", globalCfg.UserURL, pathSlug, reg.User.ID),
+			fmt.Sprintf("%s/api/admin/paths/%s/enrollments/%s", globalCfg.APIURL, pathSlug, reg.User.ID),
 			nil, globalCfg.adminToken)
 		mustStatus(t, resp, http.StatusOK)
 		resp.Body.Close()
@@ -365,18 +357,16 @@ func TestPathEnrollment(t *testing.T) {
 
 // TestPublicSettings checks the public settings endpoint (no auth required).
 func TestPublicSettings(t *testing.T) {
-	skipIfNoUserService(t)
 
-	resp := doJSON(t, http.MethodGet, globalCfg.UserURL+"/api/settings/public", nil, "")
+	resp := doJSON(t, http.MethodGet, globalCfg.APIURL+"/api/settings/public", nil, "")
 	mustStatus(t, resp, http.StatusOK)
 	resp.Body.Close()
 }
 
-// TestHealth checks the user-service health endpoint.
+// TestHealth checks the health endpoint the user routes share.
 func TestUserServiceHealth(t *testing.T) {
-	skipIfNoUserService(t)
 
-	resp := doJSON(t, http.MethodGet, globalCfg.UserURL+"/health", nil, "")
+	resp := doJSON(t, http.MethodGet, globalCfg.APIURL+"/health", nil, "")
 	mustStatus(t, resp, http.StatusOK)
 
 	var out struct {

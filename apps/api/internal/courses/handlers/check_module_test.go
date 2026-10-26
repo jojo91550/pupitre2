@@ -94,8 +94,8 @@ func TestCheckModule_FullFlow(t *testing.T) {
 	}))
 	defer checker.Close()
 
-	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24, CheckerServiceURL: checker.URL}
-	s := newStateWith(cfg, &content.Course{
+	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24}
+	s := withPeers(newStateWith(cfg, &content.Course{
 		Slug: "devops-101", Title: "DevOps 101", IsPublic: true,
 		Modules: []content.Module{
 			{
@@ -103,7 +103,7 @@ func TestCheckModule_FullFlow(t *testing.T) {
 				Src: repoDir, Ref: "main", Path: "labs/mr/module.md",
 			},
 		},
-	})
+	}), "", checker.URL)
 
 	r := BuildRouter(s, s.Config, false)
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost,
@@ -151,13 +151,13 @@ func TestCheckModule_NoCheckYAML(t *testing.T) {
 
 	repoDir := gitFixture(t, map[string]string{"labs/mr/module.md": "# lab"})
 
-	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24, CheckerServiceURL: "http://unused"}
-	s := newStateWith(cfg, &content.Course{
+	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24}
+	s := withPeers(newStateWith(cfg, &content.Course{
 		Slug: "devops-101", IsPublic: true,
 		Modules: []content.Module{
 			{Name: "MR lab", Type: "lab", Src: repoDir, Ref: "main", Path: "labs/mr/module.md"},
 		},
-	})
+	}), "", "http://unused")
 
 	r := BuildRouter(s, s.Config, false)
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost,

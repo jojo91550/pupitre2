@@ -13,10 +13,9 @@ failure does, whether it is detached) are kept exactly.
   callee exposes plain methods (`users/handlers/progress_service.go`, `BatchCourses`…,
   `checker/handlers` `RunEvaluate` and `RunCheckStep`). Only `internal/server/adapters.go` knows
   both sides and wires them.
-- Until batch B2 removes the standalone binaries, each interface also has an HTTP implementation,
-  used when the monolith did not wire one: the three old `main` packages keep working, and the
-  existing handler tests, which stand in for the other service with an `httptest` server, run
-  unchanged.
+- A `State` built without one of its peers answers as if that peer were unreachable
+  (`noUsers`, `noChecker`, `noCourseSource`): reads degrade, writes fail, as they did when a
+  service was down. The monolith always wires them.
 - An interface method does what the HTTP route did, with the same inputs and outputs: the route's
   handler and the new method share the same repository code, so there is one implementation.
 - **Failure semantics are kept.** A call that used to degrade to an empty answer when user-service
@@ -71,13 +70,13 @@ The users domain reads the catalog through its own types (`CourseInfo`, `PathInf
 domain's batch results through that same JSON, so the two sides stay in step with the public
 contract.
 
-One more call was found while writing the monolith: booking a session
-(`sessions.go`, `sessionCapacity`) read the course with an anonymous
-`GET /api/courses/{slug}` to find the session's capacity.
+Three more calls were found while writing the monolith, all anonymous reads of public routes:
 
-| HTTP call at `3cdf7b2` | Method in the monolith | On failure |
-| --- | --- | --- |
-| `GET /api/courses/{slug}` (anonymous) | `CourseSource.PublicCourseSessions(ctx, slug)` | Capacity 0, that is unlimited, warning. A private course fails like an unknown one, as the anonymous read did ([190](190-backend-defects.md) B24) |
+| HTTP call at `3cdf7b2` | Used by | Method in the monolith | On failure |
+| --- | --- | --- | --- |
+| `GET /api/courses/{slug}` | booking a session (`sessions.go`, `sessionCapacity`), for the session's capacity | `CourseSource.PublicCourseSessions(ctx, slug)` | Capacity 0, that is unlimited, warning. A private course fails like an unknown one, as the anonymous read did ([190](190-backend-defects.md) B24) |
+| `GET /api/courses` | CSV exports (`exports.go`), to label rows with course titles | `CourseSource.PublicCourseTitles(ctx)` | Titles left empty, as before. Only public courses are named, as the anonymous list did |
+| `GET /api/paths` | CSV exports, for path titles | `CourseSource.PathTitles(ctx)` | Titles left empty |
 
 The `/api/batch/*` routes stay public routes ([103](103-backend-http-api.md)): they are part of
 the API, not only of the internal traffic.
@@ -98,12 +97,14 @@ The limits and isolation of the checker are in [107](107-backend-labs-and-checke
 
 ## Acceptance criteria
 
-- No `http.Client` call targets the application itself; `grep -r "/internal/" apps/api` finds no
-  route.
-- A unit test per row of the tables above checks the failure semantics (degrade, fail, detach)
-  with a failing fake.
-- The existing handler tests of both services, which used an `httptest` server as user-service or
-  checker-service, use the fake implementation of the interface instead and keep their assertions.
+- No `http.Client` call targets the application itself, and no production code mounts an
+  `/internal/` route.
+- `internal/server/wiring_test.go` checks the failure semantics (degrade, fail, detach) with a
+  failing fake, and a learner flow across the domains.
+- The existing handler tests of the domains keep their assertions. They stood in for the other
+  service with an `httptest` server and still do: each domain's `standalone_test.go` keeps, for
+  the tests only, the old HTTP clients (as implementations of the interfaces) and the old router
+  with its internal routes (as shims over the in-process methods).
 
 ## Sources
 

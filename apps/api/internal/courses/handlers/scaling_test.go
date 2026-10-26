@@ -122,9 +122,9 @@ func getAs(t *testing.T, router http.Handler, target string) *httptest.ResponseR
 // routerForCourse wires a router serving exactly the given courses against
 // the given user-service mock.
 func routerForCourse(mockURL string, courses ...*content.Course) http.Handler {
-	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24, UserServiceURL: mockURL}
+	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24}
 
-	return BuildRouter(newStateWith(cfg, courses...), cfg, false)
+	return BuildRouter(withPeers(newStateWith(cfg, courses...), mockURL, ""), cfg, false)
 }
 
 // TestListModules_OneInternalCallWhateverTheSize pins the module listing at

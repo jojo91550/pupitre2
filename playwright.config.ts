@@ -9,6 +9,8 @@ const PORT = 4173;
 
 export default defineConfig({
   testDir: './e2e',
+  // e2e/backend runs against the real backend: playwright.backend.config.ts.
+  testIgnore: 'backend/**',
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,

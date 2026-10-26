@@ -2,7 +2,6 @@
 package handlers
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -16,10 +15,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/jojo91550/pupitre2/apps/api/internal/courses/config"
 	"github.com/jojo91550/pupitre2/apps/api/internal/courses/content"
 	"github.com/jojo91550/pupitre2/apps/api/internal/courses/models"
-	"github.com/jojo91550/pupitre2/apps/api/internal/platform/httpx"
 )
 
 // checkSpec is the structure of check.yaml in the course git repo.
@@ -359,76 +356,30 @@ func checkerRejected(message string) *CheckerError {
 	return &CheckerError{Status: http.StatusBadGateway, Message: message}
 }
 
-// labChecker returns the checker wired in by the monolith, or the
-// checker-service HTTP client of the standalone binary.
-func (s *State) labChecker() LabChecker { //nolint:ireturn // the wired checker, or its HTTP fallback
+// labChecker returns the checker wired in by the monolith; a State built
+// without one answers every check as if the checker were unreachable.
+func (s *State) labChecker() LabChecker { //nolint:ireturn // the wired checker, or none
 	if s.Checker != nil {
 		return s.Checker
 	}
 
-	return &httpLabChecker{config: s.Config}
+	return noChecker{}
 }
 
-// httpLabChecker implements LabChecker over checker-service's HTTP routes.
-type httpLabChecker struct {
-	config *config.Config
-}
+// errNoChecker is returned by a State that was not wired to the checker.
+var errNoChecker = errors.New("checker not wired")
+
+// noChecker answers every check with errNoChecker.
+type noChecker struct{}
 
 // Evaluate implements LabChecker.
-func (c *httpLabChecker) Evaluate(ctx context.Context, req EvaluateRequest) (CheckResponse, error) {
-	return c.post(ctx, "/evaluate", req)
+func (noChecker) Evaluate(context.Context, EvaluateRequest) (CheckResponse, error) {
+	return CheckResponse{}, errNoChecker
 }
 
 // CheckStep implements LabChecker.
-func (c *httpLabChecker) CheckStep(ctx context.Context, req StepCheckRequest) (CheckResponse, error) {
-	return c.post(ctx, "/check-step", req)
-}
-
-// post marshals body, POSTs it to checker-service at the given path, and
-// decodes the CheckResponse.
-func (c *httpLabChecker) post(ctx context.Context, route string, body any) (CheckResponse, error) {
-	buildErr := &CheckerError{Status: http.StatusInternalServerError, Message: buildCheckerRequestFailed}
-
-	payload, err := json.Marshal(body)
-	if err != nil {
-		return CheckResponse{}, buildErr
-	}
-
-	//nolint:gosec // URL built from the operator-configured CHECKER_SERVICE_URL and a fixed route
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, c.config.CheckerServiceURL+route, bytes.NewReader(payload))
-	if err != nil {
-		return CheckResponse{}, buildErr
-	}
-
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	if c.config.InternalSecret != "" {
-		httpReq.Header.Set("X-Internal-Secret", c.config.InternalSecret)
-	}
-
-	resp, err := httpx.Do(httpReq) //nolint:bodyclose // httpx.Drain closes it
-	if err != nil {
-		return CheckResponse{}, fmt.Errorf("POST %s: %w", route, err)
-	}
-
-	defer httpx.Drain(resp)
-
-	if resp.StatusCode != http.StatusOK {
-		var errBody map[string]string
-
-		_ = json.NewDecoder(resp.Body).Decode(&errBody)
-
-		return CheckResponse{}, checkerRejected(errBody[errorJSONKey])
-	}
-
-	var result CheckResponse
-
-	err = json.NewDecoder(resp.Body).Decode(&result)
-	if err != nil {
-		return CheckResponse{}, &CheckerError{Status: http.StatusInternalServerError, Message: "Failed to decode checker response"}
-	}
-
-	return result, nil
+func (noChecker) CheckStep(context.Context, StepCheckRequest) (CheckResponse, error) {
+	return CheckResponse{}, errNoChecker
 }
 
 // RecordLocalCheck persists the result of a Tauri-side local check

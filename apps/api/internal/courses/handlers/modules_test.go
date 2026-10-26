@@ -79,7 +79,7 @@ func TestFinalizeSubmission_InvalidBody(t *testing.T) {
 	defer mock.Close()
 
 	course := singleChoiceCourse()
-	s := newStateWith(&config.Config{JWTSecret: "test-secret", UserServiceURL: mock.URL}, course)
+	s := withPeers(newStateWith(&config.Config{JWTSecret: "test-secret"}, course), mock.URL, "")
 
 	mod := course.Modules[0]
 
@@ -105,7 +105,7 @@ func TestFinalizeSubmission_Pass(t *testing.T) {
 	defer mock.Close()
 
 	course := singleChoiceCourse()
-	s := newStateWith(&config.Config{JWTSecret: "test-secret", UserServiceURL: mock.URL}, course)
+	s := withPeers(newStateWith(&config.Config{JWTSecret: "test-secret"}, course), mock.URL, "")
 
 	mod := course.Modules[0]
 	answer := "a-correct"
@@ -145,7 +145,7 @@ func TestFinalizeSubmission_Fail(t *testing.T) {
 	defer mock.Close()
 
 	course := singleChoiceCourse()
-	s := newStateWith(&config.Config{JWTSecret: "test-secret", UserServiceURL: mock.URL}, course)
+	s := withPeers(newStateWith(&config.Config{JWTSecret: "test-secret"}, course), mock.URL, "")
 
 	mod := course.Modules[0]
 	answer := "a-wrong"
@@ -214,7 +214,7 @@ func TestFinalizeSubmission_CooldownPersistedAndBlocks(t *testing.T) {
 	defer mock.Close()
 
 	course := cooldownQuizCourse()
-	s := newStateWith(&config.Config{JWTSecret: "test-secret", UserServiceURL: mock.URL}, course)
+	s := withPeers(newStateWith(&config.Config{JWTSecret: "test-secret"}, course), mock.URL, "")
 
 	rec := submitAnswer(t, s, course, "a-wrong")
 	if rec.Code != http.StatusOK {
@@ -255,7 +255,7 @@ func TestFinalizeSubmission_CorrectAnswerClearsCooldown(t *testing.T) {
 
 	// A zero-second cooldown records the attempt without blocking the retry.
 	course := singleChoiceCourse()
-	s := newStateWith(&config.Config{JWTSecret: "test-secret", UserServiceURL: mock.URL}, course)
+	s := withPeers(newStateWith(&config.Config{JWTSecret: "test-secret"}, course), mock.URL, "")
 
 	if rec := submitAnswer(t, s, course, "a-wrong"); rec.Code != http.StatusOK {
 		t.Fatalf("first submission: want 200, got %d", rec.Code)
@@ -301,7 +301,7 @@ func TestFinalizeSubmission_LocksOnMaxAttempts(t *testing.T) {
 	course.Modules[0].MaxAttemptsPerQuestion = &maxAttempts
 	course.Modules[0].LockOnMaxAttempts = true
 
-	s := newStateWith(&config.Config{JWTSecret: "test-secret", UserServiceURL: mock.URL}, course)
+	s := withPeers(newStateWith(&config.Config{JWTSecret: "test-secret"}, course), mock.URL, "")
 
 	rec := submitAnswer(t, s, course, "a-wrong")
 	if rec.Code != http.StatusOK {
@@ -386,8 +386,8 @@ func TestMarkLessonComplete_WaitsForTrailingQuiz(t *testing.T) {
 	mock, completed := courseCompleteWatcher(nil, nil)
 	defer mock.Close()
 
-	cfg := &config.Config{JWTSecret: "test-secret", UserServiceURL: mock.URL}
-	router := BuildRouter(newStateWith(cfg, lessonAndQuizCourse()), cfg, false)
+	cfg := &config.Config{JWTSecret: "test-secret"}
+	router := BuildRouter(withPeers(newStateWith(cfg, lessonAndQuizCourse()), mock.URL, ""), cfg, false)
 
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost,
 		"/api/courses/guarded-course/lessons/lesson-one/complete", http.NoBody)
@@ -413,8 +413,8 @@ func TestMarkLessonComplete_AfterQuizPassed(t *testing.T) {
 	mock, completed := courseCompleteWatcher(nil, []string{"final-quiz"})
 	defer mock.Close()
 
-	cfg := &config.Config{JWTSecret: "test-secret", UserServiceURL: mock.URL}
-	router := BuildRouter(newStateWith(cfg, lessonAndQuizCourse()), cfg, false)
+	cfg := &config.Config{JWTSecret: "test-secret"}
+	router := BuildRouter(withPeers(newStateWith(cfg, lessonAndQuizCourse()), mock.URL, ""), cfg, false)
 
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost,
 		"/api/courses/guarded-course/lessons/lesson-one/complete", http.NoBody)
@@ -441,8 +441,8 @@ func TestSubmitModule_PassingTrailingQuizCompletesCourse(t *testing.T) {
 	mock, completed := courseCompleteWatcher([]string{"lesson-one"}, nil)
 	defer mock.Close()
 
-	cfg := &config.Config{JWTSecret: "test-secret", UserServiceURL: mock.URL}
-	router := BuildRouter(newStateWith(cfg, lessonAndQuizCourse()), cfg, false)
+	cfg := &config.Config{JWTSecret: "test-secret"}
+	router := BuildRouter(withPeers(newStateWith(cfg, lessonAndQuizCourse()), mock.URL, ""), cfg, false)
 
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost,
 		"/api/courses/guarded-course/modules/1/submit",

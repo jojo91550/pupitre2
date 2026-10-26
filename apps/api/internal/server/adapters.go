@@ -199,6 +199,16 @@ func (a *coursesSource) PublicCourseSessions(ctx context.Context, courseSlug str
 	return out, nil
 }
 
+// PublicCourseTitles implements usershandlers.CourseSource.
+func (a *coursesSource) PublicCourseTitles(ctx context.Context) (map[string]string, error) {
+	return a.courses.PublicCourseTitles(ctx) //nolint:wrapcheck // same-process call, already wrapped
+}
+
+// PathTitles implements usershandlers.CourseSource.
+func (a *coursesSource) PathTitles(ctx context.Context) (map[string]string, error) {
+	return a.courses.PathTitles(ctx) //nolint:wrapcheck // same-process call, already wrapped
+}
+
 // convert copies src into dst through their JSON form.
 func convert(src, dst any) error {
 	data, err := json.Marshal(src)

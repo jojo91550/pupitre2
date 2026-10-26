@@ -8,8 +8,7 @@ func clearEnv(t *testing.T) {
 	t.Helper()
 
 	for _, k := range []string{
-		"PORT", "CORS_ORIGINS", "GITLAB_TOKEN", "GITLAB_BASE_URL",
-		"RATE_LIMIT_REQUESTS", "RATE_LIMIT_WINDOW_SECONDS", "INTERNAL_SERVICE_SECRET",
+		"GITLAB_TOKEN", "GITLAB_BASE_URL", "RATE_LIMIT_REQUESTS", "RATE_LIMIT_WINDOW_SECONDS",
 	} {
 		t.Setenv(k, "")
 	}
@@ -23,10 +22,6 @@ func TestLoad_Defaults(t *testing.T) {
 	clearEnv(t)
 
 	cfg := Load()
-
-	if cfg.Port != defaultPort {
-		t.Errorf("Port = %d, want %d", cfg.Port, defaultPort)
-	}
 
 	if cfg.GitLabBaseURL != defaultGitLabBaseURL {
 		t.Errorf("GitLabBaseURL = %q, want %q", cfg.GitLabBaseURL, defaultGitLabBaseURL)
@@ -43,36 +38,17 @@ func TestLoad_Defaults(t *testing.T) {
 	if cfg.RateLimitWindowSeconds != defaultRateLimitWindowSeconds {
 		t.Errorf("RateLimitWindowSeconds = %d, want %d", cfg.RateLimitWindowSeconds, defaultRateLimitWindowSeconds)
 	}
-
-	if cfg.InternalSecret != defaultInternalSecret {
-		t.Errorf("InternalSecret = %q, want %q", cfg.InternalSecret, defaultInternalSecret)
-	}
-
-	if len(cfg.CORSOrigins) != 2 {
-		t.Errorf("CORSOrigins = %v, want 2 entries", cfg.CORSOrigins)
-	}
 }
 
 // TestLoad_EnvOverrides verifies every env var is honoured.
 func TestLoad_EnvOverrides(t *testing.T) {
 	clearEnv(t)
-	t.Setenv("PORT", "9999")
-	t.Setenv("CORS_ORIGINS", "http://a.test,http://b.test,http://c.test")
 	t.Setenv("GITLAB_TOKEN", "glpat-xyz")
 	t.Setenv("GITLAB_BASE_URL", "https://gitlab.example.com")
 	t.Setenv("RATE_LIMIT_REQUESTS", "5")
 	t.Setenv("RATE_LIMIT_WINDOW_SECONDS", "30")
-	t.Setenv("INTERNAL_SERVICE_SECRET", "top-secret")
 
 	cfg := Load()
-
-	if cfg.Port != 9999 {
-		t.Errorf("Port = %d, want 9999", cfg.Port)
-	}
-
-	if len(cfg.CORSOrigins) != 3 {
-		t.Errorf("CORSOrigins = %v, want 3 entries", cfg.CORSOrigins)
-	}
 
 	if cfg.GitLabToken != "glpat-xyz" {
 		t.Errorf("GitLabToken = %q", cfg.GitLabToken)
@@ -88,23 +64,6 @@ func TestLoad_EnvOverrides(t *testing.T) {
 
 	if cfg.RateLimitWindowSeconds != 30 {
 		t.Errorf("RateLimitWindowSeconds = %d, want 30", cfg.RateLimitWindowSeconds)
-	}
-
-	if cfg.InternalSecret != "top-secret" {
-		t.Errorf("InternalSecret = %q", cfg.InternalSecret)
-	}
-}
-
-// TestLoad_InvalidPortFallsBack verifies a non-numeric PORT keeps the
-// default.
-func TestLoad_InvalidPortFallsBack(t *testing.T) {
-	clearEnv(t)
-	t.Setenv("PORT", "not-a-number")
-
-	cfg := Load()
-
-	if cfg.Port != defaultPort {
-		t.Errorf("Port = %d, want default %d", cfg.Port, defaultPort)
 	}
 }
 

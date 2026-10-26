@@ -5,16 +5,11 @@
 //
 //	go test -tags e2e ./...
 //
-// Required env vars:
+// Env vars:
 //
-//	USER_SERVICE_URL    (default: http://localhost:8081)
-//	CHECKER_SERVICE_URL (default: http://localhost:8083)
-//	ADMIN_EMAIL         (default: admin@pupitre.local)
-//	ADMIN_PASSWORD      (required — no default)
-//
-// Optional:
-//
-//	COURSE_SERVICE_URL  (course tests are skipped when unset)
+//	API_URL         (default: http://localhost:8080)
+//	ADMIN_EMAIL     (default: admin@pupitre.local)
+//	ADMIN_PASSWORD  (required — no default)
 package e2e_test
 
 import (
@@ -40,41 +35,29 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	if globalCfg.UserURL != "" {
-		tok, err := adminLogin(globalCfg)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "e2e: admin login failed:", err)
-			os.Exit(1)
-		}
-
-		globalCfg.adminToken = tok
+	tok, err := adminLogin(globalCfg)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "e2e: admin login failed:", err)
+		os.Exit(1)
 	}
+
+	globalCfg.adminToken = tok
 
 	os.Exit(m.Run())
 }
 
-// awaitServices waits up to 30 s for each configured service health endpoint.
+// awaitServices waits up to 30 s for the API health endpoint.
 func awaitServices() error {
 	const timeout = 30 * time.Second
 
-	for _, entry := range []struct{ name, url string }{
-		{"user-service", globalCfg.UserURL + "/health"},
-		{"course-service", globalCfg.CourseURL + "/health"},
-		{"checker-service", globalCfg.CheckerURL + "/health"},
-	} {
-		if entry.url == "/health" {
-			continue // URL was empty; service not configured
-		}
-
-		if err := waitReady(entry.url, timeout); err != nil {
-			return fmt.Errorf("%s: %w", entry.name, err)
-		}
+	if err := waitReady(globalCfg.APIURL+"/health", timeout); err != nil {
+		return fmt.Errorf("pupitre-api: %w", err)
 	}
 
 	return nil
 }
 
-// adminLogin posts credentials to user-service and returns the JWT.
+// adminLogin posts credentials to the API and returns the JWT.
 func adminLogin(cfg testCfg) (string, error) {
 	body := map[string]string{
 		"email":    cfg.AdminEmail,
@@ -84,7 +67,7 @@ func adminLogin(cfg testCfg) (string, error) {
 	b, _ := json.Marshal(body)
 
 	resp, err := http.Post( //nolint:gosec,noctx // test helper — URLs come from env, no context needed
-		cfg.UserURL+"/api/auth/login",
+		cfg.APIURL+"/api/auth/login",
 		"application/json",
 		bytes.NewReader(b),
 	)
@@ -111,31 +94,4 @@ func adminLogin(cfg testCfg) (string, error) {
 	}
 
 	return out.Token, nil
-}
-
-// skipIfNoUserService skips the calling test when user-service is not configured.
-func skipIfNoUserService(t *testing.T) {
-	t.Helper()
-
-	if globalCfg.UserURL == "" {
-		t.Skip("USER_SERVICE_URL not set")
-	}
-}
-
-// skipIfNoCourseService skips the calling test when course-service is not configured.
-func skipIfNoCourseService(t *testing.T) {
-	t.Helper()
-
-	if globalCfg.CourseURL == "" {
-		t.Skip("COURSE_SERVICE_URL not set — course-service tests require a running K8s cluster")
-	}
-}
-
-// skipIfNoCheckerService skips the calling test when checker-service is not configured.
-func skipIfNoCheckerService(t *testing.T) {
-	t.Helper()
-
-	if globalCfg.CheckerURL == "" {
-		t.Skip("CHECKER_SERVICE_URL not set")
-	}
 }

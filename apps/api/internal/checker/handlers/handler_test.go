@@ -16,13 +16,10 @@ import (
 // baseConfig returns a Config with sane defaults for handler tests.
 func baseConfig() *config.Config {
 	return &config.Config{
-		Port:                   8083,
-		CORSOrigins:            []string{"http://localhost:3000"},
 		GitLabToken:            "tok",
 		GitLabBaseURL:          "http://gitlab.local",
 		RateLimitRequests:      0,
 		RateLimitWindowSeconds: 60,
-		InternalSecret:         "s3cret",
 	}
 }
 
@@ -69,33 +66,6 @@ func TestHealth(t *testing.T) {
 
 	if body["status"] != "ok" {
 		t.Errorf("body = %v", body)
-	}
-}
-
-// TestInternalAuth rejects missing and wrong internal secrets with 401.
-func TestInternalAuth(t *testing.T) {
-	t.Parallel()
-
-	router := New(baseConfig()).BuildRouter()
-
-	// Missing secret -> 401
-	missing := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/evaluate", strings.NewReader("{}"))
-	wMissing := httptest.NewRecorder()
-	router.ServeHTTP(wMissing, missing)
-
-	if wMissing.Code != http.StatusUnauthorized {
-		t.Errorf("missing secret: status = %d, want 401", wMissing.Code)
-	}
-
-	// Wrong secret -> 401
-	wrong := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/evaluate", strings.NewReader("{}"))
-	wrong.Header.Set("X-Internal-Secret", "wrong")
-
-	wWrong := httptest.NewRecorder()
-	router.ServeHTTP(wWrong, wrong)
-
-	if wWrong.Code != http.StatusUnauthorized {
-		t.Errorf("wrong secret: status = %d, want 401", wWrong.Code)
 	}
 }
 

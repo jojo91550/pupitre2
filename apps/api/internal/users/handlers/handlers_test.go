@@ -28,8 +28,6 @@ const (
 	htSecret = "test-jwt-signing-secret-32bytes!!"
 	// htExpiry is the JWT expiry, in hours, used by handler tests.
 	htExpiry = 24
-	// htInternalSecret is the shared service-to-service secret used in tests.
-	htInternalSecret = "test-internal-secret"
 	// htUserID is a fixed, valid UUID for tests that need an authenticated
 	// subject matching a seeded fake.UserRepository row (htAuthHeader's
 	// default subject, "user-uuid-1", is intentionally not a valid UUID).
@@ -66,10 +64,9 @@ func newTestRouter() http.Handler {
 // need custom-seeded or error-injecting fake repositories.
 func newTestRouterWithRepos(repos *repository.Repositories) http.Handler {
 	cfg := &config.Config{
-		JWTSecret:      htSecret,
-		JWTExpiryH:     htExpiry,
-		CORSOrigins:    []string{"*"},
-		InternalSecret: htInternalSecret,
+		JWTSecret:   htSecret,
+		JWTExpiryH:  htExpiry,
+		CORSOrigins: []string{"*"},
 	}
 	s := &State{Repos: repos, Config: cfg}
 
@@ -89,7 +86,6 @@ func htDoInternal(t *testing.T, handler http.Handler, method, path, body string)
 	}
 
 	req := httptest.NewRequestWithContext(t.Context(), method, path, buf)
-	req.Header.Set("X-Internal-Secret", htInternalSecret)
 
 	if body != "" {
 		req.Header.Set("Content-Type", "application/json")
@@ -1714,7 +1710,7 @@ func TestMyCourses_WithCourseService(t *testing.T) {
 	})
 	s := &State{
 		Repos:  repos,
-		Config: &config.Config{JWTSecret: htSecret, JWTExpiryH: htExpiry, CourseServiceURL: courseSvc.URL},
+		Config: &config.Config{JWTSecret: htSecret, JWTExpiryH: htExpiry}, Courses: courseSourceAt(courseSvc.URL),
 	}
 	r := BuildRouter(s, s.Config, false)
 
@@ -1757,7 +1753,7 @@ func TestMyCourses_CourseServiceNon200(t *testing.T) {
 	})
 	s := &State{
 		Repos:  repos,
-		Config: &config.Config{JWTSecret: htSecret, JWTExpiryH: htExpiry, CourseServiceURL: courseSvc.URL},
+		Config: &config.Config{JWTSecret: htSecret, JWTExpiryH: htExpiry}, Courses: courseSourceAt(courseSvc.URL),
 	}
 	r := BuildRouter(s, s.Config, false)
 
@@ -1789,7 +1785,7 @@ func TestMyCourses_CourseServiceBadJSON(t *testing.T) {
 	})
 	s := &State{
 		Repos:  repos,
-		Config: &config.Config{JWTSecret: htSecret, JWTExpiryH: htExpiry, CourseServiceURL: courseSvc.URL},
+		Config: &config.Config{JWTSecret: htSecret, JWTExpiryH: htExpiry}, Courses: courseSourceAt(courseSvc.URL),
 	}
 	r := BuildRouter(s, s.Config, false)
 
@@ -2203,12 +2199,11 @@ func TestMyCourses_WithCourseData(t *testing.T) {
 	})
 
 	cfg := &config.Config{
-		JWTSecret:        htSecret,
-		JWTExpiryH:       htExpiry,
-		CORSOrigins:      []string{"*"},
-		CourseServiceURL: mockCourse.URL,
+		JWTSecret:   htSecret,
+		JWTExpiryH:  htExpiry,
+		CORSOrigins: []string{"*"},
 	}
-	s := &State{Repos: repos, Config: cfg}
+	s := &State{Repos: repos, Config: cfg, Courses: courseSourceAt(mockCourse.URL)}
 	r := BuildRouter(s, cfg, false)
 
 	rec := htDo(t, r, "GET", "/api/my/courses", "", htAuthHeader(t, "student"))
@@ -2226,40 +2221,6 @@ func TestMyCourses_WithCourseData(t *testing.T) {
 }
 
 // ── Internal: Enrollments ─────────────────────────────────────────────────────
-
-// TestInternalRoutes_Unauthorized verifies that /internal/* routes reject
-// requests missing the X-Internal-Secret header with 401.
-func TestInternalRoutes_Unauthorized(t *testing.T) {
-	t.Parallel()
-
-	r := newTestRouter()
-
-	routes := []struct {
-		method string
-		path   string
-		body   string
-	}{
-		{"POST", "/internal/enrollments/auto", `{"userId":"u","courseSlug":"c"}`},
-		{"GET", "/internal/enrollments/check?userId=u&courseSlug=c", ""},
-		{"GET", "/internal/progress/viewed?userId=u&courseSlug=c", ""},
-		{"POST", "/internal/progress/complete", `{"userId":"u","courseSlug":"c","lessonSlug":"l"}`},
-		{"POST", "/internal/progress/course-complete", `{"userId":"u","courseSlug":"c"}`},
-		{"POST", "/internal/progress/module", `{"userId":"u","courseSlug":"c","moduleIndex":0,"score":0,"maxScore":10,"passed":false}`},
-		{"GET", "/internal/progress/modules?userId=u&courseSlug=c", ""},
-		{"GET", "/internal/progress/course-summary?userId=u&courseSlug=c", ""},
-	}
-
-	for _, tc := range routes {
-		t.Run(tc.method+" "+tc.path, func(t *testing.T) {
-			t.Parallel()
-
-			rec := htDo(t, r, tc.method, tc.path, tc.body, "")
-			if rec.Code != http.StatusUnauthorized {
-				t.Errorf("want 401 without secret, got %d", rec.Code)
-			}
-		})
-	}
-}
 
 // TestInternalAutoEnroll_InvalidJSON verifies internal auto enroll invalid
 // JSON behavior.

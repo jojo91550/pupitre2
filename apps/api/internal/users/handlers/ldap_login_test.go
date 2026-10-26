@@ -25,7 +25,6 @@ func ldapRouter(serverURL, bindDN string) http.Handler {
 
 	cfg := &config.Config{
 		JWTSecret: htSecret, JWTExpiryH: htExpiry, CORSOrigins: []string{"*"},
-		InternalSecret: htInternalSecret,
 	}
 	s := &State{Repos: repos, Config: cfg}
 

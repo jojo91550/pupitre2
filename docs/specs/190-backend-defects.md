@@ -12,6 +12,7 @@ keeps each one as it is**. Each fix is a separate change after the move (batch B
 | --- | --- | --- |
 | H6 | `/internal/*` is served on the public port, protected only by a shared secret with a public default | No internal route is left ([103](103-backend-http-api.md)) |
 | C1 (part) | Default `INTERNAL_SERVICE_SECRET` | The secret is removed ([101](101-backend-configuration.md)) |
+| B19 | The start-up test of user-service (`TestRun_BootAndGracefulShutdown`) failed at `3cdf7b2`: two `run()` of the package shared one `SIGTERM` | The service and its test are gone; `internal/server/run_integration_test.go` starts the monolith, waits for `/health`, sends `SIGTERM` and gets a clean return |
 
 ## To fix after the move
 
@@ -35,7 +36,6 @@ keeps each one as it is**. Each fix is a separate change after the move (batch B
 | B16 | Audit L1, L2 | OIDC client secret and LDAP bind password stored in clear; `oidc_insecure_skip_verify` available in production | users settings | Encrypt at rest; allow the skip only in development |
 | B17 | Audit L3, L4 | No email verification at registration (bypasses the domain allowlist); the quiz returns `correctAnswer` after submission | users `auth.go`, courses `modules.go` | Verification mail; decide on `correctAnswer` with [013](013-quizzes.md) |
 | B18 | 090 A2, A18 | No course `thumbnail`; `GET /api/my/paths` does not return `level` | courses models, users `paths.go` | Add the fields, then show them in the frontend |
-| B19 | Import (B0) | The integration test `TestRun_BootAndGracefulShutdown` of user-service fails at `3cdf7b2` too: `run()` does not return within 25 s after `SIGTERM` (the log shows two shutdowns, so a second `run()` of the package shares the signal) | `user-service/run_integration_test.go`, `main.go` | Find whether shutdown or the test is wrong; the monolith's start-up test replaces it in B1 |
 | B20 | Front + back test | A group mapping to the `manager` role fails with `500 Database error`: the handler accepts `admin`, `manager` and `student`, but the column's check constraint allows only `admin` and `student`. The admin page offers « Manager de groupe » ([044](044-admin-groups.md)) | users `models/group_role_mapping.go` | Add `manager` to the check constraint (a breaking migration replacing the constraint, [102](102-backend-data-and-migrations.md)) |
 | B21 | Front + back test | When `oidc_group_admins` is set (`sso.oidc.groupAdmins` in the chart), every OIDC sign-in resets the role to `student` unless the user is in one of those groups: a `manager` role, given by hand or by a mapping, is lost at the next sign-in | users `handlers/oauth.go` `completeSSOLogin` | Let `oidc_group_admins` grant `admin` only, and keep the mapped or stored role otherwise |
 | B22 | Helm chart | course-service writes uploads to `/data/uploads`, but the chart mounts no volume there and the root filesystem is read-only: media uploads and `replication` cannot be written, and would not survive a restart or be shared between replicas | `pupitre-helm` `templates/course-service/deployment.yaml` | Mount a persistent volume at `/data/uploads` (batch B4 of [199](199-backend-migration-plan.md)) |

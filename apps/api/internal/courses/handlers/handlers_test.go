@@ -65,14 +65,13 @@ func newTestState(t *testing.T, userSrv *httptest.Server) *State {
 	}
 
 	cfg := &config.Config{
-		JWTSecret:          "test-secret",
-		JWTExpiryH:         24,
-		UploadsDir:         "./testdata",
-		UserServiceURL:     userSrv.URL,
-		GitCredentialsPath: "",
-	}
+		JWTSecret:  "test-secret",
+		JWTExpiryH: 24,
+		UploadsDir: "./testdata",
 
-	return newStateWith(cfg, seed...)
+		GitCredentialsPath: ""}
+
+	return withPeers(newStateWith(cfg, seed...), userSrv.URL, "")
 }
 
 // newUserServiceMock returns a test server with sensible defaults for all
@@ -788,12 +787,10 @@ func newCrossCourseLockState(t *testing.T, userSrv *httptest.Server) *State {
 	}
 
 	cfg := &config.Config{
-		JWTSecret:      "test-secret",
-		JWTExpiryH:     24,
-		UserServiceURL: userSrv.URL,
-	}
+		JWTSecret:  "test-secret",
+		JWTExpiryH: 24}
 
-	return newStateWith(cfg, seed...)
+	return withPeers(newStateWith(cfg, seed...), userSrv.URL, "")
 }
 
 // ── Cross-course lock: ListModules ────────────────────────────────────────────
@@ -1831,7 +1828,7 @@ func TestGetModule_PrivateNotEnrolled(t *testing.T) {
 	defer mock.Close()
 
 	s := newTestState(t, mock)
-	cfg := &config.Config{JWTSecret: "test-secret", UserServiceURL: mock.URL}
+	cfg := &config.Config{JWTSecret: "test-secret"}
 	r := BuildRouter(s, cfg, false)
 
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/courses/docker-fundamentals/modules/0", http.NoBody)
@@ -1853,7 +1850,7 @@ func TestGetModule_ImageType(t *testing.T) {
 	defer mock.Close()
 
 	s := newTestState(t, mock)
-	cfg := &config.Config{JWTSecret: "test-secret", UserServiceURL: mock.URL}
+	cfg := &config.Config{JWTSecret: "test-secret"}
 	r := BuildRouter(s, cfg, false)
 
 	// Module index 2 is image type in kubernetes-basics
@@ -1886,7 +1883,7 @@ func TestListModules_PrivateNotEnrolled(t *testing.T) {
 	defer mock.Close()
 
 	s := newTestState(t, mock)
-	cfg := &config.Config{JWTSecret: "test-secret", UserServiceURL: mock.URL}
+	cfg := &config.Config{JWTSecret: "test-secret"}
 	r := BuildRouter(s, cfg, false)
 
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/courses/docker-fundamentals/modules", http.NoBody)
@@ -1911,7 +1908,7 @@ func TestMarkLessonComplete_PrivateNotEnrolled(t *testing.T) {
 	defer mock.Close()
 
 	s := newTestState(t, mock)
-	cfg := &config.Config{JWTSecret: "test-secret", UserServiceURL: mock.URL}
+	cfg := &config.Config{JWTSecret: "test-secret"}
 	r := BuildRouter(s, cfg, false)
 
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/api/courses/docker-fundamentals/lessons/intro/complete", http.NoBody)
@@ -1934,7 +1931,7 @@ func TestMarkLessonComplete_LessonNotFound(t *testing.T) {
 	defer mock.Close()
 
 	s := newTestState(t, mock)
-	cfg := &config.Config{JWTSecret: "test-secret", UserServiceURL: mock.URL}
+	cfg := &config.Config{JWTSecret: "test-secret"}
 	r := BuildRouter(s, cfg, false)
 
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/api/courses/kubernetes-basics/lessons/nonexistent/complete", http.NoBody)
@@ -1961,7 +1958,7 @@ func TestMarkLessonComplete_UserServiceError(t *testing.T) {
 	defer mock.Close()
 
 	s := newTestState(t, mock)
-	cfg := &config.Config{JWTSecret: "test-secret", UserServiceURL: mock.URL}
+	cfg := &config.Config{JWTSecret: "test-secret"}
 	r := BuildRouter(s, cfg, false)
 
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/api/courses/kubernetes-basics/lessons/what-is-k8s/complete", http.NoBody)
@@ -1998,11 +1995,9 @@ func TestListLessons_FromModules(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		JWTSecret:      "test-secret",
-		JWTExpiryH:     24,
-		UserServiceURL: mock.URL,
-	}
-	s := newStateWith(cfg, seed...)
+		JWTSecret:  "test-secret",
+		JWTExpiryH: 24}
+	s := withPeers(newStateWith(cfg, seed...), mock.URL, "")
 	r := BuildRouter(s, cfg, false)
 
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/courses/lesson-course/lessons", http.NoBody)
@@ -2070,11 +2065,9 @@ func TestGetLesson_FromModule(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		JWTSecret:      "test-secret",
-		JWTExpiryH:     24,
-		UserServiceURL: mock.URL,
-	}
-	s := newStateWith(cfg, seed...)
+		JWTSecret:  "test-secret",
+		JWTExpiryH: 24}
+	s := withPeers(newStateWith(cfg, seed...), mock.URL, "")
 	r := BuildRouter(s, cfg, false)
 
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/courses/lesson-course2/lessons/intro", http.NoBody)
@@ -2098,8 +2091,7 @@ func TestNewState_InvalidCredentialsPath(t *testing.T) {
 	seed := []*content.Course{}
 	cfg := &config.Config{
 		JWTSecret:          "test-secret",
-		GitCredentialsPath: "/nonexistent/git-creds.json",
-	}
+		GitCredentialsPath: "/nonexistent/git-creds.json"}
 	// Should not panic even when credentials file doesn't exist
 	s := newStateWith(cfg, seed...)
 	if s == nil {
@@ -2139,8 +2131,8 @@ func TestGetModule_PrerequisitesNotMet(t *testing.T) {
 		},
 	}
 
-	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24, UserServiceURL: mock.URL}
-	s := newStateWith(cfg, seed...)
+	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24}
+	s := withPeers(newStateWith(cfg, seed...), mock.URL, "")
 	r := BuildRouter(s, cfg, false)
 
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/courses/prereq-course/modules/0", http.NoBody)
@@ -2423,13 +2415,11 @@ func newTestStateWithQuiz(t *testing.T, mock *httptest.Server) *State {
 	}
 
 	cfg := &config.Config{
-		JWTSecret:      "test-secret",
-		JWTExpiryH:     24,
-		UploadsDir:     "./testdata",
-		UserServiceURL: mock.URL,
-	}
+		JWTSecret:  "test-secret",
+		JWTExpiryH: 24,
+		UploadsDir: "./testdata"}
 
-	return newStateWith(cfg, seed...)
+	return withPeers(newStateWith(cfg, seed...), mock.URL, "")
 }
 
 // TestGetModule_TextInline verifies get module in the text inline scenario.
@@ -2658,7 +2648,7 @@ func TestGetCourse_PrivateEnrolled(t *testing.T) {
 	defer mock.Close()
 
 	s := newTestState(t, mock)
-	cfg := &config.Config{JWTSecret: "test-secret", UserServiceURL: mock.URL}
+	cfg := &config.Config{JWTSecret: "test-secret"}
 	r := BuildRouter(s, cfg, false)
 
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/courses/docker-fundamentals", http.NoBody)
@@ -2977,8 +2967,8 @@ func TestGetLab_LabModuleType(t *testing.T) {
 		},
 	}
 
-	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24, UserServiceURL: mock.URL}
-	s := newStateWith(cfg, seed...)
+	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24}
+	s := withPeers(newStateWith(cfg, seed...), mock.URL, "")
 	r := BuildRouter(s, cfg, false)
 
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/courses/lab-type-course/labs/hands-on-lab", http.NoBody)
@@ -3026,11 +3016,9 @@ func TestListModules_AdminSeesHidden(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		JWTSecret:      "test-secret",
-		JWTExpiryH:     24,
-		UserServiceURL: mock.URL,
-	}
-	s := newStateWith(cfg, seed...)
+		JWTSecret:  "test-secret",
+		JWTExpiryH: 24}
+	s := withPeers(newStateWith(cfg, seed...), mock.URL, "")
 	r := BuildRouter(s, cfg, false)
 
 	// Admin sees hidden modules
@@ -3142,7 +3130,7 @@ func TestGetCourseProgress_Success(t *testing.T) {
 	defer mock.Close()
 
 	s := newTestState(t, mock)
-	cfg := &config.Config{JWTSecret: "test-secret", UserServiceURL: mock.URL}
+	cfg := &config.Config{JWTSecret: "test-secret"}
 	r := BuildRouter(s, cfg, false)
 
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/courses/kubernetes-basics/progress", http.NoBody)
@@ -3242,12 +3230,10 @@ func newStateWithQuiz(t *testing.T, mock *httptest.Server) *State {
 	}
 
 	cfg := &config.Config{
-		JWTSecret:      "test-secret",
-		JWTExpiryH:     24,
-		UserServiceURL: mock.URL,
-	}
+		JWTSecret:  "test-secret",
+		JWTExpiryH: 24}
 
-	return newStateWith(cfg, seed...)
+	return withPeers(newStateWith(cfg, seed...), mock.URL, "")
 }
 
 // TestGetModule_InlineQuiz verifies get module in the inline quiz scenario.
@@ -3258,7 +3244,7 @@ func TestGetModule_InlineQuiz(t *testing.T) {
 	defer mock.Close()
 
 	s := newStateWithQuiz(t, mock)
-	cfg := &config.Config{JWTSecret: "test-secret", UserServiceURL: mock.URL}
+	cfg := &config.Config{JWTSecret: "test-secret"}
 	r := BuildRouter(s, cfg, false)
 
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/courses/quiz-course/modules/1", http.NoBody)
@@ -3296,7 +3282,7 @@ func TestGetModule_QuizModuleCount(t *testing.T) {
 	defer mock.Close()
 
 	s := newStateWithQuiz(t, mock)
-	cfg := &config.Config{JWTSecret: "test-secret", UserServiceURL: mock.URL}
+	cfg := &config.Config{JWTSecret: "test-secret"}
 	r := BuildRouter(s, cfg, false)
 
 	// Module 0 is text with no inline next quiz (next is quiz at index 1, not inline)

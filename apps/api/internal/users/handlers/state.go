@@ -1,10 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"sync"
 
 	"go.uber.org/zap"
@@ -26,15 +27,14 @@ type State struct {
 	Repos  *repository.Repositories
 	Config *config.Config
 
-	// Catalog resolves course, path and skill metadata from
-	// course-service. Nil until catalog is first called, which builds it
-	// from Courses or Config — so a State assembled as a bare struct
-	// literal (as main and the tests both do) still gets one.
+	// Catalog resolves course, path and skill metadata from the courses
+	// domain. Nil until catalog is first called, which builds it from
+	// Courses — so a State assembled as a bare struct literal (as the
+	// tests do) still gets one.
 	Catalog *Catalog
 
-	// Courses is the courses domain this one reads from. The monolith sets
-	// it to an in-process implementation; left nil, the standalone binary
-	// reaches course-service over HTTP.
+	// Courses is the courses domain this one reads from, wired in by the
+	// monolith (docs/specs/104-backend-in-process-calls.md).
 	Courses CourseSource
 
 	catalogOnce sync.Once
@@ -108,14 +108,51 @@ func derefStr(s *string) string {
 	return *s
 }
 
-// courseSource returns the courses domain wired in by the monolith, or the
-// course-service HTTP client of the standalone binary.
-func (s *State) courseSource() CourseSource { //nolint:ireturn // the wired courses domain, or its HTTP fallback
+// courseSource returns the courses domain wired in by the monolith; a State
+// built without one cannot read the catalog.
+func (s *State) courseSource() CourseSource { //nolint:ireturn // the wired courses domain, or none
 	if s.Courses != nil {
 		return s.Courses
 	}
 
-	return &httpCourseSource{baseURL: strings.TrimRight(s.Config.CourseServiceURL, "/")}
+	return noCourseSource{}
+}
+
+// errNoCourseSource is returned by a State that was not wired to the courses
+// domain.
+var errNoCourseSource = errors.New("courses domain not wired")
+
+// noCourseSource answers every read with errNoCourseSource.
+type noCourseSource struct{}
+
+// Courses implements CourseSource.
+func (noCourseSource) Courses(context.Context, []string) ([]CourseInfo, error) {
+	return nil, errNoCourseSource
+}
+
+// Paths implements CourseSource.
+func (noCourseSource) Paths(context.Context, []string) ([]PathInfo, error) {
+	return nil, errNoCourseSource
+}
+
+// SkillModules implements CourseSource.
+func (noCourseSource) SkillModules(context.Context, []string) (map[string][]SkillModule, error) {
+	return nil, errNoCourseSource
+}
+
+// PublicCourseSessions implements CourseSource.
+func (noCourseSource) PublicCourseSessions(context.Context, string) ([]CourseSessionInfo, error) {
+	return nil, errNoCourseSource
+}
+
+// PublicCourseTitles implements CourseSource.
+func (noCourseSource) PublicCourseTitles(context.Context) (map[string]string, error) {
+	return nil, errNoCourseSource
+}
+
+// PathTitles implements CourseSource.
+func (noCourseSource) PathTitles(context.Context) (map[string]string, error) {
+	return nil, errNoCourseSource
 }
 
 // catalog returns the shared Catalog, building it on first use.
