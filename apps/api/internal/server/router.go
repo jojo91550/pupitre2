@@ -46,6 +46,7 @@ func BuildRouter(domains Domains, cfg *config.Config, withLogger bool) *chi.Mux 
 	}
 
 	router.Use(chiMiddleware.Recoverer)
+	router.Use(securityHeaders)
 	router.Use(cors.New(cors.Options{
 		AllowedOrigins:   cfg.Users.CORSOrigins,
 		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions},

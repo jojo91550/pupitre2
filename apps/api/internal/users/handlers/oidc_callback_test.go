@@ -155,7 +155,7 @@ func TestOIDCCallback_FullFlow(t *testing.T) {
 	}
 
 	body := `{"code":"any-code","state":"` + state + `"}`
-	rec := htDo(t, router, http.MethodPost, "/api/auth/oidc/callback", body, "")
+	rec := htDoOAuth(t, router, http.MethodPost, "/api/auth/oidc/callback", body, "")
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("want 200, got %d: %s", rec.Code, rec.Body.String())
@@ -213,7 +213,7 @@ func TestOAuthCallback_GenericOIDCFlow(t *testing.T) {
 		t.Fatalf("makeOAuthState: %v", err)
 	}
 
-	rec := htDo(t, router, http.MethodPost, "/api/auth/oauth/callback",
+	rec := htDoOAuth(t, router, http.MethodPost, "/api/auth/oauth/callback",
 		`{"code":"any","state":"`+state+`"}`, "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("want 200, got %d: %s", rec.Code, rec.Body.String())
@@ -250,7 +250,7 @@ func TestOAuthCallback_UnknownProvider(t *testing.T) {
 	router := BuildRouter(s, cfg, false)
 
 	state, _ := makeOAuthState("nope", s.oauthStateSecret())
-	rec := htDo(t, router, http.MethodPost, "/api/auth/oauth/callback",
+	rec := htDoOAuth(t, router, http.MethodPost, "/api/auth/oauth/callback",
 		`{"code":"x","state":"`+state+`"}`, "")
 
 	if rec.Code != http.StatusBadRequest {
@@ -266,7 +266,7 @@ func TestOIDCCallback_BadState(t *testing.T) {
 	s := oidcTestState(idp)
 	router := BuildRouter(s, s.Config, false)
 
-	rec := htDo(t, router, http.MethodPost, "/api/auth/oidc/callback",
+	rec := htDoOAuth(t, router, http.MethodPost, "/api/auth/oidc/callback",
 		`{"code":"x","state":"not-a-valid-state"}`, "")
 	if rec.Code != http.StatusUnauthorized {
 		t.Errorf("want 401, got %d", rec.Code)
@@ -284,7 +284,7 @@ func TestOIDCCallback_NoEmailClaim(t *testing.T) {
 	router := BuildRouter(s, s.Config, false)
 
 	state, _ := makeOAuthState(oidcProviderKey, s.oauthStateSecret())
-	rec := htDo(t, router, http.MethodPost, "/api/auth/oidc/callback",
+	rec := htDoOAuth(t, router, http.MethodPost, "/api/auth/oidc/callback",
 		`{"code":"x","state":"`+state+`"}`, "")
 
 	if rec.Code != http.StatusUnauthorized {
@@ -305,7 +305,7 @@ func TestOIDCCallback_Disabled(t *testing.T) {
 	router := BuildRouter(s, cfg, false)
 
 	state, _ := makeOAuthState(oidcProviderKey, s.oauthStateSecret())
-	rec := htDo(t, router, http.MethodPost, "/api/auth/oidc/callback",
+	rec := htDoOAuth(t, router, http.MethodPost, "/api/auth/oidc/callback",
 		`{"code":"x","state":"`+state+`"}`, "")
 
 	if rec.Code != http.StatusBadRequest {
@@ -371,7 +371,7 @@ func TestOIDCCallback_StringGroupsClaim(t *testing.T) {
 	router := BuildRouter(s, cfg, false)
 
 	state, _ := makeOAuthState(oidcProviderKey, s.oauthStateSecret())
-	rec := htDo(t, router, http.MethodPost, "/api/auth/oidc/callback",
+	rec := htDoOAuth(t, router, http.MethodPost, "/api/auth/oidc/callback",
 		`{"code":"x","state":"`+state+`"}`, "")
 
 	if rec.Code != http.StatusOK {
@@ -446,7 +446,7 @@ func TestOIDCCallback_UserInfoEnrichment(t *testing.T) {
 	router := BuildRouter(s, s.Config, false)
 
 	state, _ := makeOAuthState(oidcProviderKey, s.oauthStateSecret())
-	rec := htDo(t, router, http.MethodPost, "/api/auth/oidc/callback",
+	rec := htDoOAuth(t, router, http.MethodPost, "/api/auth/oidc/callback",
 		`{"code":"x","state":"`+state+`"}`, "")
 
 	if rec.Code != http.StatusOK {
@@ -488,7 +488,7 @@ func TestOIDCCallback_RecordsIdentityName(t *testing.T) {
 		t.Fatalf("makeOAuthState: %v", err)
 	}
 
-	rec := htDo(t, router, http.MethodPost, "/api/auth/oidc/callback", `{"code":"c","state":"`+state+`"}`, "")
+	rec := htDoOAuth(t, router, http.MethodPost, "/api/auth/oidc/callback", `{"code":"c","state":"`+state+`"}`, "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("callback: %d %s", rec.Code, rec.Body.String())
 	}

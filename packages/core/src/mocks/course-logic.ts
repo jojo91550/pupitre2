@@ -291,19 +291,6 @@ function isCorrect(question: QuestionDefinition, answer: QuizAnswer | undefined)
   }
 }
 
-function correctAnswerOf(question: QuestionDefinition): unknown {
-  switch (question.type) {
-    case 'single':
-      return question.answers?.find((a) => a.correct)?.id;
-    case 'multiple':
-      return question.answers?.filter((a) => a.correct).map((a) => a.id);
-    case 'boolean':
-      return question.correctAnswer;
-    case 'order':
-      return question.correctOrder;
-  }
-}
-
 /** modules.go — finalizeSubmission, with recordQuestionCooldowns. */
 export function scoreQuiz(
   course: CourseDefinition,
@@ -329,7 +316,6 @@ export function scoreQuiz(
       isCorrect: correct,
       pointsEarned: correct ? points : 0,
       pointsMax: points,
-      correctAnswer: correctAnswerOf(question),
       feedback: (correct ? question.feedback?.correct : question.feedback?.wrong) || undefined,
       sourceRefs: question.feedback?.sourceRefs,
     };

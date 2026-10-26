@@ -2,6 +2,9 @@ package handlers
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/subtle"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -49,6 +52,12 @@ const (
 
 	oauthStateTokenTTL  = 10 * time.Minute
 	oauthMaxUsernameLen = 32
+
+	// oauthStateCookie holds the nonce of the state the browser was given
+	// (docs/specs/190-backend-defects.md B13).
+	oauthStateCookie     = "pupitre_oauth_state"
+	oauthStateCookiePath = "/api/auth"
+	oauthNonceBytes      = 32
 )
 
 // oauthStateSecret returns the secret used to sign OAuth CSRF state tokens.
@@ -71,16 +80,82 @@ type oauthStateClaims struct {
 	jwt.RegisteredClaims
 
 	Provider string `json:"provider"`
+	// Nonce is also set in the oauthStateCookie of the browser that started
+	// the flow; the callback accepts the state from that browser only.
+	Nonce string `json:"nonce,omitempty"`
 }
 
-// makeOAuthState creates a short-lived, signed JWT to use as the OAuth
+// startOAuthState creates the state of a new login flow and binds it to the
+// browser with an HttpOnly cookie holding its nonce. Without the binding, an
+// attacker could send a victim a callback link carrying the attacker's own
+// code and state, and sign the victim in to the attacker's account (login
+// CSRF, docs/specs/190-backend-defects.md B13).
+func (s *State) startOAuthState(writer http.ResponseWriter, provider, redirectBase string) (string, error) {
+	raw := make([]byte, oauthNonceBytes)
+
+	_, err := rand.Read(raw)
+	if err != nil {
+		return "", fmt.Errorf("oauth state nonce: %w", err)
+	}
+
+	nonce := base64.RawURLEncoding.EncodeToString(raw)
+
+	token, err := makeOAuthStateWithNonce(provider, nonce, s.oauthStateSecret())
+	if err != nil {
+		return "", err
+	}
+
+	// Secure follows the redirect base: local development serves the
+	// frontend over plain HTTP, where a Secure cookie would not come back.
+	http.SetCookie(writer, &http.Cookie{ //nolint:gosec // G124: Secure is set whenever the site is HTTPS, see above
+		Name:     oauthStateCookie,
+		Value:    nonce,
+		Path:     oauthStateCookiePath,
+		MaxAge:   int(oauthStateTokenTTL / time.Second),
+		HttpOnly: true,
+		Secure:   strings.HasPrefix(redirectBase, "https://"),
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	return token, nil
+}
+
+// checkOAuthState verifies a state sent to a callback and that it comes from
+// the browser it was given to, then clears the cookie: a state is used once.
+// It returns the provider the flow was started with.
+func (s *State) checkOAuthState(writer http.ResponseWriter, request *http.Request, stateToken string) (string, bool) {
+	provider, nonce, ok := decodeOAuthStateNonce(stateToken, s.oauthStateSecret())
+	if !ok || nonce == "" {
+		return "", false
+	}
+
+	cookie, err := request.Cookie(oauthStateCookie)
+	if err != nil || subtle.ConstantTimeCompare([]byte(cookie.Value), []byte(nonce)) != 1 {
+		return "", false
+	}
+
+	http.SetCookie(writer, &http.Cookie{ //nolint:gosec // G124: clears the cookie with the Secure flag it was set with
+		Name:     oauthStateCookie,
+		Value:    "",
+		Path:     oauthStateCookiePath,
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   cookie.Secure,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	return provider, true
+}
+
+// makeOAuthStateWithNonce creates a short-lived, signed JWT to use as the OAuth
 // "state" parameter for the given provider.
-func makeOAuthState(provider, secret string) (string, error) {
+func makeOAuthStateWithNonce(provider, nonce, secret string) (string, error) {
 	claims := oauthStateClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(oauthStateTokenTTL)),
 		},
 		Provider: provider,
+		Nonce:    nonce,
 	}
 
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(secret))
@@ -91,9 +166,11 @@ func makeOAuthState(provider, secret string) (string, error) {
 	return token, nil
 }
 
-// decodeOAuthState verifies and parses an OAuth state JWT, returning the
-// provider id it was issued for and whether it is valid.
-func decodeOAuthState(stateToken, secret string) (string, bool) {
+// decodeOAuthStateNonce verifies and parses an OAuth state JWT, returning
+// the provider id and the nonce it was issued with, and whether it is valid.
+//
+//nolint:gocritic // named results here would trip nonamedreturns instead; see doc comment above for the meaning of each value
+func decodeOAuthStateNonce(stateToken, secret string) (string, string, bool) {
 	token, err := jwt.ParseWithClaims(stateToken, &oauthStateClaims{},
 		func(t *jwt.Token) (any, error) {
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -103,14 +180,14 @@ func decodeOAuthState(stateToken, secret string) (string, bool) {
 			return []byte(secret), nil
 		})
 	if err != nil || !token.Valid {
-		return "", false
+		return "", "", false
 	}
 
 	if c, ok := token.Claims.(*oauthStateClaims); ok {
-		return c.Provider, true
+		return c.Provider, c.Nonce, true
 	}
 
-	return "", false
+	return "", "", false
 }
 
 // ListProviders godoc
@@ -153,7 +230,7 @@ func (s *State) OAuthAuthorize(writer http.ResponseWriter, request *http.Request
 		return
 	}
 
-	stateToken, err := makeOAuthState(providerID, s.oauthStateSecret())
+	stateToken, err := s.startOAuthState(writer, providerID, s.Config.OAuthRedirectBase)
 	if err != nil {
 		s.Error(writer, http.StatusInternalServerError, "State token error")
 
@@ -224,7 +301,7 @@ func (s *State) OAuthCallback(writer http.ResponseWriter, request *http.Request)
 		return
 	}
 
-	providerID, ok := decodeOAuthState(body.State, s.oauthStateSecret())
+	providerID, ok := s.checkOAuthState(writer, request, body.State)
 	if !ok {
 		s.Error(writer, http.StatusUnauthorized, "Invalid or expired OAuth state")
 

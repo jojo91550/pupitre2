@@ -295,6 +295,13 @@ func (s *State) loginLookup(ctx context.Context, email string) (loginUserRow, er
 	return loginUserRow{user: toUserPublicRow(user), passwordHash: user.PasswordHash}, nil
 }
 
+// spendPasswordCheckTime takes about as long as checking a password, for
+// the sign-ins that have no hash to check: hashing costs the same as
+// comparing.
+func spendPasswordCheckTime(password string) {
+	_, _ = bcrypt.GenerateFromPassword([]byte(password), bcryptCost)
+}
+
 // Login godoc
 // @Summary  Authenticate and receive a JWT
 // @Tags     Auth
@@ -322,15 +329,13 @@ func (s *State) Login(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	// An unknown email, an SSO account and a wrong password get the same
+	// answer in about the same time, so that the sign-in does not tell
+	// which accounts exist (docs/specs/190-backend-defects.md B14).
 	row, err := s.loginLookup(ctx, req.Email)
-	if err != nil {
+	if err != nil || row.passwordHash == nil {
+		spendPasswordCheckTime(req.Password)
 		s.Error(writer, http.StatusUnauthorized, "Invalid email or password")
-
-		return
-	}
-
-	if row.passwordHash == nil {
-		s.Error(writer, http.StatusUnauthorized, "This account uses "+row.user.AuthProvider+" SSO login.")
 
 		return
 	}

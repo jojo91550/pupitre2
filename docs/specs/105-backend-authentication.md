@@ -63,6 +63,12 @@ The full-featured single provider, used by the frontend.
   start-up** from the `OIDC_*` variables ([101](101-backend-configuration.md)).
 - `GET /api/auth/oidc/authorize` redirects to the provider with a signed `state`
   (`OAUTH_STATE_SECRET`); `POST /api/auth/oidc/callback` exchanges the code and returns a token.
+- The `state` is bound to the browser ([190](190-backend-defects.md) B13): `authorize` also sets
+  the HttpOnly cookie `pupitre_oauth_state` (`SameSite=Lax`, path `/api/auth`, 10 minutes,
+  `Secure` when the redirect base is HTTPS) holding a nonce that the `state` carries. A callback
+  without that cookie, or with another nonce, is refused with `401`; the cookie is cleared after
+  use. The OAuth providers' `authorize` and `callback` work the same way. The frontend's calls
+  are same-origin, so the browser sends the cookie on its own.
 - **Split horizon**: discovery uses the internal URL, browser redirects use
   `oidc_browser_base_url`, and the token's issuer is checked against `oidc_issuer_url`.
 - **Group to role**: the groups of `oidc_group_claim` are synced as platform groups; a group
@@ -98,6 +104,9 @@ The full-featured single provider, used by the frontend.
 
 - `POST /api/auth/register` (when `registration_enabled` is true and the email domain matches
   `registration_email_whitelist`, if set), `POST /api/auth/login`.
+- A failed sign-in answers `401 Invalid email or password`, whether the email is unknown, belongs
+  to an SSO account or the password is wrong, in about the same time
+  ([190](190-backend-defects.md) B14).
 - Password policy from settings: `password_min_length` (default 8),
   `password_require_uppercase`, `password_require_number`. Passwords are hashed with bcrypt.
 - Password change refused for SSO-managed accounts. Username change allowed unless

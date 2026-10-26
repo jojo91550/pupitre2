@@ -155,16 +155,16 @@ type cooldownState struct {
 }
 
 // questionResultAPI is the client-facing result of scoring a single quiz
-// question.
+// question. It never carries the correct answer: a learner could read it,
+// then submit again with it (docs/specs/190-backend-defects.md B17).
 type questionResultAPI struct {
-	QuestionID    string              `json:"questionId"`
-	Type          string              `json:"type"`
-	IsCorrect     bool                `json:"isCorrect"`
-	PointsEarned  int                 `json:"pointsEarned"`
-	PointsMax     int                 `json:"pointsMax"`
-	CorrectAnswer any                 `json:"correctAnswer,omitempty"`
-	Feedback      string              `json:"feedback,omitempty"`
-	SourceRefs    []content.SourceRef `json:"sourceRefs,omitempty"`
+	QuestionID   string              `json:"questionId"`
+	Type         string              `json:"type"`
+	IsCorrect    bool                `json:"isCorrect"`
+	PointsEarned int                 `json:"pointsEarned"`
+	PointsMax    int                 `json:"pointsMax"`
+	Feedback     string              `json:"feedback,omitempty"`
+	SourceRefs   []content.SourceRef `json:"sourceRefs,omitempty"`
 }
 
 // moduleProgressData holds per-module quiz progress fetched from user-service.
@@ -916,14 +916,13 @@ func toQuestionResultsAPI(results []content.QuestionResult) []questionResultAPI 
 	out := make([]questionResultAPI, len(results))
 	for index, questionResult := range results {
 		out[index] = questionResultAPI{
-			QuestionID:    questionResult.QuestionID,
-			Type:          questionResult.Type,
-			IsCorrect:     questionResult.IsCorrect,
-			PointsEarned:  questionResult.PointsEarned,
-			PointsMax:     questionResult.PointsMax,
-			CorrectAnswer: questionResult.CorrectAnswer,
-			Feedback:      questionResult.Feedback,
-			SourceRefs:    questionResult.SourceRefs,
+			QuestionID:   questionResult.QuestionID,
+			Type:         questionResult.Type,
+			IsCorrect:    questionResult.IsCorrect,
+			PointsEarned: questionResult.PointsEarned,
+			PointsMax:    questionResult.PointsMax,
+			Feedback:     questionResult.Feedback,
+			SourceRefs:   questionResult.SourceRefs,
 		}
 	}
 
