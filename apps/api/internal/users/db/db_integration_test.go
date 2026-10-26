@@ -148,3 +148,58 @@ func TestMigrate_CollapsesDuplicateXPEvents(t *testing.T) { //nolint:paralleltes
 		t.Fatalf("the unique index is missing after migration: %v", err)
 	}
 }
+
+// TestMigrate_GroupMappingsAllowManager reproduces a database whose
+// group_role_mappings check accepts admin and student only, and asserts the
+// migration lets a group map to manager (docs/specs/190-backend-defects.md
+// B20).
+func TestMigrate_GroupMappingsAllowManager(t *testing.T) { //nolint:paralleltest // owns the shared schema
+	url := dbURL(t)
+
+	gdb, err := db.Connect(t.Context(), url, 5, 2)
+	if err != nil {
+		t.Fatalf("Connect: %v", err)
+	}
+
+	err = db.RunMigrations(t.Context(), gdb)
+	if err != nil {
+		t.Fatalf("RunMigrations: %v", err)
+	}
+
+	t.Cleanup(func() {
+		_ = gdb.Exec(`DELETE FROM group_role_mappings WHERE groupname = 'b20-migration-managers'`).Error
+	})
+
+	// Put back the constraint of the reference backend, and record that the
+	// migration has not run yet.
+	setup := []string{
+		`ALTER TABLE group_role_mappings DROP CONSTRAINT IF EXISTS chk_group_role_mappings_platformrole`,
+		`ALTER TABLE group_role_mappings ADD CONSTRAINT chk_group_role_mappings_platformrole
+		 CHECK (platformrole IN ('admin','student'))`,
+		`DELETE FROM _schema_migrations WHERE name = '20261026_group_role_mappings_allow_manager'`,
+	}
+
+	for _, statement := range setup {
+		execErr := gdb.WithContext(t.Context()).Exec(statement).Error
+		if execErr != nil {
+			t.Fatalf("seed the old constraint (%s): %v", statement, execErr)
+		}
+	}
+
+	err = db.RunMigrations(t.Context(), gdb)
+	if err != nil {
+		t.Fatalf("RunMigrations over the old constraint: %v", err)
+	}
+
+	err = gdb.WithContext(t.Context()).Exec(
+		`INSERT INTO group_role_mappings (groupname, platformrole) VALUES ('b20-migration-managers', 'manager')`).Error
+	if err != nil {
+		t.Fatalf("a manager mapping is still refused after migration: %v", err)
+	}
+
+	err = gdb.WithContext(t.Context()).Exec(
+		`INSERT INTO group_role_mappings (groupname, platformrole) VALUES ('b20-migration-bad', 'superuser')`).Error
+	if err == nil {
+		t.Error("the check constraint is gone: an unknown role was accepted")
+	}
+}

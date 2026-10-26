@@ -66,8 +66,13 @@ The full-featured single provider, used by the frontend.
 - **Split horizon**: discovery uses the internal URL, browser redirects use
   `oidc_browser_base_url`, and the token's issuer is checked against `oidc_issuer_url`.
 - **Group to role**: the groups of `oidc_group_claim` are synced as platform groups; a group
-  listed in `oidc_group_admins` or mapped in `group_role_mappings` grants its role. The highest
-  role wins (`admin` > `manager` > `student`).
+  mapped in `group_role_mappings` (`admin`, `manager` or `student`, [190](190-backend-defects.md)
+  B20) sets the role. A group mapped to `admin` makes the user `admin`; otherwise a mapped group
+  replaces the role of a user who is not `admin`, so a manager in a group mapped to `student`
+  becomes `student`. Without a mapped group, the stored role is kept.
+- **`oidc_group_admins`**, when set, is authoritative: a member of one of those groups is `admin`,
+  anyone else is `student`, whatever the mappings or the stored role. A manager named by hand
+  loses the role at the next OIDC sign-in, as in the reference chart (`sso.oidc.groupAdmins`).
 - `authProvider` stored on the user: `oidc`.
 
 ### OAuth providers (`sso.providers`)
