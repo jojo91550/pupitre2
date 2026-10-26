@@ -35,6 +35,7 @@ keeps each one as it is**. Each fix is a separate change after the move (batch B
 | B16 | Audit L1, L2 | OIDC client secret and LDAP bind password stored in clear; `oidc_insecure_skip_verify` available in production | users settings | Encrypt at rest; allow the skip only in development |
 | B17 | Audit L3, L4 | No email verification at registration (bypasses the domain allowlist); the quiz returns `correctAnswer` after submission | users `auth.go`, courses `modules.go` | Verification mail; decide on `correctAnswer` with [013](013-quizzes.md) |
 | B18 | 090 A2, A18 | No course `thumbnail`; `GET /api/my/paths` does not return `level` | courses models, users `paths.go` | Add the fields, then show them in the frontend |
+| B19 | Import (B0) | The integration test `TestRun_BootAndGracefulShutdown` of user-service fails at `3cdf7b2` too: `run()` does not return within 25 s after `SIGTERM` (the log shows two shutdowns, so a second `run()` of the package shares the signal) | `user-service/run_integration_test.go`, `main.go` | Find whether shutdown or the test is wrong; the monolith's start-up test replaces it in B1 |
 
 Audit findings C2, C3, C4 and H5 were in the Astro frontend and are covered by
 [003](003-security.md) and [001](001-keycloak-authentication.md).
