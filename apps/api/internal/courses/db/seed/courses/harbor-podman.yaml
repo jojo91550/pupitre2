@@ -137,7 +137,7 @@ spec:
       type: "quiz"
       inline: true
       prerequisites:
-        - "harbor-searching-&-podman-running"
+        - "harbor-searching---podman-running"
       passingScore: 75
       questions:
         - id: q1

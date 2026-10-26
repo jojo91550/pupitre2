@@ -125,6 +125,33 @@ func TestExportRepository_WriteCSV(t *testing.T) { //nolint:paralleltest // shar
 	}
 }
 
+// TestExportRepository_WriteCSV_NoFormula is the regression test of defect
+// B8 (docs/specs/190-backend-defects.md): a cell that starts like a formula
+// is exported as text.
+func TestExportRepository_WriteCSV_NoFormula(t *testing.T) { //nolint:paralleltest // shared db
+	gdb := crudDB(t)
+	repo := repository.NewGormExportRepository(gdb)
+	ctx := t.Context()
+
+	uid := mkUser(t, gdb)
+
+	err := gdb.WithContext(ctx).Exec(`UPDATE users SET email = '=HYPERLINK("http://evil")' WHERE id = ?::uuid`, uid).Error
+	if err != nil {
+		t.Fatalf("set a formula email: %v", err)
+	}
+
+	var buf bytes.Buffer
+
+	_, err = repo.WriteCSV(ctx, &buf, "users", []string{"email"}, nil, repository.Unrestricted)
+	if err != nil {
+		t.Fatalf("WriteCSV: %v", err)
+	}
+
+	if !strings.Contains(buf.String(), `'=HYPERLINK`) {
+		t.Errorf("the formula is not neutralised: %q", buf.String())
+	}
+}
+
 // TestExportRepository_FetchRowsWithFilters exercises buildWhere and
 // combineWhere by requesting the users category with an active-status and a
 // role filter applied.

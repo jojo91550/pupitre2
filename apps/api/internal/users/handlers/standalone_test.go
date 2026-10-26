@@ -494,8 +494,9 @@ func (c *httpCourseSource) SkillModules(ctx context.Context, skills []string) (m
 	return body.Skills, nil
 }
 
-// PublicCourseSessions implements CourseSource.
-func (c *httpCourseSource) PublicCourseSessions(ctx context.Context, courseSlug string) ([]CourseSessionInfo, error) {
+// CourseSessions implements CourseSource. Over HTTP it reads the course
+// anonymously, as user-service did, so a private course has no sessions.
+func (c *httpCourseSource) CourseSessions(ctx context.Context, courseSlug string) ([]CourseSessionInfo, error) {
 	var info struct {
 		Sessions []CourseSessionInfo `json:"sessions,omitempty"`
 	}

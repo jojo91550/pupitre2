@@ -214,9 +214,9 @@ spec:
       inline: true
       passingScore: 75
       prerequisites:
-        - surface-dattaque-des-conteneurs
+        - surface-d-attaque-des-conteneurs
         - bonnes-pratiques-dockerfile
-        - securite-kubernetes
+        - sécurité-kubernetes
       questions:
         - id: q1
           type: single

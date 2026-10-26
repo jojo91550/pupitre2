@@ -33,9 +33,8 @@ returns.
 - Data: `GET /api/manager/groups` → groups of the scope (`id`, `name`, `parentId`, `depth`,
   `memberCount`), shown as a tree.
 - « + Nouveau groupe »: `POST /api/manager/groups` with `{ name }` (the manager becomes a member).
-- Subgroup: `POST /api/manager/groups/{groupId}/subgroups` with `{ name }`. The manager does not
-  become a member of the subgroup, so it leaves their scope and their list ([090](090-gaps-and-defects.md)
-  B1, backend).
+- Subgroup: `POST /api/manager/groups/{groupId}/subgroups` with `{ name }` (the manager becomes a
+  member, so the subgroup stays in their scope and their list: [190](190-backend-defects.md) B1).
 - Delete: confirmation, then `DELETE /api/manager/groups/{groupId}`.
 - Members of the selected group: `GET /api/manager/groups/{groupId}/members`; add (« Choisir un
   utilisateur… », from `/api/manager/users`) through `POST /api/manager/groups/{groupId}/members`

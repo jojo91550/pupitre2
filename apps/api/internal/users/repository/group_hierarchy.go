@@ -19,7 +19,7 @@ const (
 
 // CreateSubgroup creates a local child group under parentID, enforcing the
 // maximum nesting depth. Path and depth are derived from the parent.
-func (r *gormGroupRepository) CreateSubgroup(ctx context.Context, name, parentID string) (string, error) {
+func (r *gormGroupRepository) CreateSubgroup(ctx context.Context, name, parentID string, memberIDs ...string) (string, error) {
 	var newID string
 
 	err := r.db.WithContext(ctx).Transaction(func(txDB *gorm.DB) error {
@@ -52,6 +52,13 @@ func (r *gormGroupRepository) CreateSubgroup(ctx context.Context, name, parentID
 		updateErr := txDB.Model(&group).Update("path", group.Path).Error
 		if updateErr != nil {
 			return fmt.Errorf("update subgroup path: %w", updateErr)
+		}
+
+		for _, memberID := range memberIDs {
+			memberErr := txDB.Create(&models.UserGroup{UserID: memberID, GroupID: group.ID}).Error
+			if memberErr != nil {
+				return fmt.Errorf("add subgroup member: %w", memberErr)
+			}
 		}
 
 		newID = group.ID.String()

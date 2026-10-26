@@ -74,8 +74,9 @@ type GroupRepository interface {
 	// member in a single transaction, preventing a group from existing
 	// without an owner if the membership step fails.
 	CreateAndJoin(ctx context.Context, name, ownerID string) (string, error)
-	// CreateSubgroup creates a local group as a child of parentID.
-	CreateSubgroup(ctx context.Context, name, parentID string) (string, error)
+	// CreateSubgroup creates a local group as a child of parentID, with
+	// memberIDs as its first members, in one transaction.
+	CreateSubgroup(ctx context.Context, name, parentID string, memberIDs ...string) (string, error)
 	Delete(ctx context.Context, id string) (bool, error)
 	List(ctx context.Context) ([]GroupRow, error)
 	ListMappings(ctx context.Context) ([]GroupMapping, error)

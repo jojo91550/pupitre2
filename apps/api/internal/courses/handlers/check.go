@@ -329,6 +329,10 @@ func (s *State) callCheckerRoute(writer http.ResponseWriter, req *http.Request, 
 	}
 
 	if checkerErr, ok := errors.AsType[*CheckerError](err); ok {
+		if checkerErr.RetryAfter > 0 {
+			writer.Header().Set("Retry-After", strconv.Itoa(checkerErr.RetryAfter))
+		}
+
 		s.Error(writer, checkerErr.Status, checkerErr.Message)
 
 		return CheckResponse{}, false
@@ -360,6 +364,9 @@ const buildCheckerRequestFailed = "Failed to build checker request"
 type CheckerError struct {
 	Status  int
 	Message string
+	// RetryAfter, in seconds, is sent as Retry-After when the learner is
+	// over the lab check limit.
+	RetryAfter int
 }
 
 // Error implements error.

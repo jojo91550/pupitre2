@@ -18,7 +18,7 @@ keeps each one as it is**. Each fix is a separate change after the move (batch B
 
 Batch B3.1 of [199](199-backend-migration-plan.md), security first. Each fix has a regression
 test that failed before it. Batch B3.2 fixed the manager group mapping, batch B3.3 the
-secondary security findings.
+secondary security findings, batch B3.4 the functional defects.
 
 | # | Source | Defect | Fix |
 | --- | --- | --- | --- |
@@ -34,6 +34,11 @@ secondary security findings.
 | B14 | Audit M6 | Account enumeration through the sign-in messages | An unknown email, an SSO account and a wrong password all get `401 Invalid email or password`, in about the same time ([105](105-backend-authentication.md)) |
 | B15 | Audit M7 | No security headers | Every API response carries `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer` and a CSP that forbids framing and scripts; `/uploads/*` may be framed by the frontend's origin but runs no script ([103](103-backend-http-api.md)) |
 | B17 | Audit L4 | The quiz submission returned `correctAnswer` for every question: a learner could read it in the browser's network tools and submit again with it | `correctAnswer` is no longer in the submission response; the review shows ✓/✗, points, feedback and links ([013](013-quizzes.md)). The only change to a response struct of `3cdf7b2`, made on purpose |
+| B1 | 090 | A manager who created a subgroup was not made a member of it, so it left their scope and their list | The manager becomes a member of the subgroup, in the same transaction; the mock mode does the same ([030](030-manager-space.md)) |
+| B8 | Audit M4 | CSV formula injection (`=`, `+`, `-`, `@`) | Every exported cell that starts with `=`, `+`, `-`, `@`, a tab or a carriage return is prefixed with `'` (`platform/csvsafe`), in the users and lab exports and in the mock mode |
+| B9 | checker | The lab check limit (20 per 60 s) applied to all learners together, and its `429` reached the learner as `502` | The limit counts each learner's checks apart; over it, the learner gets `429` with `Retry-After` and the frontend says « Trop de vérifications d'affilée : réessayez dans N s. » ([101](101-backend-configuration.md), [014](014-labs.md)) |
+| B23 | Monolith test | 14 module prerequisites of 11 demo courses (`python-basics`' `listes,-tuples-et-dictionnaires`, `linux-intro`, `container-security`…) did not match their module's slug: the final quizzes stayed `locked` | Every prerequisite names its module's exact slug, in the seed and the mock fixture; a test checks every seed prerequisite. A local database seeded before keeps its courses until `SEED_DEV_COURSES=overwrite` |
+| B24 | Monolith work | Booking a session of a **private** course ignored its capacity: the capacity was read with an anonymous course read, which a private course refuses | The capacity is read whatever the course's visibility (`CourseSource.CourseSessions`, [104](104-backend-in-process-calls.md)) |
 
 B21 was withdrawn: with `oidc_group_admins` set, every OIDC sign-in makes a user outside those
 groups a `student`, managers included. That is the rule documented by the reference chart
@@ -51,20 +56,15 @@ on. Changing it would move pupitre2 away from `genesary/pupitre`, so it is kept 
 | B15 | Audit M7 | `/metrics` is public | Documented as public by the reference and routed on purpose by its chart's ingress. Prometheus scrapes the pod directly (`prometheus.io/*` annotations), so the deployment chart should not route `/metrics` from the ingress ([108](108-backend-operations-and-testing.md)) |
 | B16 | Audit L1, L2 | OIDC client secret and LDAP bind password stored in clear; `oidc_insecure_skip_verify` available in production | Encryption would need a new mandatory key in every deployment. `insecureSkipVerify` is a documented option of the reference chart, for providers behind an internal CA |
 | B17 | Audit L3 | No email verification at registration | The reference has no mail sending, and pupitre2 signs in through Keycloak only ([001](001-keycloak-authentication.md)), which verifies emails. For the same reason, `POST /api/auth/register` still answers `409` for a taken email or username: without a verification mail, it cannot hide that an account exists |
+| B2 | 090 A22 | `PathEnrollmentRow` and `GroupRow` have no json tags: fields are sent as `Slug`, `EnrolledAt`… | The reference's frontend reads `Slug` and so does pupitre2's (`api-types.ts`): it works, renaming would change the response for nothing |
+| B3 | 090 A23 | No route recomputes progress; `/api/admin/sync-progress` marks one lesson for one user | A need to specify, not a defect: the route is kept as it is |
+| B18 | 090 A2, A18 | No course `thumbnail`; `GET /api/my/paths` does not return `level` | The reference has neither field: they would be new features (column, admin input, display), out of the scope of the move |
 
 ## To fix after the move
 
 | # | Source | Defect | Where | Proposed fix |
 | --- | --- | --- | --- | --- |
-| B1 | 090 | A manager who creates a subgroup is not made a member of it, so it leaves their scope | users `ManagerCreateSubgroup` | Add the creator as manager of the new subgroup, in the same transaction |
-| B2 | 090 A22 | `PathEnrollmentRow` and `GroupRow` have no json tags: fields are sent as `Slug`, `EnrolledAt`… | users `repository/path_enrollment.go`, `repository/group.go` | Add camelCase tags **and** update `api-types.ts` and the mocks in the same change |
-| B3 | 090 A23 | No route recomputes progress; `/api/admin/sync-progress` marks one lesson for one user | users `admin.go` | Specify the need first; keep the route as is |
-| B8 | Audit M4 | CSV formula injection (`=`, `+`, `-`, `@`) | users `repository/export.go` | Prefix such cells with `'` |
-| B9 | checker | The lab check limit (20 per 60 s) applies to **all learners together**, and its `429` reaches the learner as `502` | `checker`, courses `check.go` | Limit per learner, answer `429` with `Retry-After`; the frontend handles it ([014](014-labs.md)) |
-| B18 | 090 A2, A18 | No course `thumbnail`; `GET /api/my/paths` does not return `level` | courses models, users `paths.go` | Add the fields, then show them in the frontend |
 | B22 | Helm chart | course-service writes uploads to `/data/uploads`, but the chart mounts no volume there and the root filesystem is read-only: media uploads and `replication` cannot be written, and would not survive a restart or be shared between replicas | `pupitre-helm` `templates/course-service/deployment.yaml` | Mount a persistent volume at `/data/uploads` (batch B4 of [199](199-backend-migration-plan.md)) |
-| B23 | Monolith test | The demo course `python-basics` lists its quiz prerequisite as `listes,-tuples-et-dictionnaires`, while the lesson's slug is `listes--tuples-et-dictionnaires`: the quiz stays `locked` once every lesson is done (its submission is still accepted) | courses `db/seed/courses/python-basics.yaml` | Fix the slug in the seed; consider validating prerequisites against the module slugs when a course is saved |
-| B24 | Monolith work | Booking a session of a **private** course ignores its capacity: the capacity was read with an anonymous course read, which a private course refuses, and a failed read means "unlimited" | users `sessions.go` `sessionCapacity` | Read the capacity without the public-visibility filter |
 
 Audit findings C2, C3, C4 and H5 were in the Astro frontend and are covered by
 [003](003-security.md) and [001](001-keycloak-authentication.md).

@@ -574,7 +574,7 @@ func (f *GroupRepository) ListMemberIDs(_ context.Context, groupID string) ([]st
 }
 
 // CreateSubgroup adds a child group under parentID in the fake store.
-func (f *GroupRepository) CreateSubgroup(_ context.Context, name, parentID string) (string, error) {
+func (f *GroupRepository) CreateSubgroup(_ context.Context, name, parentID string, memberIDs ...string) (string, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -594,6 +594,10 @@ func (f *GroupRepository) CreateSubgroup(_ context.Context, name, parentID strin
 		Source:   authProviderLocal,
 		ParentID: &parentUUID,
 	})
+
+	for _, memberID := range memberIDs {
+		f.UserGroup = append(f.UserGroup, models.UserGroup{UserID: memberID, GroupID: groupID})
+	}
 
 	return groupID.String(), nil
 }

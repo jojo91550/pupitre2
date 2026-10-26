@@ -25,7 +25,8 @@ instructions, then the checks. Useful module fields: `hasCheck`, `labUrl`, `chec
 - Result `{ allow, violations[] }`:
   - `allow` → « ✓ Étape validée ! »;
   - otherwise → « ✗ Pas encore » and the list of violations, **as text**;
-  - error → the message, styled as an error.
+  - error → the message, styled as an error. Over the lab check limit (`429`, [190](190-backend-defects.md)
+    B9): « Trop de vérifications d'affilée : réessayez dans N s. », N from the API's message.
 - Once every step is validated:
   - « ✓ Lab terminé ! Félicitations. » banner;
   - `POST /api/courses/{slug}/lessons/{moduleSlug}/complete` (an error is ignored: the lab may

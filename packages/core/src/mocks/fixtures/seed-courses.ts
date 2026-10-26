@@ -52,9 +52,9 @@ export const SEED_COURSES: CourseDefinition[] = [
      "inline": true,
      "passingScore": 75,
      "prerequisites": [
-      "surface-dattaque-des-conteneurs",
+      "surface-d-attaque-des-conteneurs",
       "bonnes-pratiques-dockerfile",
-      "securite-kubernetes"
+      "sécurité-kubernetes"
      ],
      "questions": [
       {
@@ -333,7 +333,7 @@ export const SEED_COURSES: CourseDefinition[] = [
      "passingScore": 75,
      "prerequisites": [
       "shift-left-security",
-      "sast-et-analyse-de-dependances",
+      "sast-et-analyse-de-dépendances",
       "supply-chain-security"
      ],
      "questions": [
@@ -1082,7 +1082,7 @@ export const SEED_COURSES: CourseDefinition[] = [
      "type": "quiz",
      "inline": true,
      "prerequisites": [
-      "harbor-searching-&-podman-running"
+      "harbor-searching---podman-running"
      ],
      "passingScore": 75,
      "questions": [
@@ -1245,8 +1245,8 @@ export const SEED_COURSES: CourseDefinition[] = [
      "inline": true,
      "passingScore": 75,
      "prerequisites": [
-      "principes-de-liac",
-      "terraform-les-bases",
+      "principes-de-l-iac",
+      "terraform---les-bases",
       "state-et-collaboration"
      ],
      "questions": [
@@ -1567,8 +1567,8 @@ export const SEED_COURSES: CourseDefinition[] = [
      "inline": true,
      "prerequisites": [
       "navigation-et-système-de-fichiers",
-      "utilisateurs,-groupes-et-permissions",
-      "processus,-services-et-réseau"
+      "utilisateurs--groupes-et-permissions",
+      "processus--services-et-réseau"
      ],
      "passingScore": 75,
      "questions": [
@@ -1755,8 +1755,8 @@ export const SEED_COURSES: CourseDefinition[] = [
      "inline": true,
      "passingScore": 75,
      "prerequisites": [
-      "les-trois-piliers-de-lobservabilite",
-      "prometheus-grafana",
+      "les-trois-piliers-de-l-observabilité",
+      "prometheus---grafana",
       "alerting-et-slos"
      ],
      "questions": [
@@ -1888,7 +1888,7 @@ export const SEED_COURSES: CourseDefinition[] = [
      "type": "quiz",
      "inline": true,
      "prerequisites": [
-      "modèle-tcp/ip-et-protocoles",
+      "modèle-tcp-ip-et-protocoles",
       "adressage-ip-et-sous-réseaux",
       "pare-feux-et-sécurité-réseau"
      ],
@@ -2240,7 +2240,7 @@ export const SEED_COURSES: CourseDefinition[] = [
      "inline": true,
      "passingScore": 75,
      "prerequisites": [
-      "methodologie-et-cadre-legal",
+      "méthodologie-et-cadre-légal",
       "reconnaissance-et-scanning",
       "exploitation-basique-et-burp-suite"
      ],
@@ -2418,7 +2418,7 @@ export const SEED_COURSES: CourseDefinition[] = [
       "variables-et-types",
       "structures-de-contrôle",
       "fonctions-et-modules",
-      "listes,-tuples-et-dictionnaires"
+      "listes--tuples-et-dictionnaires"
      ],
      "passingScore": 75,
      "questions": [
@@ -2555,7 +2555,7 @@ export const SEED_COURSES: CourseDefinition[] = [
      "passingScore": 75,
      "prerequisites": [
       "le-danger-des-secrets-dans-le-code",
-      "variables-denvironnement-et-fichiers-env",
+      "variables-d-environnement-et-fichiers--env",
       "hashicorp-vault"
      ],
      "questions": [

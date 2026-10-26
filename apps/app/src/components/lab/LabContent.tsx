@@ -4,6 +4,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { checkModule, checkStep, recordLocalCheck } from '@pupitre/core/lib/api';
 import type { CheckResult, CheckStep, ModuleDetail } from '@pupitre/core/lib/api-types';
 import { MarkdownContent } from '@pupitre/core/components/MarkdownContent';
+import { checkErrorMessage } from '@/lib/check-error';
 import { isTauri, resolveCheck } from '@/lib/local-check';
 import type { PatternMap, TocEntry } from '@pupitre/core/lib/markdown';
 import { safeExternalUrl } from '@pupitre/ui/lib/security';
@@ -85,7 +86,7 @@ function StepBlock({ step, index, run, localOnly, slug, moduleIndex, onResult }:
         {shownLocal ? (
           <LocalOnly slug={slug} index={moduleIndex} />
         ) : (
-          <CheckOutcome result={check.data} error={check.error?.message} />
+          <CheckOutcome result={check.data} error={checkErrorMessage(check.error)} />
         )}
       </div>
     </div>
@@ -170,7 +171,7 @@ export function LabContent({ slug, module, patterns, onTocChange, onCompleted }:
             </button>
           </div>
           <div className="check-result">
-            {singleLocal ? <LocalOnly slug={slug} index={module.index} /> : <CheckOutcome result={single.data} error={single.error?.message} />}
+            {singleLocal ? <LocalOnly slug={slug} index={module.index} /> : <CheckOutcome result={single.data} error={checkErrorMessage(single.error)} />}
           </div>
         </>
       )}

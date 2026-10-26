@@ -377,7 +377,9 @@ func (s *State) ManagerCreateSubgroup(writer http.ResponseWriter, request *http.
 		return
 	}
 
-	newID, err := s.Repos.Groups.CreateSubgroup(ctx, body.Name, parentID)
+	// The manager becomes a member of the subgroup, so that it stays in
+	// their scope (docs/specs/190-backend-defects.md B1).
+	newID, err := s.Repos.Groups.CreateSubgroup(ctx, body.Name, parentID, claims.Subject)
 	if err != nil {
 		s.Error(writer, http.StatusConflict, err.Error())
 

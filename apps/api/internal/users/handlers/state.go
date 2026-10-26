@@ -145,8 +145,8 @@ func (noCourseSource) SkillModules(context.Context, []string) (map[string][]Skil
 	return nil, errNoCourseSource
 }
 
-// PublicCourseSessions implements CourseSource.
-func (noCourseSource) PublicCourseSessions(context.Context, string) ([]CourseSessionInfo, error) {
+// CourseSessions implements CourseSource.
+func (noCourseSource) CourseSessions(context.Context, string) ([]CourseSessionInfo, error) {
 	return nil, errNoCourseSource
 }
 

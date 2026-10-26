@@ -390,17 +390,15 @@ func (s *State) PathTitles(ctx context.Context) (map[string]string, error) {
 	return titles, nil
 }
 
-// PublicCourse returns a course as GET /api/courses/{slug} shows it to an
-// anonymous visitor: repository.ErrNotFound for a private or unknown
-// course. The users domain reads session capacities through it.
-func (s *State) PublicCourse(ctx context.Context, slug string) (CourseResponse, error) {
+// CourseDetail returns a course as GET /api/courses/{slug} shows it,
+// private or not: repository.ErrNotFound for an unknown course. The users
+// domain reads session capacities through it. It used to refuse a private
+// course, like an anonymous read, so the capacity of a private course's
+// sessions was never enforced (docs/specs/190-backend-defects.md B24).
+func (s *State) CourseDetail(ctx context.Context, slug string) (CourseResponse, error) {
 	course, err := s.Repos.Courses.Get(ctx, slug)
 	if err != nil {
 		return CourseResponse{}, fmt.Errorf("load course %s: %w", slug, err)
-	}
-
-	if !course.IsPublic {
-		return CourseResponse{}, fmt.Errorf("course %s is private: %w", slug, repository.ErrNotFound)
 	}
 
 	return toCourseResponse(course), nil
