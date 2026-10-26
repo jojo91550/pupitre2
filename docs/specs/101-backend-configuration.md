@@ -29,7 +29,7 @@ checker-service.
 | `dbMaxOpenConns` | `DB_MAX_OPEN_CONNS` | `30` | u (20), c (10) | **One pool**: the sum of the two pools |
 | `dbMaxIdleConns` | `DB_MAX_IDLE_CONNS` | `30` | u (20), c (10) | Same |
 | `jwtSecret` | `JWT_SECRET` | `change-me-in-production-use-a-long-random-string` | u, c | One value: it no longer has to be repeated per service |
-| `jwtExpiryHours` | `JWT_EXPIRY_HOURS` | `8` | u | course-service's `24` was never used: it only verifies tokens |
+| `jwtExpiryHours` | `JWT_EXPIRY_HOURS` | `8` | u | course-service's `24` was never used: it only verifies tokens. The Helm chart sets `24` for user-service, so deployed tokens last 24 h |
 | `oauthStateSecret` | `OAUTH_STATE_SECRET` | the JWT secret | u | |
 | `oauthRedirectBase` | `OAUTH_REDIRECT_BASE` | `http://localhost:3000` | u | |
 | `providers[]` (`id`, `name`, `clientId`, `clientSecret`, `issuerUrl`…) | `SSO_<ID>_CLIENT_SECRET[_FILE]` | none | u | OAuth providers of `sso.providers` ([105](105-backend-authentication.md)) |
