@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"fmt"
-	"slices"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -185,18 +184,12 @@ func syncGroupMembership(groupTx *gorm.DB, userID, name, source, currentRole str
 		return currentRole, false, nil
 	}
 
-	// The highest role wins (admin > manager > student): a group mapped to
-	// student does not demote a manager or an admin.
 	updatedRole := currentRole
-	if roleRank(mappedRole) > roleRank(currentRole) {
+	if mappedRole == roleAdmin {
+		updatedRole = roleAdmin
+	} else if updatedRole != roleAdmin {
 		updatedRole = mappedRole
 	}
 
 	return updatedRole, true, nil
-}
-
-// roleRank orders the platform roles from the lowest to the highest; an
-// unknown role ranks lowest.
-func roleRank(role string) int {
-	return slices.Index([]string{roleStudent, roleManager, roleAdmin}, role)
 }

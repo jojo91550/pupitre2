@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"slices"
 	"sync"
 
 	"github.com/google/uuid"
@@ -831,8 +830,9 @@ func (f *GroupRepository) applyGroupMembership(
 			continue
 		}
 
-		// The highest role wins, as in the real repository.
-		if fakeRoleRank(mapping.PlatformRole) > fakeRoleRank(role) {
+		if mapping.PlatformRole == groupsRoleAdmin {
+			role = groupsRoleAdmin
+		} else if role != groupsRoleAdmin {
 			role = mapping.PlatformRole
 		}
 
@@ -857,10 +857,4 @@ func (f *GroupRepository) findOrCreateGroup(name, source string) uuid.UUID {
 	f.Groups = append(f.Groups, models.Group{ID: id, Name: name, Source: source})
 
 	return id
-}
-
-// fakeRoleRank orders the platform roles from the lowest to the highest,
-// like the real repository's roleRank; an unknown role ranks lowest.
-func fakeRoleRank(role string) int {
-	return slices.Index([]string{"student", "manager", groupsRoleAdmin}, role)
 }

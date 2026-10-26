@@ -669,15 +669,9 @@ func (s *State) completeSSOLogin(
 	}
 
 	if len(groupAdmins) > 0 {
-		// groupAdmins decides who is admin, and only that
-		// (docs/specs/190-backend-defects.md B21): a member of those groups
-		// becomes admin, an admin outside them goes back to student, and
-		// any other role, manager included, is kept.
-		switch {
-		case isMemberOfAny(groups, groupAdmins):
+		role = groupsRoleStudent
+		if isMemberOfAny(groups, groupAdmins) {
 			role = groupsRoleAdmin
-		case role == groupsRoleAdmin:
-			role = groupsRoleStudent
 		}
 
 		userID, parseErr := uuid.Parse(user.ID)

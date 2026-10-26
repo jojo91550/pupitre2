@@ -17,7 +17,7 @@ keeps each one as it is**. Each fix is a separate change after the move (batch B
 ## Fixed after the move
 
 Batch B3.1 of [199](199-backend-migration-plan.md), security first. Each fix has a regression
-test that failed before it. Batch B3.2 fixed the Keycloak roles.
+test that failed before it. Batch B3.2 fixed the manager group mapping.
 
 | # | Source | Defect | Fix |
 | --- | --- | --- | --- |
@@ -29,7 +29,12 @@ test that failed before it. Batch B3.2 fixed the Keycloak roles.
 | B11 | Audit M2 | The GitLab project of a lab check came from the editable username | The project comes from the identity provider's `preferred_username`, recorded at each OIDC sign-in; a learner without one is refused (`403`) ([107](107-backend-labs-and-checker.md)) |
 | B12 | Audit H4, H7 | `RealIP` trusted any `X-Forwarded-For`, so the sign-in rate limit could be bypassed | Forwarding headers are read only from `TRUSTED_PROXIES`, from the right; sign-in attempts are also limited per email ([101](101-backend-configuration.md), [105](105-backend-authentication.md)) |
 | B20 | Front + back test | A group mapping to `manager` failed with `500 Database error`: the check constraint allowed only `admin` and `student` | The constraint allows `manager`; a breaking migration drops the old one so AutoMigrate creates it again ([102](102-backend-data-and-migrations.md)) |
-| B21 | Front + back test | With `oidc_group_admins` set, every OIDC sign-in reset a manager outside those groups to `student` | `oidc_group_admins` grants `admin` and takes back only `admin`; any other role is kept. A group mapping no longer demotes either: the highest role wins ([105](105-backend-authentication.md)) |
+
+B21 was withdrawn: with `oidc_group_admins` set, every OIDC sign-in makes a user outside those
+groups a `student`, managers included. That is the rule documented by the reference chart
+(`sso.oidc.groupAdmins`: "this mapping is authoritative"), so it is kept as it is
+([105](105-backend-authentication.md)). A deployment with managers leaves `groupAdmins` empty, maps
+`admin` and `manager` to groups in `/admin/groups`, or names managers by hand.
 
 ## To fix after the move
 
