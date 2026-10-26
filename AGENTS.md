@@ -43,7 +43,7 @@ pnpm monorepo, same layout as `ebuildy/pupitre2`: two applications on one origin
 | `apps/app` | `@pupitre/app` | The learner app: sign-in, catalogue, lessons, quizzes, learner space, agenda |
 | `apps/admin` | `@pupitre/admin` | The admin app, served under `/admin` and `/manager`: administration, manager space, CSV exports, attendance |
 | `packages/core` | `@pupitre/core` | Shared by both apps: API client and types, session, top bar, guards, markdown, mock mode |
-| `apps/api` | Go module | The Go backend, imported from `genesary/pupitre` at `3cdf7b2`; becoming one application ([`199`](docs/specs/199-backend-migration-plan.md)) |
+| `apps/api` | Go module | The Go backend, imported from `genesary/pupitre` at `3cdf7b2`, as one application: `cmd/pupitre-api` on port 8080 ([`199`](docs/specs/199-backend-migration-plan.md)) |
 | `packages/ui` | `@pupitre/ui` | Design system: shadcn components, pupitre CSS, security helpers |
 | `docs/specs` | | Specs, one file per feature area |
 | `e2e` | | Playwright tests |

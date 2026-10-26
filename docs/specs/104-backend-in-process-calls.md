@@ -8,9 +8,15 @@ failure does, whether it is detached) are kept exactly.
 
 ## Rules
 
-- The **caller declares the interface**, with its own types, in its own package
-  (`courses/.../handlers`, `users/.../handlers`). The callee provides an implementation. Only
-  `internal/server`, which builds the application, knows both sides and wires them.
+- **The caller declares the interface**, with its own types, in its own package:
+  `UserProgress` and `LabChecker` in `courses/handlers`, `CourseSource` in `users/handlers`. The
+  callee exposes plain methods (`users/handlers/progress_service.go`, `BatchCourses`…,
+  `checker/handlers` `RunEvaluate` and `RunCheckStep`). Only `internal/server/adapters.go` knows
+  both sides and wires them.
+- Until batch B2 removes the standalone binaries, each interface also has an HTTP implementation,
+  used when the monolith did not wire one: the three old `main` packages keep working, and the
+  existing handler tests, which stand in for the other service with an `httptest` server, run
+  unchanged.
 - An interface method does what the HTTP route did, with the same inputs and outputs: the route's
   handler and the new method share the same repository code, so there is one implementation.
 - **Failure semantics are kept.** A call that used to degrade to an empty answer when user-service
@@ -59,6 +65,19 @@ fetched them in batches from course-service's public `/api/batch/*` routes and c
 The `Catalog` type and its cache are kept: entries are memoized for **30 s**, concurrent misses
 share one fetch, and the size stays bounded. Only the fetch changes, from an HTTP request to a
 call into the courses domain. A missing course is still left out of the result, as it was.
+
+The users domain reads the catalog through its own types (`CourseInfo`, `PathInfo`,
+`SkillModule`), which mirror the JSON of the batch routes. The adapter converts the courses
+domain's batch results through that same JSON, so the two sides stay in step with the public
+contract.
+
+One more call was found while writing the monolith: booking a session
+(`sessions.go`, `sessionCapacity`) read the course with an anonymous
+`GET /api/courses/{slug}` to find the session's capacity.
+
+| HTTP call at `3cdf7b2` | Method in the monolith | On failure |
+| --- | --- | --- |
+| `GET /api/courses/{slug}` (anonymous) | `CourseSource.PublicCourseSessions(ctx, slug)` | Capacity 0, that is unlimited, warning. A private course fails like an unknown one, as the anonymous read did ([190](190-backend-defects.md) B24) |
 
 The `/api/batch/*` routes stay public routes ([103](103-backend-http-api.md)): they are part of
 the API, not only of the internal traffic.

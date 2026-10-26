@@ -9,7 +9,7 @@ import (
 
 	"go.uber.org/zap/zapcore"
 
-	"github.com/jojo91550/pupitre2/apps/api/course-service/internal/config"
+	"github.com/jojo91550/pupitre2/apps/api/internal/courses/config"
 )
 
 // TestInitLogger_Defaults builds an info-level production logger by default.

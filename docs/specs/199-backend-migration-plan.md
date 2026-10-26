@@ -20,15 +20,18 @@ Branch `feature/api-import`.
 
 Branch `feature/api-monolith`.
 
-- `internal/platform`: the root `internal/` packages, then the merged `config` ([101](101-backend-configuration.md))
-  and `db` ([102](102-backend-data-and-migrations.md)).
+- `internal/platform`: the root `internal/` packages, then the merged `config`
+  ([101](101-backend-configuration.md)).
 - Move `user-service/internal` to `internal/users`, `course-service/internal` to
   `internal/courses`, `checker-service/internal/checker` to `internal/checker`.
 - The interfaces of [104](104-backend-in-process-calls.md), their implementations, and the fakes
   replacing the `httptest` stand-ins in tests.
-- `internal/server`: one router ([103](103-backend-http-api.md)), `cmd/pupitre-api/main.go`.
+- `internal/server`: migrations ([102](102-backend-data-and-migrations.md)), one router
+  ([103](103-backend-http-api.md)), the adapters, start-up; `cmd/pupitre-api/main.go`.
+- The three old `main` packages still build, with HTTP implementations of the interfaces, until B2
+  removes them.
 - Done when the acceptance criteria of 100 to 107 pass: route inventory test, schema test, Go
-  e2e against one binary, Playwright against the monolith.
+  e2e against one binary, and a manual run of the frontend against the monolith with Keycloak.
 
 ## B2 - Clean-up
 
@@ -41,8 +44,11 @@ Branch `chore/api-cleanup`.
   `pnpm api:*`; the single-target dev proxy and [004](004-api-and-routing.md)
   ([108](108-backend-operations-and-testing.md)).
 - `AGENTS.md` and `README.md` describe the API; the CI workflows.
+- The Playwright suite also runs against the monolith, with the `compose.yaml` PostgreSQL and
+  Keycloak (its test realm and `groups` scope) and a seeded database, besides the mock mode.
 - Done when no `USER_SERVICE_URL`, `COURSE_SERVICE_URL`, `CHECKER_SERVICE_URL`,
-  `INTERNAL_SERVICE_SECRET` or `/internal/` route remains.
+  `INTERNAL_SERVICE_SECRET` or `/internal/` route remains, and Playwright passes against the
+  monolith.
 
 ## B3 - Fixes
 

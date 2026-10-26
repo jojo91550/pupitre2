@@ -16,10 +16,10 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/jojo91550/pupitre2/apps/api/user-service/internal/config"
-	"github.com/jojo91550/pupitre2/apps/api/user-service/internal/db"
-	"github.com/jojo91550/pupitre2/apps/api/user-service/internal/handlers"
-	"github.com/jojo91550/pupitre2/apps/api/user-service/internal/repository"
+	"github.com/jojo91550/pupitre2/apps/api/internal/users/config"
+	"github.com/jojo91550/pupitre2/apps/api/internal/users/db"
+	"github.com/jojo91550/pupitre2/apps/api/internal/users/handlers"
+	"github.com/jojo91550/pupitre2/apps/api/internal/users/repository"
 )
 
 const (

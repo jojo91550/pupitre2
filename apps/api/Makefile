@@ -104,7 +104,7 @@ helm-delete:
 
 # ── Dev courses ──────────────────────────────────────────────────────────────
 #
-# The demo catalogue lives in course-service/internal/db/seed/courses/ and is
+# The demo catalogue lives in internal/courses/db/seed/courses/ and is
 # embedded in the binary. course-service seeds it on startup when
 # SEED_DEV_COURSES is set, which the KinD values files already do.
 

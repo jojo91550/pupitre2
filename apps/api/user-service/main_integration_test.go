@@ -14,8 +14,8 @@ import (
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 
-	"github.com/jojo91550/pupitre2/apps/api/user-service/internal/config"
-	"github.com/jojo91550/pupitre2/apps/api/user-service/internal/repository"
+	"github.com/jojo91550/pupitre2/apps/api/internal/users/config"
+	"github.com/jojo91550/pupitre2/apps/api/internal/users/repository"
 )
 
 // TestSeedDatabase runs the full startup seed against Postgres, once with mock
