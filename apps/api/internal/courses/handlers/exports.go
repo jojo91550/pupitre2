@@ -12,6 +12,7 @@ import (
 
 	"github.com/jojo91550/pupitre2/apps/api/internal/courses/models"
 	"github.com/jojo91550/pupitre2/apps/api/internal/courses/repository"
+	"github.com/jojo91550/pupitre2/apps/api/internal/platform/csvsafe"
 )
 
 // exportPreviewLimit is the max rows returned by ExportLabPreview.
@@ -222,7 +223,7 @@ func (s *State) ExportLabDownload(writer http.ResponseWriter, req *http.Request)
 	}
 
 	streamErr := s.Repos.LabChecks.StreamExport(req.Context(), labFilter, func(row *models.LabCheck) error {
-		return csvWriter.Write(labCheckToRecord(row, fields))
+		return csvWriter.Write(csvsafe.Record(labCheckToRecord(row, fields)))
 	})
 	if streamErr != nil {
 		zap.L().Error("lab export download failed", zap.Error(streamErr))

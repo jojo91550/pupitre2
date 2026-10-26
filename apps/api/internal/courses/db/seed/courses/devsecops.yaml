@@ -202,7 +202,7 @@ spec:
       passingScore: 75
       prerequisites:
         - shift-left-security
-        - sast-et-analyse-de-dependances
+        - sast-et-analyse-de-dépendances
         - supply-chain-security
       questions:
         - id: q1

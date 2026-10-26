@@ -74,7 +74,7 @@ Three more calls were found while writing the monolith, all anonymous reads of p
 
 | HTTP call at `3cdf7b2` | Used by | Method in the monolith | On failure |
 | --- | --- | --- | --- |
-| `GET /api/courses/{slug}` | booking a session (`sessions.go`, `sessionCapacity`), for the session's capacity | `CourseSource.PublicCourseSessions(ctx, slug)` | Capacity 0, that is unlimited, warning. A private course fails like an unknown one, as the anonymous read did ([190](190-backend-defects.md) B24) |
+| `GET /api/courses/{slug}` | booking a session (`sessions.go`, `sessionCapacity`), for the session's capacity | `CourseSource.CourseSessions(ctx, slug)` | Capacity 0, that is unlimited, warning. Reads a private course too: the anonymous read refused it, so its capacity was ignored ([190](190-backend-defects.md) B24) |
 | `GET /api/courses` | CSV exports (`exports.go`), to label rows with course titles | `CourseSource.PublicCourseTitles(ctx)` | Titles left empty, as before. Only public courses are named, as the anonymous list did |
 | `GET /api/paths` | CSV exports, for path titles | `CourseSource.PathTitles(ctx)` | Titles left empty |
 
@@ -91,7 +91,7 @@ of checker-service. Error mapping is kept as the learner saw it:
 | --- | --- |
 | checker-service unreachable: `500 error when reaching for checker service` | Cannot happen: no network |
 | checker-service answered non-200 with `{"error": msg}`: `502 msg` | The checker returns an error carrying `msg`: `502 msg` |
-| checker-service rate limit: `429` relayed as `502` | Same, see [101](101-backend-configuration.md) and [190](190-backend-defects.md) B9 |
+| checker-service rate limit: `429` relayed as `502` | Per learner, `429` with `Retry-After` ([101](101-backend-configuration.md), [190](190-backend-defects.md) B9) |
 
 The limits and isolation of the checker are in [107](107-backend-labs-and-checker.md).
 

@@ -28,7 +28,7 @@ func (s *State) sessionCapacity(req *http.Request, slug, sessionID string) int {
 		return 0
 	}
 
-	sessions, err := s.courseSource().PublicCourseSessions(req.Context(), slug)
+	sessions, err := s.courseSource().CourseSessions(req.Context(), slug)
 	if err != nil {
 		zap.L().Warn("could not fetch course for capacity check", zap.String("slug", slug), zap.Error(err))
 

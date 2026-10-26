@@ -217,8 +217,8 @@ spec:
       inline: true
       passingScore: 75
       prerequisites:
-        - principes-de-liac
-        - terraform-les-bases
+        - principes-de-l-iac
+        - terraform---les-bases
         - state-et-collaboration
       questions:
         - id: q1

@@ -74,9 +74,9 @@ them too, and the checker's has no port, CORS origins or secret of its own any m
 
 checker-service limited `/evaluate` and `/check-step` per client IP. Its only client was
 course-service, so in practice the limit (20 checks per 60 s) applied to **all learners
-together**. The monolith keeps that behaviour: one process-wide limiter in front of the GitLab
-fetch, with the same defaults, answering `429` as checker-service did (course-service relayed it
-as `502`; see [190](190-backend-defects.md) B9 for the decision on this behaviour).
+together**, and course-service relayed its `429` as `502`. Since [190](190-backend-defects.md) B9
+the limit counts **each learner's** checks apart, with the same defaults: over it, the learner
+gets `429 Too many lab checks, retry in N s` with `Retry-After: N`, N being the window.
 
 ## Default secrets
 

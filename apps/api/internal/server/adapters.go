@@ -187,11 +187,11 @@ func (a *coursesSource) SkillModules(ctx context.Context, skills []string) (map[
 	return out, nil
 }
 
-// PublicCourseSessions implements usershandlers.CourseSource.
-func (a *coursesSource) PublicCourseSessions(ctx context.Context, courseSlug string) ([]usershandlers.CourseSessionInfo, error) {
-	course, err := a.courses.PublicCourse(ctx, courseSlug)
+// CourseSessions implements usershandlers.CourseSource.
+func (a *coursesSource) CourseSessions(ctx context.Context, courseSlug string) ([]usershandlers.CourseSessionInfo, error) {
+	course, err := a.courses.CourseDetail(ctx, courseSlug)
 	if err != nil {
-		return nil, fmt.Errorf("public course: %w", err)
+		return nil, fmt.Errorf("course detail: %w", err)
 	}
 
 	var out []usershandlers.CourseSessionInfo
@@ -229,10 +229,11 @@ func convert(src, dst any) error {
 	return nil
 }
 
-// labCheckRateLimitKey is the single key of the lab check limiter: the
-// limit is process-wide, as checker-service's was in practice, since
-// course-service was its only client (docs/specs/101-backend-configuration.md).
-const labCheckRateLimitKey = "lab-checks"
+// labCheckRateLimitKey prefixes the key of the lab check limiter, which
+// counts the checks of each learner apart. checker-service's limit was meant
+// per client, but its only client was course-service, so it applied to all
+// learners together (docs/specs/190-backend-defects.md B9).
+const labCheckRateLimitKey = "lab-checks:"
 
 // genericCheckerMessage is what course-service answered when
 // checker-service failed without a message of its own.
@@ -242,14 +243,17 @@ const genericCheckerMessage = "checker-service error"
 type labChecker struct {
 	checker *checkerhandlers.Handler
 	limiter *httprate.RateLimiter
+	// window is the length of the limit's window, in seconds: how long a
+	// learner over the limit waits at most.
+	window int
 }
 
 var _ courseshandlers.LabChecker = (*labChecker)(nil)
 
 // newLabChecker builds the in-process checker, limited to requests checks
-// per window for the whole process; requests 0 disables the limit.
+// per window for each learner; requests 0 disables the limit.
 func newLabChecker(handler *checkerhandlers.Handler, requests, windowSeconds int) *labChecker {
-	lab := &labChecker{checker: handler}
+	lab := &labChecker{checker: handler, window: windowSeconds}
 	if requests > 0 {
 		lab.limiter = httprate.NewRateLimiter(requests, time.Duration(windowSeconds)*time.Second)
 	}
@@ -259,8 +263,8 @@ func newLabChecker(handler *checkerhandlers.Handler, requests, windowSeconds int
 
 // Evaluate implements courseshandlers.LabChecker.
 func (a *labChecker) Evaluate(ctx context.Context, req courseshandlers.EvaluateRequest) (courseshandlers.CheckResponse, error) {
-	if a.limited(ctx) {
-		return courseshandlers.CheckResponse{}, rateLimited()
+	if a.limited(ctx, req.Username) {
+		return courseshandlers.CheckResponse{}, a.rateLimited()
 	}
 
 	result, fail := a.checker.RunEvaluate(ctx, checker.EvaluateRequest(req))
@@ -270,8 +274,8 @@ func (a *labChecker) Evaluate(ctx context.Context, req courseshandlers.EvaluateR
 
 // CheckStep implements courseshandlers.LabChecker.
 func (a *labChecker) CheckStep(ctx context.Context, req courseshandlers.StepCheckRequest) (courseshandlers.CheckResponse, error) {
-	if a.limited(ctx) {
-		return courseshandlers.CheckResponse{}, rateLimited()
+	if a.limited(ctx, req.Username) {
+		return courseshandlers.CheckResponse{}, a.rateLimited()
 	}
 
 	result, fail := a.checker.RunCheckStep(checker.StepRequest(req))
@@ -279,8 +283,9 @@ func (a *labChecker) CheckStep(ctx context.Context, req courseshandlers.StepChec
 	return checkResult(result, fail)
 }
 
-// limited counts one check and reports whether it is over the limit.
-func (a *labChecker) limited(ctx context.Context) bool {
+// limited counts one check of the learner and reports whether it is over
+// the limit.
+func (a *labChecker) limited(ctx context.Context, learner string) bool {
 	if a.limiter == nil {
 		return false
 	}
@@ -290,14 +295,19 @@ func (a *labChecker) limited(ctx context.Context) bool {
 		return false
 	}
 
-	return a.limiter.OnLimit(headerSink{}, req, labCheckRateLimitKey)
+	return a.limiter.OnLimit(headerSink{}, req, labCheckRateLimitKey+learner)
 }
 
-// rateLimited is the error of a check refused by the limit. checker-service
-// answered 429 with a plain-text body, which course-service relayed as a
-// 502 with its generic message (docs/specs/190-backend-defects.md B9).
-func rateLimited() error {
-	return &courseshandlers.CheckerError{Status: http.StatusBadGateway, Message: genericCheckerMessage}
+// rateLimited is the error of a check refused by the limit: 429 with the
+// time to wait, which the frontend tells the learner. checker-service
+// answered 429 too, but course-service relayed it as a 502 with its generic
+// message (docs/specs/190-backend-defects.md B9).
+func (a *labChecker) rateLimited() error {
+	return &courseshandlers.CheckerError{
+		Status:     http.StatusTooManyRequests,
+		Message:    fmt.Sprintf("Too many lab checks, retry in %d s", a.window),
+		RetryAfter: a.window,
+	}
 }
 
 // checkResult turns a checker outcome into what the courses domain

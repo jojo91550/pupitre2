@@ -175,7 +175,7 @@ spec:
       type: "quiz"
       inline: true
       prerequisites:
-        - "modèle-tcp/ip-et-protocoles"
+        - "modèle-tcp-ip-et-protocoles"
         - "adressage-ip-et-sous-réseaux"
         - "pare-feux-et-sécurité-réseau"
       passingScore: 75

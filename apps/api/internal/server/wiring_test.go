@@ -246,26 +246,35 @@ func TestWiring_UsersFailureSemantics(t *testing.T) {
 }
 
 // TestWiring_LabCheckerLimit checks the in-process checker: its refusals
-// reach the learner as a 502 with the checker's message, and the
-// process-wide limit answers like checker-service's did.
+// reach the learner as a 502 with the checker's message, and the limit is
+// per learner, answering 429 with the time to wait (regression test of
+// defect B9, docs/specs/190-backend-defects.md).
 func TestWiring_LabCheckerLimit(t *testing.T) {
 	t.Parallel()
 
 	checker := newLabChecker(checkerhandlers.New(&checkerconfig.Config{GitLabBaseURL: "http://gitlab.invalid"}), 1, 60)
-	req := courseshandlers.EvaluateRequest{
-		Username: "u", Project: "p", PolicySrc: "http://gitlab.invalid/r", PolicyRef: "main", PolicyPath: "check.rego",
+	request := func(learner string) courseshandlers.EvaluateRequest {
+		return courseshandlers.EvaluateRequest{
+			Username: learner, Project: "p", PolicySrc: "http://gitlab.invalid/r", PolicyRef: "main", PolicyPath: "check.rego",
+		}
 	}
 
-	_, err := checker.Evaluate(t.Context(), req)
+	_, err := checker.Evaluate(t.Context(), request("alice"))
 
 	var checkerErr *courseshandlers.CheckerError
 	if !errors.As(err, &checkerErr) || checkerErr.Status != http.StatusBadGateway || checkerErr.Message != "GITLAB_TOKEN not configured" {
 		t.Fatalf("first check: %v, want 502 GITLAB_TOKEN not configured", err)
 	}
 
-	_, err = checker.Evaluate(t.Context(), req)
-	if !errors.As(err, &checkerErr) || checkerErr.Status != http.StatusBadGateway || checkerErr.Message != "checker-service error" {
-		t.Fatalf("second check: %v, want the rate-limit 502", err)
+	_, err = checker.Evaluate(t.Context(), request("alice"))
+	if !errors.As(err, &checkerErr) || checkerErr.Status != http.StatusTooManyRequests || checkerErr.RetryAfter != 60 {
+		t.Fatalf("second check of the same learner: %v, want 429 with Retry-After 60", err)
+	}
+
+	// Another learner has a limit of their own.
+	_, err = checker.Evaluate(t.Context(), request("bob"))
+	if !errors.As(err, &checkerErr) || checkerErr.Status != http.StatusBadGateway {
+		t.Fatalf("first check of another learner: %v, want the checker's 502, not the limit", err)
 	}
 }
 

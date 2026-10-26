@@ -12,6 +12,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"github.com/jojo91550/pupitre2/apps/api/internal/platform/csvsafe"
 	"github.com/jojo91550/pupitre2/apps/api/internal/users/models"
 )
 
@@ -820,7 +821,7 @@ func writeCSVRows(sqlRows *sql.Rows, cols []string, csvWriter *csv.Writer) (int,
 			}
 		}
 
-		writeErr := csvWriter.Write(record)
+		writeErr := csvWriter.Write(csvsafe.Record(record))
 		if writeErr != nil {
 			return rowCount, fmt.Errorf("write row: %w", writeErr)
 		}

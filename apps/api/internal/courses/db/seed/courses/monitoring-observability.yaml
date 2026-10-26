@@ -213,8 +213,8 @@ spec:
       inline: true
       passingScore: 75
       prerequisites:
-        - les-trois-piliers-de-lobservabilite
-        - prometheus-grafana
+        - les-trois-piliers-de-l-observabilité
+        - prometheus---grafana
         - alerting-et-slos
       questions:
         - id: q1

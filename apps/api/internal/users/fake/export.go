@@ -9,6 +9,7 @@ import (
 	"maps"
 	"sync"
 
+	"github.com/jojo91550/pupitre2/apps/api/internal/platform/csvsafe"
 	"github.com/jojo91550/pupitre2/apps/api/internal/users/models"
 	"github.com/jojo91550/pupitre2/apps/api/internal/users/repository"
 )
@@ -125,7 +126,7 @@ func (f *ExportRepository) WriteCSV(
 			record = append(record, row[field])
 		}
 
-		err = csvWriter.Write(record)
+		err = csvWriter.Write(csvsafe.Record(record))
 		if err != nil {
 			return 0, fmt.Errorf("write row: %w", err)
 		}

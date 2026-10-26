@@ -80,3 +80,42 @@ func TestSeedDevCourses_DisabledByDefault(t *testing.T) {
 		}
 	}
 }
+
+// TestDevCoursesPrerequisites checks that every module prerequisite of the
+// demo catalogue names a module of its course. A wrong slug locks the module
+// for good: python-basics' quiz did (docs/specs/190-backend-defects.md B23).
+func TestDevCoursesPrerequisites(t *testing.T) {
+	t.Parallel()
+
+	entries, err := fs.ReadDir(devCourses, devCourseDir)
+	if err != nil {
+		t.Fatalf("read embedded seed dir: %v", err)
+	}
+
+	for _, entry := range entries {
+		data, readErr := devCourses.ReadFile(devCourseDir + "/" + entry.Name())
+		if readErr != nil {
+			t.Fatalf("read %s: %v", entry.Name(), readErr)
+		}
+
+		file, parseErr := definition.ParseCourseFile(data)
+		if parseErr != nil {
+			t.Fatalf("parse %s: %v", entry.Name(), parseErr)
+		}
+
+		course := file.Spec.ToCourse(file.Slug)
+		slugs := make(map[string]bool, len(course.Modules))
+
+		for _, module := range course.Modules {
+			slugs[module.Slug()] = true
+		}
+
+		for _, module := range course.Modules {
+			for _, prerequisite := range module.Prerequisites {
+				if !slugs[prerequisite] {
+					t.Errorf("%s: module %q requires %q, which is not a module of the course", entry.Name(), module.Name, prerequisite)
+				}
+			}
+		}
+	}
+}

@@ -63,7 +63,7 @@ spec:
         - "variables-et-types"
         - "structures-de-contrôle"
         - "fonctions-et-modules"
-        - "listes,-tuples-et-dictionnaires"
+        - "listes--tuples-et-dictionnaires"
       passingScore: 75
       questions:
         - id: q1

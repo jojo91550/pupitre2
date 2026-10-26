@@ -12,6 +12,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/jojo91550/pupitre2/apps/api/internal/platform/csvsafe"
 	"github.com/jojo91550/pupitre2/apps/api/internal/users/models"
 	"github.com/jojo91550/pupitre2/apps/api/internal/users/repository"
 )
@@ -230,7 +231,7 @@ func (s *State) writeEnrichedCSV(
 				record[idx] = rowData[fieldID]
 			}
 
-			rowErr := csvWriter.Write(record)
+			rowErr := csvWriter.Write(csvsafe.Record(record))
 			if rowErr != nil {
 				return fmt.Errorf("write csv row: %w", rowErr)
 			}
