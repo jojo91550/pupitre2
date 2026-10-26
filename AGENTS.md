@@ -16,10 +16,14 @@ English; they are the source of truth for behaviour.
 
 ## Constraints
 
-- **The Go backend is not changed.** Every request matches a route and a struct of
+- **The Go backend's API is not changed.** Every request matches a route and a struct of
   `genesary/pupitre` at commit `3cdf7b2`, the reference of every spec. A
-  backend defect is recorded in [`090`](docs/specs/090-gaps-and-defects.md), never worked around
+  backend defect is recorded in [`190`](docs/specs/190-backend-defects.md), never worked around
   by inventing a route.
+- **The backend moves into `apps/api` as one application** (specs
+  [`100`-`199`](docs/specs/100-backend-scope-and-architecture.md)), batch by batch
+  ([`199`](docs/specs/199-backend-migration-plan.md)). The move keeps every route, table and rule;
+  a defect is fixed only after it, as a separate change.
 - **The pupitre design is kept as is**: colours, fonts, spacing, markup and class names of the
   Astro pages ([`005`](docs/specs/005-ui-theme-navigation.md), "Visual design").
   `packages/ui/src/styles/pupitre/*.css` are copies of the original CSS: do not edit them. shadcn

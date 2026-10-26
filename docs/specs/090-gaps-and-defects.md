@@ -90,7 +90,9 @@ indicated.
 
 ## Backend defects found while writing the frontend
 
-Not worked around in the frontend ([`AGENTS.md`](../../AGENTS.md): the Go backend is not changed).
+Not worked around in the frontend ([`AGENTS.md`](../../AGENTS.md): the Go backend's API is not
+changed). They are tracked, with the audit's server-side findings, in
+[190](190-backend-defects.md).
 
 | # | Defect | Where | Effect |
 | --- | --- | --- | --- |
