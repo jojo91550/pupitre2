@@ -1,6 +1,7 @@
 import { Dialog } from 'radix-ui';
 
-import { endSession, useSession } from '../lib/session';
+import { signOut } from '../lib/sign-out';
+import { useSession } from '../lib/session';
 import { CloseIcon } from '@pupitre/ui/components/icons';
 import { toggleTheme, useTheme } from '@pupitre/ui/lib/theme';
 
@@ -59,7 +60,7 @@ export function SideMenu({ open, onOpenChange }: SideMenuProps) {
                   className="nav-drawer-link w-full text-left text-bad"
                   onClick={() => {
                     close();
-                    endSession('logout');
+                    signOut();
                   }}
                 >
                   <span className="nav-drawer-icon">🚪</span>

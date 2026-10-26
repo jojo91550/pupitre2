@@ -406,6 +406,21 @@ var exportCategoryOrder = []string{
 	catLessonProgress,
 }
 
+// ExportScope limits an export to the users of some groups: a manager
+// exports the members of the groups they manage, an admin everything
+// (docs/specs/190-backend-defects.md B6).
+type ExportScope struct {
+	// Restricted turns the limit on; GroupIDs may then be empty, which
+	// exports nothing.
+	Restricted bool
+	GroupIDs   []string
+}
+
+// Unrestricted is the scope of an admin: every row.
+//
+//nolint:gochecknoglobals // immutable zero value, named for readability
+var Unrestricted = ExportScope{}
+
 // ExportRepository handles CSV data extraction and audit logging.
 type ExportRepository interface {
 	// Categories returns the ordered list of available export categories
@@ -414,15 +429,15 @@ type ExportRepository interface {
 
 	// FetchRows returns the first limit rows for category filtered to
 	// fields and filters, plus the total matching count.
-	FetchRows(ctx context.Context, category string, fields []string, filters map[string]string, limit int) ([]string, []map[string]string, int64, error)
+	FetchRows(ctx context.Context, category string, fields []string, filters map[string]string, scope ExportScope, limit int) ([]string, []map[string]string, int64, error)
 
 	// StreamRows runs the same query unbounded and hands each row to visit
 	// as it is read, so a large export never has to fit in memory.
-	StreamRows(ctx context.Context, category string, fields []string, filters map[string]string, visit func(row map[string]string) error) ([]string, error)
+	StreamRows(ctx context.Context, category string, fields []string, filters map[string]string, scope ExportScope, visit func(row map[string]string) error) ([]string, error)
 
 	// WriteCSV streams the full dataset for category/fields/filters into
 	// writer as CSV.
-	WriteCSV(ctx context.Context, writer io.Writer, category string, fields []string, filters map[string]string) (int, error)
+	WriteCSV(ctx context.Context, writer io.Writer, category string, fields []string, filters map[string]string, scope ExportScope) (int, error)
 
 	// LogDownload records a download event in the export_logs audit table.
 	LogDownload(ctx context.Context, log *models.ExportLog) error
@@ -563,11 +578,36 @@ func buildWhere(specs []filterSpec, filters map[string]string) (string, []any) {
 	return "WHERE " + strings.Join(conditions, " AND "), args
 }
 
+// scopedBaseWhere adds the scope's condition to a category's base WHERE
+// condition. Every category joins the users table as u.
+//
+//nolint:gocritic // unnamedResult conflicts with project nonamedreturns policy
+func scopedBaseWhere(baseWhere string, scope ExportScope) (string, []any) {
+	if !scope.Restricted {
+		return baseWhere, nil
+	}
+
+	condition := "FALSE"
+
+	var args []any
+
+	if len(scope.GroupIDs) > 0 {
+		condition = "u.id IN (SELECT ug.userid FROM user_groups ug WHERE ug.groupid::text IN ?)"
+		args = []any{scope.GroupIDs}
+	}
+
+	if baseWhere == "" {
+		return condition, args
+	}
+
+	return baseWhere + " AND " + condition, args
+}
+
 // buildQuery validates category/fields/filters and returns column headers,
 // the SELECT … FROM … WHERE … query and its bound arguments.
 //
 //nolint:gocritic // unnamedResult conflicts with project nonamedreturns policy
-func buildQuery(category string, fields []string, filters map[string]string) ([]string, string, []any, error) {
+func buildQuery(category string, fields []string, filters map[string]string, scope ExportScope) ([]string, string, []any, error) {
 	def, exists := exportCategoryDefs[category]
 	if !exists {
 		return nil, "", nil, fmt.Errorf("unknown category: %s", category)
@@ -590,8 +630,11 @@ func buildQuery(category string, fields []string, filters map[string]string) ([]
 		headers = append(headers, fieldKey)
 	}
 
-	rawWhere, args := buildWhere(def.FilterSpecs, filters)
-	whereClause := combineWhere(def.BaseWhere, rawWhere)
+	baseWhere, scopeArgs := scopedBaseWhere(def.BaseWhere, scope)
+	rawWhere, filterArgs := buildWhere(def.FilterSpecs, filters)
+	whereClause := combineWhere(baseWhere, rawWhere)
+
+	args := append(scopeArgs, filterArgs...)
 
 	query := "SELECT " + strings.Join(selects, ", ") + " " + def.FromClause
 	if whereClause != "" {
@@ -673,9 +716,10 @@ func (r *gormExportRepository) StreamRows(
 	category string,
 	fields []string,
 	filters map[string]string,
+	scope ExportScope,
 	visit func(row map[string]string) error,
 ) ([]string, error) {
-	headers, query, args, buildErr := buildQuery(category, fields, filters)
+	headers, query, args, buildErr := buildQuery(category, fields, filters, scope)
 	if buildErr != nil {
 		return nil, buildErr
 	}
@@ -704,16 +748,20 @@ func (r *gormExportRepository) FetchRows(
 	category string,
 	fields []string,
 	filters map[string]string,
+	scope ExportScope,
 	limit int,
 ) ([]string, []map[string]string, int64, error) {
-	headers, query, args, buildErr := buildQuery(category, fields, filters)
+	headers, query, args, buildErr := buildQuery(category, fields, filters, scope)
 	if buildErr != nil {
 		return nil, nil, 0, buildErr
 	}
 
 	def := exportCategoryDefs[category]
-	rawCountWhere, countArgs := buildWhere(def.FilterSpecs, filters)
-	countWhere := combineWhere(def.BaseWhere, rawCountWhere)
+	countBase, countArgs := scopedBaseWhere(def.BaseWhere, scope)
+	rawCountWhere, countFilterArgs := buildWhere(def.FilterSpecs, filters)
+	countWhere := combineWhere(countBase, rawCountWhere)
+
+	countArgs = append(countArgs, countFilterArgs...)
 
 	countQuery := "SELECT COUNT(*) " + def.FromClause
 	if countWhere != "" {
@@ -790,8 +838,9 @@ func (r *gormExportRepository) WriteCSV(
 	category string,
 	fields []string,
 	filters map[string]string,
+	scope ExportScope,
 ) (int, error) {
-	headers, query, args, buildErr := buildQuery(category, fields, filters)
+	headers, query, args, buildErr := buildQuery(category, fields, filters, scope)
 	if buildErr != nil {
 		return 0, buildErr
 	}

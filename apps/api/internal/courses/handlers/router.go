@@ -13,9 +13,10 @@ import (
 // and no /health or /metrics: the monolith's router owns those
 // (docs/specs/103-backend-http-api.md).
 func RegisterRoutes(router chi.Router, state *State, cfg *config.Config) {
-	authMW := apimiddleware.Auth(cfg.JWTSecret)
-	adminMW := apimiddleware.Admin(cfg.JWTSecret)
-	trainerMW := apimiddleware.ManagerOrAdmin(cfg.JWTSecret)
+	sessions := apimiddleware.WithSessionCheck(state.Sessions)
+	authMW := apimiddleware.Auth(cfg.JWTSecret, sessions)
+	adminMW := apimiddleware.Admin(cfg.JWTSecret, sessions)
+	trainerMW := apimiddleware.ManagerOrAdmin(cfg.JWTSecret, sessions)
 
 	// The body cap is per group rather than global: an admin importing a
 	// whole course as one markdown document sends far more than any

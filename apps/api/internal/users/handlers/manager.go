@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 
+	"github.com/jojo91550/pupitre2/apps/api/internal/platform/middleware"
 	"github.com/jojo91550/pupitre2/apps/api/internal/users/repository"
 )
 
@@ -52,6 +54,36 @@ func managerScopeIDs(groups []repository.GroupRow) []string {
 	}
 
 	return ids
+}
+
+// callerScope returns the users a caller may act on: nil, meaning
+// everyone, for an admin; for a manager, the set of members of the groups
+// they manage (docs/specs/190-backend-defects.md B6). One query whatever the
+// number of groups.
+func (s *State) callerScope(ctx context.Context, claims *middleware.Claims) (map[string]bool, error) {
+	if claims.Role != groupsRoleManager {
+		return nil, nil //nolint:nilnil // nil scope means unrestricted
+	}
+
+	groups, err := s.Repos.Groups.GetGroupsByUserID(ctx, claims.Subject)
+	if err != nil {
+		return nil, fmt.Errorf("load manager groups: %w", err)
+	}
+
+	membersByGroup, err := s.Repos.Groups.ListMemberIDsByGroups(ctx, managerScopeIDs(groups))
+	if err != nil {
+		return nil, fmt.Errorf("load manager scope: %w", err)
+	}
+
+	scope := map[string]bool{}
+
+	for _, memberIDs := range membersByGroup {
+		for _, id := range memberIDs {
+			scope[id] = true
+		}
+	}
+
+	return scope, nil
 }
 
 // ManagerListUsers godoc
@@ -471,6 +503,22 @@ func (s *State) ManagerAddGroupMember(writer http.ResponseWriter, request *http.
 	err = decode(request, &body)
 	if err != nil || body.UserID == "" {
 		s.Error(writer, http.StatusBadRequest, "userId required")
+
+		return
+	}
+
+	// A manager adds users already in their scope: the page offers no
+	// one else, and adding anyone would widen the scope at will
+	// (docs/specs/190-backend-defects.md B6).
+	scope, err := s.callerScope(ctx, claims)
+	if err != nil {
+		s.Error(writer, http.StatusInternalServerError, "Database error")
+
+		return
+	}
+
+	if scope != nil && !scope[body.UserID] {
+		s.Error(writer, http.StatusForbidden, "User not in manager scope")
 
 		return
 	}

@@ -147,6 +147,11 @@ type State struct {
 	// the monolith (docs/specs/104-backend-in-process-calls.md).
 	Users   UserProgress
 	Checker LabChecker
+
+	// Sessions, when set, is checked by every guard on every request
+	// (docs/specs/190-backend-defects.md B7): the monolith sets it to the
+	// users domain's CheckSession.
+	Sessions middleware.SessionCheck
 }
 
 // NewState builds a State from the given config and repositories, wiring

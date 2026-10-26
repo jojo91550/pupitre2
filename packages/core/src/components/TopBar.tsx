@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
-import { endSession, useSession } from '../lib/session';
+import { signOut } from '../lib/sign-out';
+import { useSession } from '../lib/session';
 import { Brand } from '@pupitre/ui/components/brand';
 import { HamburgerIcon, MoonIcon, SunIcon } from '@pupitre/ui/components/icons';
 import { UserAvatar } from '@pupitre/ui/components/user-avatar';
@@ -65,7 +66,7 @@ export function TopBar() {
                   ⚙ Admin
                 </SiteLink>
               )}
-              <button id="nav-logout" className="btn btn-ghost btn-sm" onClick={() => endSession('logout')}>
+              <button id="nav-logout" className="btn btn-ghost btn-sm" onClick={() => signOut()}>
                 Déconnexion
               </button>
             </>

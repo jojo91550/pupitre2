@@ -549,6 +549,15 @@ func (s *State) ChangePassword(writer http.ResponseWriter, request *http.Request
 		return
 	}
 
+	// A new password ends the sessions opened with the old one, this one
+	// included (docs/specs/190-backend-defects.md B7).
+	userID, _ := uuid.Parse(claims.Subject) // parsed by applyNewPassword already
+
+	err = s.revokeSessions(ctx, userID)
+	if err != nil {
+		zap.L().Error("revoke sessions after password change", zap.Error(err))
+	}
+
 	s.JSON(writer, http.StatusOK, map[string]string{groupsRespKeyMessage: "Password changed successfully"})
 }
 

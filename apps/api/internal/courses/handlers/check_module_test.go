@@ -217,3 +217,26 @@ func TestCheckModule_NoGitContent(t *testing.T) {
 		t.Errorf("want 400, got %d", rec.Code)
 	}
 }
+
+// TestCheckModule_NoIdentityProviderLogin is the regression test for defect
+// B11: without a login from the identity provider, a lab check is refused
+// rather than run against the editable profile username.
+func TestCheckModule_NoIdentityProviderLogin(t *testing.T) {
+	t.Parallel()
+
+	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24}
+	course := labStepCourse()
+	s := newStateWith(cfg, course)
+	s.Users = identityUsers{UserProgress: noUsers{}, name: ""}
+
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost,
+		"/api/courses/"+course.Slug+"/modules/0/steps/0/check", http.NoBody)
+	req.Header.Set("Authorization", authHeader(t, "test-secret"))
+
+	rec := httptest.NewRecorder()
+	BuildRouter(s, cfg, false).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("lab check without an identity-provider login: %d %s, want 403", rec.Code, rec.Body.String())
+	}
+}

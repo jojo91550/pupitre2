@@ -154,7 +154,7 @@ func (s *State) MySessionBookings(writer http.ResponseWriter, req *http.Request)
 // @Param    sessionId  path  string  true  "Session ID"
 // @Success  200  {object}  map[string]interface{}
 // @Router   /api/admin/courses/{slug}/sessions/{sessionId}/bookings [get].
-func (s *State) ListSessionBookings(writer http.ResponseWriter, req *http.Request) { //nolint:dupl // similar structure to SessionBookingCount; returns participants not count
+func (s *State) ListSessionBookings(writer http.ResponseWriter, req *http.Request) {
 	slug := param(req, "slug")
 	sessionID := param(req, "sessionId")
 
@@ -167,6 +167,26 @@ func (s *State) ListSessionBookings(writer http.ResponseWriter, req *http.Reques
 		s.Error(writer, http.StatusInternalServerError, "Failed to fetch participants")
 
 		return
+	}
+
+	// A manager sees the participants of their scope only.
+	scope, err := s.callerScope(req.Context(), s.claims(req))
+	if err != nil {
+		zap.L().Error("failed to load manager scope", zap.Error(err))
+		s.Error(writer, http.StatusInternalServerError, "Failed to fetch participants")
+
+		return
+	}
+
+	if scope != nil {
+		visible := participants[:0]
+		for _, participant := range participants {
+			if scope[participant.UserID] {
+				visible = append(visible, participant)
+			}
+		}
+
+		participants = visible
 	}
 
 	s.JSON(writer, http.StatusOK, map[string]any{"participants": participants})
@@ -196,6 +216,21 @@ func (s *State) MarkSessionPresence(writer http.ResponseWriter, req *http.Reques
 		return
 	}
 
+	// A manager marks the attendance of their scope only.
+	scope, err := s.callerScope(req.Context(), s.claims(req))
+	if err != nil {
+		zap.L().Error("failed to load manager scope", zap.Error(err))
+		s.Error(writer, http.StatusInternalServerError, "Failed to update presence")
+
+		return
+	}
+
+	if scope != nil && !scope[userID] {
+		s.Error(writer, http.StatusForbidden, "User not in manager scope")
+
+		return
+	}
+
 	err = s.Repos.SessionBookings.MarkPresent(req.Context(), userID, slug, sessionID, body.Present)
 	if err != nil {
 		zap.L().Error("failed to mark presence",
@@ -219,7 +254,7 @@ func (s *State) MarkSessionPresence(writer http.ResponseWriter, req *http.Reques
 // @Param    sessionId  path  string  true  "Session ID"
 // @Success  200  {object}  map[string]interface{}
 // @Router   /api/courses/{slug}/sessions/{sessionId}/booking-count [get].
-func (s *State) SessionBookingCount(writer http.ResponseWriter, req *http.Request) { //nolint:dupl // similar structure to ListSessionBookings; returns count not participants
+func (s *State) SessionBookingCount(writer http.ResponseWriter, req *http.Request) {
 	slug := param(req, "slug")
 	sessionID := param(req, "sessionId")
 

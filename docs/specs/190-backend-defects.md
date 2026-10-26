@@ -14,6 +14,21 @@ keeps each one as it is**. Each fix is a separate change after the move (batch B
 | C1 (part) | Default `INTERNAL_SERVICE_SECRET` | The secret is removed ([101](101-backend-configuration.md)) |
 | B19 | The start-up test of user-service (`TestRun_BootAndGracefulShutdown`) failed at `3cdf7b2`: two `run()` of the package shared one `SIGTERM` | The service and its test are gone; `internal/server/run_integration_test.go` starts the monolith, waits for `/health`, sends `SIGTERM` and gets a clean return |
 
+## Fixed after the move
+
+Batch B3.1 of [199](199-backend-migration-plan.md), security first. Each fix has a regression
+test that failed before it.
+
+| # | Source | Defect | Fix |
+| --- | --- | --- | --- |
+| B4 | Audit C1 | The default `JWT_SECRET` was accepted: anyone could mint an admin token | The API refuses to start when `JWT_SECRET` is the old public default or shorter than 32 characters ([101](101-backend-configuration.md)) |
+| B5 | - | Without `ADMIN_PASSWORD`, the bootstrap admin got `Admin@1234` | An admin account created without `ADMIN_PASSWORD` gets a random password nobody knows, with a warning; an existing account keeps its password ([102](102-backend-data-and-migrations.md)) |
+| B6 | Audit H2 | Managers acted outside their groups | A manager adds to their groups only users already in their scope, exports the members of their groups only, and sees and marks the attendance of their scope only (`callerScope`, `ExportScope`); the mock mode does the same |
+| B7 | Audit H3 | No revocation: the role was read from the token for its whole life | The guards read the user's row on every request: an unknown, deactivated or revoked user is refused with `401 Session expired`, and the role comes from the row. `POST /api/auth/logout` (called by « Déconnexion »), a password change and a deactivation revoke every token issued until then ([105](105-backend-authentication.md)) |
+| B10 | Audit M1 | `/api/batch/courses` was public and returned private courses | The public route returns public courses only; the users domain's in-process catalog still sees every course |
+| B11 | Audit M2 | The GitLab project of a lab check came from the editable username | The project comes from the identity provider's `preferred_username`, recorded at each OIDC sign-in; a learner without one is refused (`403`) ([107](107-backend-labs-and-checker.md)) |
+| B12 | Audit H4, H7 | `RealIP` trusted any `X-Forwarded-For`, so the sign-in rate limit could be bypassed | Forwarding headers are read only from `TRUSTED_PROXIES`, from the right; sign-in attempts are also limited per email ([101](101-backend-configuration.md), [105](105-backend-authentication.md)) |
+
 ## To fix after the move
 
 | # | Source | Defect | Where | Proposed fix |
@@ -21,15 +36,8 @@ keeps each one as it is**. Each fix is a separate change after the move (batch B
 | B1 | 090 | A manager who creates a subgroup is not made a member of it, so it leaves their scope | users `ManagerCreateSubgroup` | Add the creator as manager of the new subgroup, in the same transaction |
 | B2 | 090 A22 | `PathEnrollmentRow` and `GroupRow` have no json tags: fields are sent as `Slug`, `EnrolledAt`… | users `repository/path_enrollment.go`, `repository/group.go` | Add camelCase tags **and** update `api-types.ts` and the mocks in the same change |
 | B3 | 090 A23 | No route recomputes progress; `/api/admin/sync-progress` marks one lesson for one user | users `admin.go` | Specify the need first; keep the route as is |
-| B4 | Audit C1 | Default `JWT_SECRET` accepted: anyone can mint an admin token | `platform/config` | Refuse to start with a default or short secret unless `PUPITRE_ENV=development` |
-| B5 | - | Without `ADMIN_PASSWORD`, the bootstrap admin gets `Admin@1234` | users `db/seed.go` | Same rule as B4: refuse outside development, or generate and log a one-time password |
-| B6 | Audit H2 | Managers act outside their groups: add any user to their group, export or mark attendance beyond their scope | users `manager.go`, `exports.go`, `sessions.go` | Check the target user and session against the manager's groups |
-| B7 | Audit H3 | No revocation: the role is read from the token (8 h) and the database is never checked | `platform/auth` | Short-lived token plus a per-user token version checked on each request |
 | B8 | Audit M4 | CSV formula injection (`=`, `+`, `-`, `@`) | users `repository/export.go` | Prefix such cells with `'` |
 | B9 | checker | The lab check limit (20 per 60 s) applies to **all learners together**, and its `429` reaches the learner as `502` | `checker`, courses `check.go` | Limit per learner, answer `429` with `Retry-After`; the frontend handles it ([014](014-labs.md)) |
-| B10 | Audit M1 | `/api/batch/courses` is public and returns private courses | courses `batch.go` | Filter the public route like `GET /api/courses/{slug}`; the in-process `Catalog` keeps full access |
-| B11 | Audit M2 | The GitLab project checked is derived from the editable username: a learner can validate someone else's lab | courses `check.go` | Use the identity provider's `preferred_username`, not the profile username |
-| B12 | Audit H4, H7 | `RealIP` trusts any `X-Forwarded-For`: the sign-in rate limit is bypassed | `internal/server` | Trust forwarding headers from configured proxies only; add a per-email limit |
 | B13 | Audit M3 | The OAuth `state` is a JWT not bound to the browser (login CSRF) | users `oauth.go`, `oidc.go` | Bind it to a cookie or PKCE verifier |
 | B14 | Audit M6 | Account enumeration through sign-in and registration messages | users `auth.go`, `oauth.go` | Generic messages |
 | B15 | Audit M7 | No security headers; `/metrics` is public | `internal/server` | Header middleware; `/metrics` on a separate port or behind a guard |

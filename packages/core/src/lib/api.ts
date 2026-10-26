@@ -57,6 +57,9 @@ export const oidcCallback = (code: string, state: string) =>
 
 export const getMe = () => request<UserPublic>('/auth/me');
 
+/** Ends every session of the signed-in user on the server (docs/specs/190-backend-defects.md B7). */
+export const logout = () => request<{ message: string }>('/auth/logout', { method: 'POST' });
+
 /** Bio or emoji avatar only: username and avatar URLs are not offered (docs/specs/021). */
 export const updateProfile = (body: { bio: string } | { avatarUrl: string }) =>
   request<UserPublic>('/auth/profile', { method: 'PUT', body });

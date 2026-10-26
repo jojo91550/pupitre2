@@ -20,6 +20,8 @@ func clearEnv(t *testing.T) {
 	} {
 		t.Setenv(key, "")
 	}
+
+	t.Setenv("JWT_SECRET", "a-test-signing-secret-of-enough-length-0123")
 }
 
 // TestLoad_Defaults checks the monolith's own defaults (spec 101).
@@ -148,5 +150,19 @@ func TestLoad_InvalidPort(t *testing.T) {
 	_, _, err := Load()
 	if err == nil {
 		t.Fatal("Load accepted port 70000")
+	}
+}
+
+// TestLoad_WeakJWTSecret stops the start-up on the public default secret or
+// a short one (docs/specs/190-backend-defects.md B4).
+func TestLoad_WeakJWTSecret(t *testing.T) { //nolint:paralleltest // sets environment variables
+	for _, secret := range []string{"", "change-me-in-production-use-a-long-random-string", "short-secret"} {
+		clearEnv(t)
+		t.Setenv("JWT_SECRET", secret)
+
+		_, _, err := Load()
+		if err == nil {
+			t.Errorf("Load accepted JWT_SECRET %q", secret)
+		}
 	}
 }

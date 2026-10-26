@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -105,6 +106,14 @@ type UserRepository interface {
 	RefreshSSOProfile(ctx context.Context, id uuid.UUID, avatarURL, bio *string) (*models.User, error)
 	LinkProviderIdentity(ctx context.Context, id uuid.UUID, provider, providerUserID string, avatarURL, bio *string) (*models.User, error)
 	UpdateSSORole(ctx context.Context, id uuid.UUID, role string) (*models.User, error)
+
+	// Sessions (docs/specs/190-backend-defects.md B7)
+	SessionState(ctx context.Context, id uuid.UUID) (*SessionState, error)
+	RevokeSessions(ctx context.Context, id uuid.UUID, validAfter time.Time) error
+
+	// Identity given by the identity provider (docs/specs/190-backend-defects.md B11)
+	SetIdentityName(ctx context.Context, provider, providerUserID, name string) error
+	IdentityName(ctx context.Context, id uuid.UUID) (string, error)
 
 	// Admin
 	CountByRole(ctx context.Context, role string) (int64, error)
@@ -454,6 +463,80 @@ func (r *gormUserRepository) UpdateSSORole(ctx context.Context, userID uuid.UUID
 	}
 
 	return &user, nil
+}
+
+// SessionState is what the per-request session check reads of a user.
+type SessionState struct {
+	Role               string     `gorm:"column:role"`
+	IsActive           bool       `gorm:"column:isactive"`
+	SessionsValidAfter *time.Time `gorm:"column:sessionsvalidafter"`
+}
+
+// SessionState returns the role, the activity and the revocation date of
+// the user identified by id, or ErrUserNotFound. One primary-key read.
+func (r *gormUserRepository) SessionState(ctx context.Context, userID uuid.UUID) (*SessionState, error) {
+	var rows []SessionState
+
+	err := r.db.WithContext(ctx).Model(&models.User{}).
+		Select("role", "isactive", "sessionsvalidafter").
+		Where("id = ?", userID).Limit(1).Scan(&rows).Error
+	if err != nil {
+		return nil, fmt.Errorf("load session state: %w", err)
+	}
+
+	if len(rows) == 0 {
+		return nil, ErrUserNotFound
+	}
+
+	return &rows[0], nil
+}
+
+// RevokeSessions invalidates every token of the user issued until validAfter.
+func (r *gormUserRepository) RevokeSessions(ctx context.Context, userID uuid.UUID, validAfter time.Time) error {
+	err := r.db.WithContext(ctx).Model(&models.User{}).
+		Where("id = ?", userID).Update("sessionsvalidafter", validAfter).Error
+	if err != nil {
+		return fmt.Errorf("revoke sessions: %w", err)
+	}
+
+	return nil
+}
+
+// SetIdentityName records the login the identity provider gave the user
+// signed in through provider as providerUserID.
+func (r *gormUserRepository) SetIdentityName(ctx context.Context, provider, providerUserID, name string) error {
+	err := r.db.WithContext(ctx).Model(&models.User{}).
+		Where("authprovider = ? AND provider_user_id = ?", provider, providerUserID).
+		Update("identityname", name).Error
+	if err != nil {
+		return fmt.Errorf("set identity name: %w", err)
+	}
+
+	return nil
+}
+
+// IdentityName returns the login the identity provider gave the user, or
+// "" when it gave none; ErrUserNotFound for an unknown user.
+func (r *gormUserRepository) IdentityName(ctx context.Context, userID uuid.UUID) (string, error) {
+	var rows []struct {
+		IdentityName *string `gorm:"column:identityname"`
+	}
+
+	err := r.db.WithContext(ctx).Model(&models.User{}).
+		Select("identityname").Where("id = ?", userID).Limit(1).Scan(&rows).Error
+	if err != nil {
+		return "", fmt.Errorf("load identity name: %w", err)
+	}
+
+	if len(rows) == 0 {
+		return "", ErrUserNotFound
+	}
+
+	if rows[0].IdentityName == nil {
+		return "", nil
+	}
+
+	return *rows[0].IdentityName, nil
 }
 
 // UpdateAdminFields updates the non-nil fields of the user identified by id

@@ -84,10 +84,10 @@ export function safeRedirect(raw: string | null, fallback: string): string {
 
 ## Logout
 
-- The « Déconnexion » button (top bar and side menu) ends the local session, clears the TanStack
-  Query cache and redirects to `/login`.
-- The backend has no logout route: the JWT stays valid until it expires (audit finding H3,
-  server side).
+- The « Déconnexion » button (top bar and side menu) calls `POST /api/auth/logout`, which ends
+  every session of the user on the server ([190](190-backend-defects.md) B7), then ends the local
+  session, clears the TanStack Query cache and redirects to `/login`. The browser forgets the
+  token whatever the server answers.
 - The Keycloak session is not closed: clicking « Se connecter » again signs in without asking for
   the password. A redirect to the Keycloak `end_session_endpoint` **may** be added once the API
   exposes its URL.

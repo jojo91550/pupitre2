@@ -65,6 +65,13 @@ export const handlers = [
     });
   }),
 
+  // user-service sessions_auth.go: the mock tokens are not revoked, the
+  // browser forgets them.
+  http.post('/api/auth/logout', ({ request }) => {
+    if (!currentAccount(request)) return apiError(401, 'Invalid token');
+    return HttpResponse.json({ message: 'Signed out' });
+  }),
+
   http.get('/api/auth/me', ({ request }) => {
     const account = currentAccount(request);
     if (!account) return apiError(401, 'Invalid token');

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 
 	"github.com/jojo91550/pupitre2/apps/api/internal/users/repository"
 )
@@ -236,6 +237,16 @@ func (s *State) UpdateUser(writer http.ResponseWriter, request *http.Request) {
 		s.Error(writer, http.StatusNotFound, "User not found")
 
 		return
+	}
+
+	// A deactivation ends the user's sessions; a role change takes effect
+	// at once anyway, the guards reading the role of the row
+	// (docs/specs/190-backend-defects.md B7).
+	if body.IsActive != nil && !*body.IsActive {
+		err = s.revokeSessions(request.Context(), userUUID)
+		if err != nil {
+			zap.L().Error("revoke sessions after deactivation", zap.Error(err))
+		}
 	}
 
 	s.JSON(writer, http.StatusOK, toUserPublicRow(user))

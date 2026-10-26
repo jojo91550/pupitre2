@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 
 	checkerconfig "github.com/jojo91550/pupitre2/apps/api/internal/checker/config"
 	coursesconfig "github.com/jojo91550/pupitre2/apps/api/internal/courses/config"
@@ -17,8 +18,13 @@ import (
 	"github.com/jojo91550/pupitre2/apps/api/internal/platform/config"
 	"github.com/jojo91550/pupitre2/apps/api/internal/platform/middleware"
 	usersconfig "github.com/jojo91550/pupitre2/apps/api/internal/users/config"
+	usersfake "github.com/jojo91550/pupitre2/apps/api/internal/users/fake"
+	usersmodels "github.com/jojo91550/pupitre2/apps/api/internal/users/models"
 	usersrepo "github.com/jojo91550/pupitre2/apps/api/internal/users/repository"
 )
+
+// studentID is the student of TestRouter_Guards.
+const studentID = "00000000-0000-0000-0000-000000000001"
 
 // testJWTSecret signs the tokens of these tests.
 const testJWTSecret = "router-test-secret-long-enough-for-hs256"
@@ -71,7 +77,12 @@ func testRouter(t *testing.T) *chi.Mux {
 		Checker: &checkerconfig.Config{},
 	}
 
-	domains := Wire(cfg, &usersrepo.Repositories{}, &coursesrepo.Repositories{})
+	// The guards check the session of the student of TestRouter_Guards.
+	usersRepos := &usersrepo.Repositories{Users: usersfake.NewUserRepository(usersmodels.User{
+		ID: uuid.MustParse(studentID), Username: "student", Email: "s@example.com", Role: "student", IsActive: true,
+	})}
+
+	domains := Wire(cfg, usersRepos, &coursesrepo.Repositories{})
 
 	return BuildRouter(domains, cfg, false)
 }
@@ -143,7 +154,7 @@ func TestRouter_Guards(t *testing.T) {
 
 	router := testRouter(t)
 
-	studentToken, err := middleware.CreateToken("00000000-0000-0000-0000-000000000001", "s@example.com", "student", "student", testJWTSecret, 1)
+	studentToken, err := middleware.CreateToken(studentID, "s@example.com", "student", "student", testJWTSecret, 1)
 	if err != nil {
 		t.Fatalf("create token: %v", err)
 	}

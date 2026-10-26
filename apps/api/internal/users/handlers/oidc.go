@@ -334,4 +334,21 @@ func (s *State) OIDCCallback(writer http.ResponseWriter, request *http.Request) 
 	groups := oidcGroupsFromClaims(claims, cfg.GroupClaim)
 
 	s.completeSSOLogin(ctx, writer, email, name, avatarURL, bio, oidcProviderKey, sub, groups, cfg.GroupAdmins)
+
+	s.recordIdentityName(ctx, sub, claims)
+}
+
+// recordIdentityName stores the provider's login of the OIDC user sub, which
+// the user cannot change, for lab checks (docs/specs/190-backend-defects.md
+// B11). A failure is only logged: the sign-in already succeeded.
+func (s *State) recordIdentityName(ctx context.Context, sub string, claims map[string]any) {
+	login, ok := claims["preferred_username"].(string)
+	if !ok || login == "" {
+		return
+	}
+
+	err := s.Repos.Users.SetIdentityName(ctx, oidcProviderKey, sub, login)
+	if err != nil {
+		zap.L().Warn("record identity name", zap.Error(err))
+	}
 }

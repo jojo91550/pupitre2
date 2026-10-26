@@ -229,9 +229,9 @@ func TestRepository_CancelledContext(t *testing.T) {
 	wantErr(t, "Patterns.UpsertFromConfig", pat.UpsertFromConfig(ctx, "n", "l", "d", "p", "h", "", "", "global"))
 
 	exp := repository.NewGormExportRepository(gdb)
-	_, _, _, err = exp.FetchRows(ctx, "users", []string{"email"}, nil, 1) //nolint:dogsled // fixed 4-value signature
+	_, _, _, err = exp.FetchRows(ctx, "users", []string{"email"}, nil, repository.Unrestricted, 1) //nolint:dogsled // fixed 4-value signature
 	wantErr(t, "Export.FetchRows", err)
-	_, err = exp.WriteCSV(ctx, io.Discard, "users", []string{"email"}, nil)
+	_, err = exp.WriteCSV(ctx, io.Discard, "users", []string{"email"}, nil, repository.Unrestricted)
 	wantErr(t, "Export.WriteCSV", err)
 	wantErr(t, "Export.LogDownload", exp.LogDownload(ctx, &models.ExportLog{UserID: "u", UserEmail: "e", Category: "users"}))
 }

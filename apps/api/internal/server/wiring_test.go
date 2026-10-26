@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 
 	checkerconfig "github.com/jojo91550/pupitre2/apps/api/internal/checker/config"
 	checkerhandlers "github.com/jojo91550/pupitre2/apps/api/internal/checker/handlers"
@@ -22,6 +23,7 @@ import (
 	"github.com/jojo91550/pupitre2/apps/api/internal/platform/middleware"
 	usersconfig "github.com/jojo91550/pupitre2/apps/api/internal/users/config"
 	usersfake "github.com/jojo91550/pupitre2/apps/api/internal/users/fake"
+	usersmodels "github.com/jojo91550/pupitre2/apps/api/internal/users/models"
 	usersrepo "github.com/jojo91550/pupitre2/apps/api/internal/users/repository"
 )
 
@@ -49,6 +51,9 @@ func newWiredApp(t *testing.T) *wiredApp {
 	}
 
 	usersRepos := usersfake.NewRepositories()
+	usersRepos.Users = usersfake.NewUserRepository(usersmodels.User{
+		ID: uuid.MustParse(learnerID), Username: "learner", Email: "learner@example.com", Role: "student", IsActive: true,
+	})
 	coursesRepos := &coursesrepo.Repositories{
 		Courses: coursesfake.NewCourseRepository(&content.Course{
 			Slug:       "k8s",
@@ -215,6 +220,11 @@ func (failingProgress) RecordModule(context.Context, courseshandlers.ModuleResul
 	return errUsersDown
 }
 
+// LabIdentity fails.
+func (failingProgress) LabIdentity(context.Context, string) (string, error) {
+	return "", errUsersDown
+}
+
 // TestWiring_UsersFailureSemantics checks the failure rules of spec 104: a
 // failing read degrades to empty progress, a failing lesson completion
 // fails the request with the message course-service used.
@@ -256,5 +266,73 @@ func TestWiring_LabCheckerLimit(t *testing.T) {
 	_, err = checker.Evaluate(t.Context(), req)
 	if !errors.As(err, &checkerErr) || checkerErr.Status != http.StatusBadGateway || checkerErr.Message != "checker-service error" {
 		t.Fatalf("second check: %v, want the rate-limit 502", err)
+	}
+}
+
+// TestWiring_SessionsCanBeRevoked is the regression test for defect B7: the
+// guards read the user's row on each request, so a sign-out, a deactivation
+// or a role change takes effect at once instead of at the token's expiry.
+func TestWiring_SessionsCanBeRevoked(t *testing.T) {
+	t.Parallel()
+
+	app := newWiredApp(t)
+	ctx := t.Context()
+
+	// A token claiming the admin role does not make a student an admin: the
+	// role comes from the row.
+	forged, err := middleware.CreateToken(learnerID, "learner@example.com", "admin", "learner", testJWTSecret, 1)
+	if err != nil {
+		t.Fatalf("create token: %v", err)
+	}
+
+	req := httptest.NewRequestWithContext(ctx, http.MethodGet, "/api/admin/users", http.NoBody)
+	req.Header.Set("Authorization", "Bearer "+forged)
+
+	rec := httptest.NewRecorder()
+	app.router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("admin route with a student's row: %d, want 403", rec.Code)
+	}
+
+	if rec := app.do(t, http.MethodGet, "/api/auth/me"); rec.Code != http.StatusOK {
+		t.Fatalf("me before sign-out: %d %s", rec.Code, rec.Body.String())
+	}
+
+	// Signing out revokes the token used, and every other one issued before.
+	// JWT times have a one-second resolution: wait for the next second so
+	// the revocation is strictly after the token.
+	time.Sleep(time.Until(time.Now().Truncate(time.Second).Add(time.Second)))
+
+	if rec := app.do(t, http.MethodPost, "/api/auth/logout"); rec.Code != http.StatusOK {
+		t.Fatalf("logout: %d %s", rec.Code, rec.Body.String())
+	}
+
+	if rec := app.do(t, http.MethodGet, "/api/auth/me"); rec.Code != http.StatusUnauthorized {
+		t.Fatalf("me after sign-out: %d, want 401", rec.Code)
+	}
+
+	// A deactivated user is refused even with a fresh token.
+	time.Sleep(time.Until(time.Now().Truncate(time.Second).Add(time.Second)))
+
+	fresh, err := middleware.CreateToken(learnerID, "learner@example.com", "student", "learner", testJWTSecret, 1)
+	if err != nil {
+		t.Fatalf("create token: %v", err)
+	}
+
+	app.token = fresh
+	if rec := app.do(t, http.MethodGet, "/api/auth/me"); rec.Code != http.StatusOK {
+		t.Fatalf("me with a token issued after the sign-out: %d %s", rec.Code, rec.Body.String())
+	}
+
+	inactive := false
+
+	_, err = app.usersRepos.Users.UpdateAdminFields(ctx, uuid.MustParse(learnerID), nil, nil, nil, &inactive, nil)
+	if err != nil {
+		t.Fatalf("deactivate: %v", err)
+	}
+
+	if rec := app.do(t, http.MethodGet, "/api/auth/me"); rec.Code != http.StatusUnauthorized {
+		t.Fatalf("me after deactivation: %d, want 401", rec.Code)
 	}
 }

@@ -37,8 +37,8 @@ category keeps the source it comes from, so the right route is called.
 - Preview cells are shown as text ([003](003-security.md) S1).
 - The CSV comes from the server as is. Formula injection (a cell starting with `=`, `+`, `-` or
   `@`, finding M4) is fixed on the server.
-- For a manager, the server today exports the **whole** database (finding H2). Until this is
-  fixed, the page shows managers: « Cet export n'est pas encore limité à votre périmètre. »
+- For a manager, the server exports the members of the groups they manage only (finding H2,
+  fixed in [190](190-backend-defects.md) B6).
 
 ## Lab tracking - `/admin/labs`
 

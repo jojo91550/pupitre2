@@ -110,6 +110,8 @@ func Wire(cfg *config.Config, usersRepos *usersrepo.Repositories, coursesRepos *
 	courses := courseshandlers.NewState(cfg.Courses, coursesRepos)
 
 	users.Courses = &coursesSource{courses: courses}
+	users.Sessions = users.CheckSession
+	courses.Sessions = users.CheckSession
 	courses.Users = &usersProgress{users: users}
 	courses.Checker = newLabChecker(checkerhandlers.New(cfg.Checker),
 		cfg.Checker.RateLimitRequests, cfg.Checker.RateLimitWindowSeconds)

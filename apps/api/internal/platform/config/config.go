@@ -13,13 +13,16 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/netip"
 	"os"
 	"strconv"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 
 	checkerconfig "github.com/jojo91550/pupitre2/apps/api/internal/checker/config"
 	coursesconfig "github.com/jojo91550/pupitre2/apps/api/internal/courses/config"
+	"github.com/jojo91550/pupitre2/apps/api/internal/platform/clientip"
 	usersconfig "github.com/jojo91550/pupitre2/apps/api/internal/users/config"
 )
 
@@ -39,15 +42,29 @@ const (
 	defaultLabCheckRateLimitRequests = 20
 	// defaultLabCheckRateLimitWindowSeconds is the lab check window.
 	defaultLabCheckRateLimitWindowSeconds = 60
+	// minJWTSecretLength is the shortest signing secret accepted: 32 bytes,
+	// the size of the HS256 key.
+	minJWTSecretLength = 32
+	// publicDefaultJWTSecret is the secret the services shipped with as a
+	// default. Anyone can mint an admin token with it.
+	publicDefaultJWTSecret = "change-me-in-production-use-a-long-random-string"
 )
 
 // errInvalidPort is returned when the configured port cannot be listened on.
 var errInvalidPort = errors.New("invalid port")
 
+// errWeakJWTSecret is returned when the signing secret is the public default
+// or too short (docs/specs/190-backend-defects.md B4).
+var errWeakJWTSecret = fmt.Errorf("JWT_SECRET must be set to a random secret of at least %d characters", minJWTSecretLength)
+
 // Config is the configuration of the monolith.
 type Config struct {
 	// Port is the single HTTP listen port.
 	Port int
+
+	// TrustedProxies are the networks whose forwarding headers are believed
+	// (docs/specs/190-backend-defects.md B12).
+	TrustedProxies []netip.Prefix
 
 	// Users, Courses and Checker are the configurations each domain reads,
 	// with the shared values already applied.
@@ -59,15 +76,16 @@ type Config struct {
 // fileConfig holds the keys of the YAML file that the monolith resolves
 // itself. Pointers tell an absent key from a zero value.
 type fileConfig struct {
-	Port                           *int    `yaml:"port"`
-	DBMaxOpenConns                 *int    `yaml:"dbMaxOpenConns"`
-	DBMaxIdleConns                 *int    `yaml:"dbMaxIdleConns"`
-	GitCredentialsPath             *string `yaml:"gitCredentialsPath"`
-	LabCheckRateLimitRequests      *int    `yaml:"labCheckRateLimitRequests"`
-	LabCheckRateLimitWindowSeconds *int    `yaml:"labCheckRateLimitWindowSeconds"`
-	UserServiceURL                 *string `yaml:"userServiceUrl"`
-	CourseServiceURL               *string `yaml:"courseServiceUrl"`
-	CheckerServiceURL              *string `yaml:"checkerServiceUrl"`
+	Port                           *int     `yaml:"port"`
+	DBMaxOpenConns                 *int     `yaml:"dbMaxOpenConns"`
+	DBMaxIdleConns                 *int     `yaml:"dbMaxIdleConns"`
+	GitCredentialsPath             *string  `yaml:"gitCredentialsPath"`
+	LabCheckRateLimitRequests      *int     `yaml:"labCheckRateLimitRequests"`
+	LabCheckRateLimitWindowSeconds *int     `yaml:"labCheckRateLimitWindowSeconds"`
+	TrustedProxies                 []string `yaml:"trustedProxies"`
+	UserServiceURL                 *string  `yaml:"userServiceUrl"`
+	CourseServiceURL               *string  `yaml:"courseServiceUrl"`
+	CheckerServiceURL              *string  `yaml:"checkerServiceUrl"`
 }
 
 // removedEnv lists the environment variables of the services that the
@@ -96,6 +114,10 @@ func Load() (*Config, []string, error) {
 		return nil, warnings, fmt.Errorf("%w: %d", errInvalidPort, port)
 	}
 
+	if users.JWTSecret == publicDefaultJWTSecret || len(users.JWTSecret) < minJWTSecretLength {
+		return nil, warnings, errWeakJWTSecret
+	}
+
 	maxOpen := intSetting("DB_MAX_OPEN_CONNS", file.DBMaxOpenConns, defaultDBMaxConns, true)
 	maxIdle := intSetting("DB_MAX_IDLE_CONNS", file.DBMaxIdleConns, defaultDBMaxConns, true)
 
@@ -112,7 +134,30 @@ func Load() (*Config, []string, error) {
 	limitWarnings := applyLabCheckRateLimit(checker, file)
 	warnings = append(warnings, limitWarnings...)
 
-	return &Config{Port: port, Users: users, Courses: courses, Checker: checker}, warnings, nil
+	trusted, err := trustedProxies(file)
+	if err != nil {
+		return nil, warnings, err
+	}
+
+	return &Config{Port: port, TrustedProxies: trusted, Users: users, Courses: courses, Checker: checker}, warnings, nil
+}
+
+// trustedProxies resolves TRUSTED_PROXIES (comma-separated), then the
+// file's trustedProxies, then the private networks of a cluster.
+func trustedProxies(file fileConfig) ([]netip.Prefix, error) {
+	values := clientip.DefaultTrustedProxies
+	if raw := os.Getenv("TRUSTED_PROXIES"); raw != "" {
+		values = strings.Split(raw, ",")
+	} else if len(file.TrustedProxies) > 0 {
+		values = file.TrustedProxies
+	}
+
+	prefixes, err := clientip.ParsePrefixes(values)
+	if err != nil {
+		return nil, fmt.Errorf("TRUSTED_PROXIES: %w", err)
+	}
+
+	return prefixes, nil
 }
 
 // loadFile reads the monolith's own keys from the CONFIG_PATH file. The

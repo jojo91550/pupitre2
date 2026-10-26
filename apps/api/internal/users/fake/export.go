@@ -38,6 +38,9 @@ type ExportRepository struct {
 
 	// Logged captures every ExportLog passed to LogDownload.
 	Logged []models.ExportLog
+
+	// LastScope is the scope of the last FetchRows, WriteCSV or StreamRows.
+	LastScope repository.ExportScope
 }
 
 // NewExportRepository builds a fake ExportRepository with one demo category.
@@ -66,10 +69,12 @@ func (f *ExportRepository) Categories() []repository.ExportCategoryMeta {
 //
 //nolint:gocritic // result shape is fixed by the ExportRepository interface
 func (f *ExportRepository) FetchRows(
-	_ context.Context, _ string, fields []string, _ map[string]string, limit int,
+	_ context.Context, _ string, fields []string, _ map[string]string, scope repository.ExportScope, limit int,
 ) ([]string, []map[string]string, int64, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+
+	f.LastScope = scope
 
 	if f.FetchErr != nil {
 		return nil, nil, 0, f.FetchErr
@@ -95,10 +100,12 @@ func (f *ExportRepository) FetchRows(
 
 // WriteCSV streams the configured rows into writer as semicolon-delimited CSV.
 func (f *ExportRepository) WriteCSV(
-	_ context.Context, writer io.Writer, _ string, fields []string, _ map[string]string,
+	_ context.Context, writer io.Writer, _ string, fields []string, _ map[string]string, scope repository.ExportScope,
 ) (int, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+
+	f.LastScope = scope
 
 	if f.FetchErr != nil {
 		return 0, f.FetchErr
@@ -154,10 +161,13 @@ func (f *ExportRepository) LogDownload(_ context.Context, log *models.ExportLog)
 
 // StreamRows hands each configured row to visit, returning the headers.
 func (f *ExportRepository) StreamRows(
-	_ context.Context, _ string, fields []string, _ map[string]string, visit func(map[string]string) error,
+	_ context.Context, _ string, fields []string, _ map[string]string, scope repository.ExportScope,
+	visit func(map[string]string) error,
 ) ([]string, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+
+	f.LastScope = scope
 
 	if f.FetchErr != nil {
 		return nil, f.FetchErr

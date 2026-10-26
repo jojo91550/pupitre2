@@ -67,6 +67,7 @@ DELETE	/api/admin/users/{userId}	admin	1 MB
 POST	/api/auth/ldap/login	public, rate-limited	1 MB
 POST	/api/auth/login	public, rate-limited	1 MB
 GET	/api/auth/me	signed in	1 MB
+POST	/api/auth/logout	signed in	1 MB
 POST	/api/auth/oauth/callback	public, rate-limited	1 MB
 GET	/api/auth/oauth/providers	public	1 MB
 GET	/api/auth/oauth/{provider}/authorize	public	1 MB

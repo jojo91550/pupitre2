@@ -28,7 +28,7 @@ checker-service.
 | `databaseUrl` | `DATABASE_URL` | `postgres://pupitre:pupitre@localhost:5432/pupitre` | u, c | **Required** in production (course-service refused to start without it) |
 | `dbMaxOpenConns` | `DB_MAX_OPEN_CONNS` | `30` | u (20), c (10) | **One pool**: the sum of the two pools |
 | `dbMaxIdleConns` | `DB_MAX_IDLE_CONNS` | `30` | u (20), c (10) | Same |
-| `jwtSecret` | `JWT_SECRET` | `change-me-in-production-use-a-long-random-string` | u, c | One value: it no longer has to be repeated per service |
+| `jwtSecret` | `JWT_SECRET` | none | u, c | One value; **required**, at least 32 characters ([190](190-backend-defects.md) B4) |
 | `jwtExpiryHours` | `JWT_EXPIRY_HOURS` | `8` | u | course-service's `24` was never used: it only verifies tokens. The Helm chart sets `24` for user-service, so deployed tokens last 24 h |
 | `oauthStateSecret` | `OAUTH_STATE_SECRET` | the JWT secret | u | |
 | `oauthRedirectBase` | `OAUTH_REDIRECT_BASE` | `http://localhost:3000` | u | |
@@ -48,6 +48,7 @@ checker-service.
 | - | `OIDC_ENABLED`, `OIDC_PROVIDER_URL`, `OIDC_ISSUER_URL`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET[_FILE]`, `OIDC_SCOPES`, `OIDC_GROUP_CLAIM`, `OIDC_GROUP_ADMINS`, `OIDC_REDIRECT_BASE`, `OIDC_BROWSER_BASE_URL`, `OIDC_INSECURE_SKIP_VERIFY` | none | u | Seed the `oidc_*` platform settings at start-up ([105](105-backend-authentication.md)) |
 | - | `SEED_DEV_COURSES` | unset | c | `true` seeds the demo catalogue, `overwrite` replaces it; never in production |
 | - | `SEED_MOCK_DATA` | unset | u | `true` seeds demo users and progress; never in production |
+| `trustedProxies` | `TRUSTED_PROXIES` | loopback and private networks | - | Comma-separated CIDRs or addresses whose `X-Forwarded-For` is believed ([190](190-backend-defects.md) B12) |
 | - | `LOG_LEVEL` | `info` | u, c, k | `debug`, `info`, `warn`, `error` |
 | - | `LOG_FORMAT` | `json` | u, c, k | `text` for local development |
 
@@ -79,9 +80,9 @@ as `502`; see [190](190-backend-defects.md) B9 for the decision on this behaviou
 
 ## Default secrets
 
-The defaults of `jwtSecret` (and of the removed internal secret) are public. Refusing to start with
-a default secret outside development is audit finding C1, a specified fix
-([190](190-backend-defects.md) B4), not part of the move.
+The old defaults of `jwtSecret` and of the removed internal secret are public. The API refuses to
+start when `JWT_SECRET` is that default or shorter than 32 characters
+([190](190-backend-defects.md) B4); local development sets one in `apps/api/.env`.
 
 ## Acceptance criteria
 

@@ -72,7 +72,10 @@ func (s *State) ListCoursesBatch(writer http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	out, err := s.BatchCourses(req.Context(), slugs)
+	// The public route lists public courses only, like GET /api/courses
+	// (docs/specs/190-backend-defects.md B10); the in-process BatchCourses
+	// of the users domain still sees every course.
+	out, err := s.batchCourses(req.Context(), slugs, true)
 	if err != nil {
 		zap.L().Error("batch course lookup failed", zap.Int("slugs", len(slugs)), zap.Error(err))
 		s.Error(writer, http.StatusInternalServerError, internalErrorMessage)
@@ -87,7 +90,13 @@ func (s *State) ListCoursesBatch(writer http.ResponseWriter, req *http.Request) 
 // GET /api/batch/courses reports them. The users domain reads its catalog
 // through it (docs/specs/104-backend-in-process-calls.md).
 func (s *State) BatchCourses(ctx context.Context, slugs []string) ([]CourseResponse, error) {
-	courses, err := s.Repos.Courses.List(ctx, repository.CourseFilter{Slugs: slugs})
+	return s.batchCourses(ctx, slugs, false)
+}
+
+// batchCourses resolves the courses among slugs, public ones only when
+// publicOnly is set.
+func (s *State) batchCourses(ctx context.Context, slugs []string, publicOnly bool) ([]CourseResponse, error) {
+	courses, err := s.Repos.Courses.List(ctx, repository.CourseFilter{Slugs: slugs, PublicOnly: publicOnly})
 	if err != nil {
 		return nil, fmt.Errorf("list courses: %w", err)
 	}

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	"github.com/jojo91550/pupitre2/apps/api/internal/users/repository"
@@ -168,6 +169,28 @@ func (s *State) MarkCourseComplete(ctx context.Context, body CourseCompletion) e
 	}
 
 	return nil
+}
+
+// LabIdentity returns the login the identity provider gave the user, which
+// the courses domain uses to find the learner's GitLab project; "" when the
+// user never signed in through the identity provider
+// (docs/specs/190-backend-defects.md B11).
+func (s *State) LabIdentity(ctx context.Context, userID string) (string, error) {
+	id, err := uuid.Parse(userID)
+	if err != nil {
+		return "", nil //nolint:nilerr // an unknown subject has no identity
+	}
+
+	name, err := s.Repos.Users.IdentityName(ctx, id)
+	if errors.Is(err, repository.ErrUserNotFound) {
+		return "", nil
+	}
+
+	if err != nil {
+		return "", fmt.Errorf("lab identity: %w", err)
+	}
+
+	return name, nil
 }
 
 // RecordModuleProgress records a quiz or lab result, and grants the

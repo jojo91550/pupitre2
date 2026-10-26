@@ -62,7 +62,7 @@ dev proxy and the front door send all of `/api` to one target
 Generated from the routers at `3cdf7b2` (`user-service/internal/handlers/router.go`,
 `course-service/internal/handlers/router.go`, `checker-service/internal/handlers/handler.go`).
 "From" is the service that served the route. 135 routes are kept as they are, 2 are merged and
-13 are removed.
+13 are removed; one was added after the move by a fix of [190](190-backend-defects.md).
 
 | Method | Route | Access | Body limit | From | Handler | In the monolith |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -134,6 +134,7 @@ Generated from the routers at `3cdf7b2` (`user-service/internal/handlers/router.
 | POST | `/api/auth/ldap/login` | public, rate-limited | 1 MB | user | `LDAPLogin` | Kept |
 | POST | `/api/auth/login` | public, rate-limited | 1 MB | user | `Login` | Kept |
 | GET | `/api/auth/me` | signed in | 1 MB | user | `Me` | Kept |
+| POST | `/api/auth/logout` | signed in | 1 MB | user | `Logout` | **Added**: ends every session of the user ([190](190-backend-defects.md) B7) |
 | POST | `/api/auth/oauth/callback` | public, rate-limited | 1 MB | user | `OAuthCallback` | Kept |
 | GET | `/api/auth/oauth/providers` | public | 1 MB | user | `ListProviders` | Kept |
 | GET | `/api/auth/oauth/{provider}/authorize` | public | 1 MB | user | `OAuthAuthorize` | Kept |
