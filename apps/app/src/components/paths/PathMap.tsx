@@ -45,6 +45,8 @@ const FONT = 'system-ui,sans-serif';
 const BADGE_WIDTH = 64;
 const BADGE_HEIGHT = 14;
 const LINE_HEIGHT = 11;
+// The width of a step's click area: the 16-character label lines are the widest part.
+const HIT_WIDTH = 100;
 
 export function PathMap({ path }: { path: MyPath }) {
   const dark = useTheme() === 'dark';
@@ -81,6 +83,15 @@ export function PathMap({ path }: { path: MyPath }) {
         const r = MAP.nodeRadius;
         const node = (
           <>
+            {/* An invisible area over the whole step, so a click between the circle and the
+                name still opens it: the gap between the shapes caught no click. */}
+            <rect
+              x={x - HIT_WIDTH / 2}
+              y={y - r - 3}
+              width={HIT_WIDTH}
+              height={badgeY + BADGE_HEIGHT - (y - r - 3)}
+              fill="transparent"
+            />
             {step.status === 'available' && (
               <circle cx={x} cy={y} r={r + 5} fill="none" stroke={th.fill} strokeWidth="2.5" opacity="0">
                 <animate attributeName="r" values={`${r + 3};${r + 20}`} dur="2s" repeatCount="indefinite" />
