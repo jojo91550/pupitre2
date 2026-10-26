@@ -43,8 +43,9 @@ How the monolith is built, run, tested and deployed, next to the frontend in thi
   address and no split-horizon setting is needed.
 - `apps/api/.env.example` holds the development settings matching compose. `pupitre-api` loads
   a `.env` of its working directory without overriding the environment.
-- Roles: `pupitre-admins` is mapped to `admin` in `/admin/groups`; a manager is made in
-  `/admin/users` ([190](190-backend-defects.md) B20, B21). The Playwright backend suite does both.
+- Roles: `pupitre-admins` is mapped to `admin` in `/admin/groups`; a manager is made by hand in
+  `/admin/users`, and keeps the role at the next sign-in ([190](190-backend-defects.md) B21). The
+  Playwright backend suite does both.
 
 The frontend's dev proxy (`apps/app/vite.config.ts`) sends `/api` and `/uploads` to **one**
 target, `VITE_API_URL` (default `http://localhost:8080`). `VITE_USER_SERVICE_URL` and

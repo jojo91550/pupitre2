@@ -57,8 +57,11 @@ once at start-up: the users domain's, then the courses domain's (`server.Migrate
 breaking migration or constraint of one domain depends on the other, the order gives the same
 schema as the two services starting in any order.
 
-Today the breaking migrations hold one entry, from user-service: `20260829_dedupe_user_xp_events`.
-Names are kept as they are, so a database that already ran it does not run it again.
+The move kept the one breaking migration of user-service, `20260829_dedupe_user_xp_events`.
+Names are kept as they are, so a database that already ran it does not run it again. The fixes
+added `20261026_group_role_mappings_allow_manager` ([190](190-backend-defects.md) B20): it drops
+the check constraint of `group_role_mappings.platformrole`, which AutoMigrate does not change, and
+AutoMigrate creates it again with `admin`, `manager` and `student`.
 `_schema_migrations` was already shared by the two services; nothing changes for it.
 
 Each domain keeps its own list of models and of breaking migrations in its `db` package. A new
@@ -96,8 +99,8 @@ one replica of the monolith opens no more connections than one replica of each s
 - On an empty database, the monolith creates exactly the tables, columns, indexes and constraints
   that the two services created together (schema dump compared in a test).
 - On a database migrated by the two services at `3cdf7b2`, with data, the monolith starts, applies
-  nothing new and serves the same data.
-- `_schema_migrations` holds `20260829_dedupe_user_xp_events` once.
+  only the migrations of the fixes and serves the same data.
+- `_schema_migrations` holds each breaking migration once.
 
 ## Sources
 

@@ -17,7 +17,7 @@ keeps each one as it is**. Each fix is a separate change after the move (batch B
 ## Fixed after the move
 
 Batch B3.1 of [199](199-backend-migration-plan.md), security first. Each fix has a regression
-test that failed before it.
+test that failed before it. Batch B3.2 fixed the Keycloak roles.
 
 | # | Source | Defect | Fix |
 | --- | --- | --- | --- |
@@ -28,6 +28,8 @@ test that failed before it.
 | B10 | Audit M1 | `/api/batch/courses` was public and returned private courses | The public route returns public courses only; the users domain's in-process catalog still sees every course |
 | B11 | Audit M2 | The GitLab project of a lab check came from the editable username | The project comes from the identity provider's `preferred_username`, recorded at each OIDC sign-in; a learner without one is refused (`403`) ([107](107-backend-labs-and-checker.md)) |
 | B12 | Audit H4, H7 | `RealIP` trusted any `X-Forwarded-For`, so the sign-in rate limit could be bypassed | Forwarding headers are read only from `TRUSTED_PROXIES`, from the right; sign-in attempts are also limited per email ([101](101-backend-configuration.md), [105](105-backend-authentication.md)) |
+| B20 | Front + back test | A group mapping to `manager` failed with `500 Database error`: the check constraint allowed only `admin` and `student` | The constraint allows `manager`; a breaking migration drops the old one so AutoMigrate creates it again ([102](102-backend-data-and-migrations.md)) |
+| B21 | Front + back test | With `oidc_group_admins` set, every OIDC sign-in reset a manager outside those groups to `student` | `oidc_group_admins` grants `admin` and takes back only `admin`; any other role is kept. A group mapping no longer demotes either: the highest role wins ([105](105-backend-authentication.md)) |
 
 ## To fix after the move
 
@@ -44,8 +46,6 @@ test that failed before it.
 | B16 | Audit L1, L2 | OIDC client secret and LDAP bind password stored in clear; `oidc_insecure_skip_verify` available in production | users settings | Encrypt at rest; allow the skip only in development |
 | B17 | Audit L3, L4 | No email verification at registration (bypasses the domain allowlist); the quiz returns `correctAnswer` after submission | users `auth.go`, courses `modules.go` | Verification mail; decide on `correctAnswer` with [013](013-quizzes.md) |
 | B18 | 090 A2, A18 | No course `thumbnail`; `GET /api/my/paths` does not return `level` | courses models, users `paths.go` | Add the fields, then show them in the frontend |
-| B20 | Front + back test | A group mapping to the `manager` role fails with `500 Database error`: the handler accepts `admin`, `manager` and `student`, but the column's check constraint allows only `admin` and `student`. The admin page offers « Manager de groupe » ([044](044-admin-groups.md)) | users `models/group_role_mapping.go` | Add `manager` to the check constraint (a breaking migration replacing the constraint, [102](102-backend-data-and-migrations.md)) |
-| B21 | Front + back test | When `oidc_group_admins` is set (`sso.oidc.groupAdmins` in the chart), every OIDC sign-in resets the role to `student` unless the user is in one of those groups: a `manager` role, given by hand or by a mapping, is lost at the next sign-in | users `handlers/oauth.go` `completeSSOLogin` | Let `oidc_group_admins` grant `admin` only, and keep the mapped or stored role otherwise |
 | B22 | Helm chart | course-service writes uploads to `/data/uploads`, but the chart mounts no volume there and the root filesystem is read-only: media uploads and `replication` cannot be written, and would not survive a restart or be shared between replicas | `pupitre-helm` `templates/course-service/deployment.yaml` | Mount a persistent volume at `/data/uploads` (batch B4 of [199](199-backend-migration-plan.md)) |
 | B23 | Monolith test | The demo course `python-basics` lists its quiz prerequisite as `listes,-tuples-et-dictionnaires`, while the lesson's slug is `listes--tuples-et-dictionnaires`: the quiz stays `locked` once every lesson is done (its submission is still accepted) | courses `db/seed/courses/python-basics.yaml` | Fix the slug in the seed; consider validating prerequisites against the module slugs when a course is saved |
 | B24 | Monolith work | Booking a session of a **private** course ignores its capacity: the capacity was read with an anonymous course read, which a private course refuses, and a failed read means "unlimited" | users `sessions.go` `sessionCapacity` | Read the capacity without the public-visibility filter |

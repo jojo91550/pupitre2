@@ -145,6 +145,29 @@ type breakingMigration struct {
 //nolint:gochecknoglobals // static migration configuration, populated once at init
 var breakingMigrations = []breakingMigration{
 	{
+		// group_role_mappings.platformrole accepted admin and student only,
+		// while the API and the admin page offered manager too: saving such a
+		// mapping failed with "Database error" (docs/specs/190-backend-defects.md
+		// B20). AutoMigrate does not change an existing check constraint, so
+		// drop it here; AutoMigrate then creates it again from the model,
+		// which lists the three roles.
+		Name: "20261026_group_role_mappings_allow_manager",
+		Apply: func(ctx context.Context, gdb *gorm.DB) error {
+			exists, err := tableExists(ctx, gdb, "group_role_mappings")
+			if err != nil || !exists {
+				return err
+			}
+
+			err = gdb.WithContext(ctx).Exec(
+				"ALTER TABLE group_role_mappings DROP CONSTRAINT IF EXISTS chk_group_role_mappings_platformrole").Error
+			if err != nil {
+				return fmt.Errorf("drop platformrole check: %w", err)
+			}
+
+			return nil
+		},
+	},
+	{
 		// user_xp_events gained a unique index on (userid, source,
 		// source_slug). Award() always intended one — it upserts with ON
 		// CONFLICT DO NOTHING — but without the index there was nothing to

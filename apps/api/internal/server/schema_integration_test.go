@@ -151,7 +151,10 @@ func TestMigrate_SameSchemaAsTheServices(t *testing.T) {
 		t.Fatalf("read _schema_migrations: %v", err)
 	}
 
-	if len(applied) != 1 || applied[0] != "20260829_dedupe_user_xp_events" {
-		t.Fatalf("_schema_migrations = %v, want the user-service migration once", applied)
+	// The user-service migration, then the one of the fixes
+	// (docs/specs/190-backend-defects.md B20), each once.
+	wantApplied := []string{"20260829_dedupe_user_xp_events", "20261026_group_role_mappings_allow_manager"}
+	if !slices.Equal(applied, wantApplied) {
+		t.Fatalf("_schema_migrations = %v, want %v", applied, wantApplied)
 	}
 }
