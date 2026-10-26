@@ -31,7 +31,7 @@ COPY --from=builder /out/user-service /app/user-service
 
 # No ENV config defaults here: env vars override the mounted ConfigMap file
 # (precedence: code defaults → CONFIG_PATH file → env). Defaults live in
-# user-service/internal/config/config.go.
+# internal/users/config/config.go.
 
 USER 1000:1000
 

@@ -53,7 +53,9 @@ dev proxy and the front door send all of `/api` to one target
   ([104](104-backend-in-process-calls.md), [107](107-backend-labs-and-checker.md)). They were
   never reachable from a browser (guarded by `X-Internal-Secret`), so no client loses anything.
 - `/health` and `/metrics` existed once per service: the monolith serves each once. `/health`
-  keeps its body; `/metrics` exposes the metrics of every domain, with the same names.
+  answers `{"status":"ok","service":"pupitre-api","version":"1.0.0"}` (the services named
+  themselves in `service`; probes only read the status). `/metrics` exposes the metrics of every
+  domain, with the same names: they were already one registry in `internal/metrics`.
 
 ## Route inventory
 
@@ -219,8 +221,10 @@ Generated from the routers at `3cdf7b2` (`user-service/internal/handlers/router.
 
 ## Acceptance criteria
 
-- A test walks the monolith router and compares its method and path pairs, guards and body
-  limits with this table: every "Kept" and "One route" row is served, no "Removed" row is.
+- `internal/server/router_test.go` walks the monolith router and compares its method and path
+  pairs with this table (`testdata/routes.tsv`, generated from it): every "Kept" and "One route"
+  row is served, no other route is. It also checks every guard: a guarded route answers an
+  anonymous request with 401, a role-guarded one answers a student with 403.
 - The Go e2e suite and the frontend Playwright suite pass against the monolith.
 - A 5 MB markdown import to `/api/admin/courses/import` is accepted; a 2 MB body to a learner route
   is refused with the same status as today.

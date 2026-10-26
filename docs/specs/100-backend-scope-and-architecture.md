@@ -47,15 +47,16 @@ apps/api/
 ├── internal/
 │   ├── platform/                # shared plumbing, from the root internal/ of genesary/pupitre
 │   │   ├── config/              # merged configuration (101)
-│   │   ├── db/                  # one connection pool, migrations of every domain (102)
-│   │   ├── auth/                # JWT and role guards (was internal/middleware)
-│   │   ├── httperr/  httpx/  metrics/
-│   ├── server/                  # the single chi router: mounts every domain's routes (103)
+│   │   ├── middleware/          # JWT and role guards
+│   │   ├── httperr/  httpx/  metrics/  utils/
+│   ├── server/                  # wiring: one pool, migrations (102), router (103), in-process
+│   │                            # adapters (104), start-up and shutdown
 │   ├── users/                   # was user-service/internal: auth, users, groups, enrollments,
 │   │                            # progress, gamification, sessions, settings, patterns, exports
 │   ├── courses/                 # was course-service/internal: catalogue, content, git, quizzes,
 │   │                            # labs, paths, markdown import/export, uploads
-│   └── checker/                 # was checker-service/internal/checker: GitLab state + OPA (107)
+│   └── checker/                 # was checker-service/internal: GitLab state + OPA engine, with
+│                                # its handlers/ and config/ (107)
 ├── e2e/
 └── examples/
 ```
@@ -65,9 +66,12 @@ Rules:
 - **Domains keep their packages.** `users/`, `courses/` and `checker/` keep the inner layout they
   had in their service (`handlers/`, `repository/`, `models/`, …), so a file of `genesary/pupitre`
   can be found by its path. They are moved, not rewritten.
-- **A domain never imports another domain's internals.** Calls across domains go through the small
-  interfaces of [104](104-backend-in-process-calls.md), declared by the caller and implemented by
-  the callee. Go's `internal/` rule enforces this inside `users/` and `courses/`.
+- **A domain never imports another domain.** Calls across domains go through the small interfaces
+  of [104](104-backend-in-process-calls.md), declared by the caller; `internal/server` implements
+  them with adapters that call the domain owning the data. It is the only package that imports two
+  domains.
+- **Each domain keeps its configuration package.** The merged loader of
+  [101](101-backend-configuration.md) fills them from one file and one environment.
 - **One process, one database pool, one router, one `/health`, one `/metrics`.**
 - The module path changes from `github.com/genesary/pupitre` to
   `github.com/jojo91550/pupitre2/apps/api`; imports are rewritten accordingly.

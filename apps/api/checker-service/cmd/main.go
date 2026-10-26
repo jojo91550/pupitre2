@@ -14,8 +14,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/jojo91550/pupitre2/apps/api/checker-service/internal/config"
-	"github.com/jojo91550/pupitre2/apps/api/checker-service/internal/handlers"
+	"github.com/jojo91550/pupitre2/apps/api/internal/checker/config"
+	"github.com/jojo91550/pupitre2/apps/api/internal/checker/handlers"
 )
 
 const (

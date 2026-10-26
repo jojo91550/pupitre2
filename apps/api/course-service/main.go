@@ -16,10 +16,10 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/jojo91550/pupitre2/apps/api/course-service/internal/config"
-	coursedb "github.com/jojo91550/pupitre2/apps/api/course-service/internal/db"
-	"github.com/jojo91550/pupitre2/apps/api/course-service/internal/handlers"
-	"github.com/jojo91550/pupitre2/apps/api/course-service/internal/repository"
+	"github.com/jojo91550/pupitre2/apps/api/internal/courses/config"
+	coursedb "github.com/jojo91550/pupitre2/apps/api/internal/courses/db"
+	"github.com/jojo91550/pupitre2/apps/api/internal/courses/handlers"
+	"github.com/jojo91550/pupitre2/apps/api/internal/courses/repository"
 )
 
 const (

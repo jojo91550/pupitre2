@@ -12,7 +12,7 @@ courseService:
   extraEnv:
     # Seeds the demo catalogue on startup so a fresh cluster is browsable.
     # "true" only creates the courses that are missing; use "overwrite" to
-    # replace them after editing course-service/internal/db/seed/courses/.
+    # replace them after editing internal/courses/db/seed/courses/.
     - name: SEED_DEV_COURSES
       value: "true"
 

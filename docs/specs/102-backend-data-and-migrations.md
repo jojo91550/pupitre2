@@ -49,21 +49,20 @@ it stays one. Adding such a key is not part of the move.
 
 ## Migrations
 
-Both services migrated the shared database at start-up with the same three steps. The monolith
-runs them once, in this order:
+Both services migrated the shared database at start-up with the same three steps: **breaking
+migrations** (each tracked by name in `_schema_migrations` and run in its own transaction),
+**AutoMigrate** (it only adds tables, columns and indexes), then **foreign keys** added if missing
+(checked by name in `pg_constraint`). The monolith runs each domain's migration runner, unchanged,
+once at start-up: the users domain's, then the courses domain's (`server.Migrate`). Since no table,
+breaking migration or constraint of one domain depends on the other, the order gives the same
+schema as the two services starting in any order.
 
-1. **Breaking migrations** of both domains, in one list, each tracked by name in
-   `_schema_migrations` and run in its own transaction. Today the list holds one entry, from
-   user-service: `20260829_dedupe_user_xp_events`. Names are kept as they are, so a database that
-   already ran it does not run it again.
-2. **AutoMigrate** of the users models, then of the courses models (the order of the two lists
-   above). AutoMigrate only adds tables, columns and indexes.
-3. **Foreign keys** of the users domain, added if missing (checked by name in `pg_constraint`).
-
+Today the breaking migrations hold one entry, from user-service: `20260829_dedupe_user_xp_events`.
+Names are kept as they are, so a database that already ran it does not run it again.
 `_schema_migrations` was already shared by the two services; nothing changes for it.
 
-Each domain keeps its own list of models and of breaking migrations in its package; the platform
-`db` package concatenates them. A new breaking migration gets a dated name, unique across domains.
+Each domain keeps its own list of models and of breaking migrations in its `db` package. A new
+breaking migration gets a dated name, unique across domains.
 
 Running the migrations on a database that the two services already migrated changes nothing:
 this is checked by a test against a database migrated by the `3cdf7b2` code

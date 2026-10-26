@@ -31,7 +31,7 @@ COPY --from=builder /out/course-service /app/course-service
 
 # No ENV config defaults here: env vars override the mounted ConfigMap file
 # (precedence: code defaults → CONFIG_PATH file → env). Defaults live in
-# course-service/internal/config/config.go.
+# internal/courses/config/config.go.
 
 USER 1000:1000
 
