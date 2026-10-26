@@ -32,8 +32,8 @@ func TestGetCourse_PrivateViaPathEnrollment(t *testing.T) {
 	}))
 	defer userSrv.Close()
 
-	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24, UserServiceURL: userSrv.URL}
-	state := NewState(cfg, &repository.Repositories{
+	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24}
+	state := withPeers(NewState(cfg, &repository.Repositories{
 		Courses: fake.NewCourseRepository(&content.Course{
 			Slug: "secret-course", Title: "Secret", IsPublic: false,
 			Modules: []content.Module{{Name: "m", Type: "text", InlineContent: "x"}},
@@ -43,7 +43,7 @@ func TestGetCourse_PrivateViaPathEnrollment(t *testing.T) {
 		}),
 		QuizAttempts: fake.NewQuizAttemptRepository(),
 		LabChecks:    fake.NewLabCheckRepository(),
-	})
+	}), userSrv.URL, "")
 
 	r := BuildRouter(state, cfg, false)
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/courses/secret-course", http.NoBody)
@@ -78,15 +78,15 @@ func TestGetCourse_PrivateNoPathHidden(t *testing.T) {
 	}))
 	defer userSrv.Close()
 
-	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24, UserServiceURL: userSrv.URL}
-	state := NewState(cfg, &repository.Repositories{
+	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24}
+	state := withPeers(NewState(cfg, &repository.Repositories{
 		Courses: fake.NewCourseRepository(&content.Course{
 			Slug: "secret-course", Title: "Secret", IsPublic: false,
 		}),
 		Paths:        fake.NewPathRepository(), // no path contains it
 		QuizAttempts: fake.NewQuizAttemptRepository(),
 		LabChecks:    fake.NewLabCheckRepository(),
-	})
+	}), userSrv.URL, "")
 
 	r := BuildRouter(state, cfg, false)
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/courses/secret-course", http.NoBody)

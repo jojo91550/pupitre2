@@ -74,16 +74,3 @@ func TestInternalViewedLessons_DBError(t *testing.T) {
 		t.Errorf("want 500, got %d", rec.Code)
 	}
 }
-
-// TestInternalViewedLessons_NoSecret is rejected without the internal
-// secret header.
-func TestInternalViewedLessons_NoSecret(t *testing.T) {
-	t.Parallel()
-
-	r := newTestRouter()
-
-	rec := htDo(t, r, http.MethodGet, "/internal/progress/viewed?userId=u1&courseSlug=c", "", "")
-	if rec.Code != http.StatusUnauthorized {
-		t.Errorf("want 401, got %d", rec.Code)
-	}
-}

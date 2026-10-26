@@ -102,8 +102,7 @@ func TestRouter_OwnedPrefixesAreDisjoint(t *testing.T) {
 func ownershipRouter() *chi.Mux {
 	cfg := &config.Config{
 		JWTSecret: htSecret, JWTExpiryH: htExpiry,
-		CORSOrigins: []string{"*"}, InternalSecret: htInternalSecret,
-	}
+		CORSOrigins: []string{"*"}}
 
 	return BuildRouter(&State{Repos: fake.NewRepositories(), Config: cfg}, cfg, false)
 }

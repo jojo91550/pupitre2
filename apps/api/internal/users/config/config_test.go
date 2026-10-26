@@ -13,7 +13,7 @@ func TestLoad_Defaults(t *testing.T) {
 	// Clear all relevant env vars.
 	for _, k := range []string{
 		"DATABASE_URL", "JWT_SECRET", "JWT_EXPIRY_HOURS", "PORT",
-		"CORS_ORIGINS", "OAUTH_REDIRECT_BASE", "COURSE_SERVICE_URL",
+		"CORS_ORIGINS", "OAUTH_REDIRECT_BASE",
 		"ADMIN_PASSWORD", "ADMIN_PASSWORD_FILE", "CONFIG_PATH",
 		"OIDC_ENABLED", "OIDC_PROVIDER_URL", "OIDC_ISSUER_URL",
 		"OIDC_CLIENT_ID", "OIDC_CLIENT_SECRET", "OIDC_CLIENT_SECRET_FILE",
@@ -280,15 +280,10 @@ func TestLoad_AdminPasswordFileMissing_FallsBackToEnv(t *testing.T) {
 // OAuth redirect base and course service URL from their env vars.
 func TestLoad_OAuthRedirectBaseAndCourseURL(t *testing.T) {
 	t.Setenv("OAUTH_REDIRECT_BASE", "https://app.example.com")
-	t.Setenv("COURSE_SERVICE_URL", "http://course-svc:8082")
 
 	c, _ := Load()
 	if c.OAuthRedirectBase != "https://app.example.com" {
 		t.Errorf("OAuthRedirectBase: want https://app.example.com, got %q", c.OAuthRedirectBase)
-	}
-
-	if c.CourseServiceURL != "http://course-svc:8082" {
-		t.Errorf("CourseServiceURL: want http://course-svc:8082, got %q", c.CourseServiceURL)
 	}
 }
 

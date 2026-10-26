@@ -3,47 +3,10 @@ package handlers
 import (
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/cors"
 
 	"github.com/jojo91550/pupitre2/apps/api/internal/courses/config"
-	"github.com/jojo91550/pupitre2/apps/api/internal/platform/metrics"
 	apimiddleware "github.com/jojo91550/pupitre2/apps/api/internal/platform/middleware"
 )
-
-// routerCORSMaxAgeSeconds is the max-age advertised for CORS preflight
-// response caching.
-const routerCORSMaxAgeSeconds = 300
-
-// BuildRouter constructs the course-service chi router, wiring public
-// routes, user-authenticated routes, and admin-only routes behind their
-// respective middleware, plus CORS/logging middleware.
-func BuildRouter(state *State, cfg *config.Config, withLogger bool) *chi.Mux {
-	corsOptions := cors.New(cors.Options{
-		AllowedOrigins:   cfg.CORSOrigins,
-		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
-		AllowCredentials: true,
-		MaxAge:           routerCORSMaxAgeSeconds,
-	})
-
-	router := chi.NewRouter()
-	router.Use(chiMiddleware.RequestID)
-	//nolint:staticcheck // SA1019: RealIP deprecation acknowledged — service runs behind a trusted reverse proxy that sets X-Forwarded-For; the value is used for logging/rate-limiting only.
-	router.Use(chiMiddleware.RealIP)
-
-	if withLogger {
-		router.Use(chiMiddleware.Logger)
-	}
-
-	router.Use(chiMiddleware.Recoverer)
-	router.Use(corsOptions.Handler)
-
-	router.Get("/health", state.Health)
-	router.Get("/metrics", metrics.Handler())
-	RegisterRoutes(router, state, cfg)
-
-	return router
-}
 
 // RegisterRoutes mounts every public route of the courses domain on router,
 // each group behind its body limit and guard. It adds no global middleware

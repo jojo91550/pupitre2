@@ -40,9 +40,9 @@ func labStepCourse() *content.Course {
 
 // checkStepState wires a State at a mock checker-service.
 func checkStepState(checkerURL string) *State {
-	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24, CheckerServiceURL: checkerURL}
+	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24}
 
-	return newStateWith(cfg, labStepCourse())
+	return withPeers(newStateWith(cfg, labStepCourse()), "", checkerURL)
 }
 
 // stepCheckReq issues an authenticated student POST to the step-check route.
@@ -173,8 +173,8 @@ func TestCheckModuleStep_MissingProject(t *testing.T) {
 	course := labStepCourse()
 	course.Modules[0].Steps[0].CheckParams = map[string]any{"pattern": "feature/"}
 
-	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24, CheckerServiceURL: "http://unused"}
-	s := newStateWith(cfg, course)
+	cfg := &config.Config{JWTSecret: "test-secret", JWTExpiryH: 24}
+	s := withPeers(newStateWith(cfg, course), "", "http://unused")
 
 	rec := stepCheckReq(t, s, "/api/courses/devops-101/modules/0/steps/0/check")
 	if rec.Code != http.StatusBadRequest {

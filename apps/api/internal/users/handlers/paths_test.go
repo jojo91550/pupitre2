@@ -196,7 +196,7 @@ func TestMyPaths_CourseServiceError(t *testing.T) {
 
 	s := &State{
 		Repos:  repos,
-		Config: &config.Config{JWTSecret: htSecret, JWTExpiryH: htExpiry, CourseServiceURL: "http://127.0.0.1:0"},
+		Config: &config.Config{JWTSecret: htSecret, JWTExpiryH: htExpiry}, Courses: courseSourceAt("http://127.0.0.1:0"),
 	}
 	r := BuildRouter(s, s.Config, false)
 
@@ -243,7 +243,7 @@ func TestMyPaths_WithCourseService(t *testing.T) {
 
 	s := &State{
 		Repos:  repos,
-		Config: &config.Config{JWTSecret: htSecret, JWTExpiryH: htExpiry, CourseServiceURL: courseSvc.URL},
+		Config: &config.Config{JWTSecret: htSecret, JWTExpiryH: htExpiry}, Courses: courseSourceAt(courseSvc.URL),
 	}
 	r := BuildRouter(s, s.Config, false)
 
@@ -506,7 +506,7 @@ func TestAdminUnenrollUserFromPath_RequiresAdmin(t *testing.T) {
 func TestFetchPathDetail_InvalidSlug(t *testing.T) {
 	t.Parallel()
 
-	s := &State{Config: &config.Config{CourseServiceURL: "http://localhost"}}
+	s := &State{Config: &config.Config{}, Courses: courseSourceAt("http://localhost")}
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", http.NoBody)
 
 	cases := []string{"../etc/passwd", "UPPERCASE", "-leading", "with space", "a/b"}
@@ -527,7 +527,7 @@ func TestFetchPathDetail_ValidSlug(t *testing.T) {
 		"my-path": {Slug: "my-path", Title: "My Path"},
 	}})
 
-	s := &State{Config: &config.Config{CourseServiceURL: srv.URL}}
+	s := &State{Config: &config.Config{}, Courses: courseSourceAt(srv.URL)}
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", http.NoBody)
 
 	detail, err := s.fetchPathDetail(req, "my-path")
@@ -638,7 +638,7 @@ func TestAdminListPathEnrollments_WithDetail(t *testing.T) {
 
 	s := &State{
 		Repos:  repos,
-		Config: &config.Config{JWTSecret: htSecret, JWTExpiryH: htExpiry, CourseServiceURL: courseSvc.URL},
+		Config: &config.Config{JWTSecret: htSecret, JWTExpiryH: htExpiry}, Courses: courseSourceAt(courseSvc.URL),
 	}
 	r := BuildRouter(s, s.Config, false)
 

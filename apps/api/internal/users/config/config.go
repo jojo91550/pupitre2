@@ -16,9 +16,6 @@ const (
 	// defaultJWTSecret is the fallback JWT signing secret; it must be
 	// overridden in production via the JWT_SECRET env var or config file.
 	defaultJWTSecret = "change-me-in-production-use-a-long-random-string"
-	// defaultInternalSecret is the fallback service-to-service shared secret;
-	// it must be overridden in production via the INTERNAL_SERVICE_SECRET env var.
-	defaultInternalSecret = "change-me-internal-secret"
 	// defaultJWTExpiryHours is the default JWT token lifetime, in hours.
 	defaultJWTExpiryHours = 8
 	// defaultPort is the default HTTP listen port.
@@ -120,12 +117,6 @@ type Config struct {
 	OAuthRedirectBase string           `yaml:"oauthRedirectBase"`
 	Providers         []ProviderConfig `yaml:"providers"`
 
-	CourseServiceURL string `yaml:"courseServiceUrl"`
-
-	// InternalSecret is the shared secret used to authenticate service-to-service
-	// calls on /internal/* routes (X-Internal-Secret header).
-	InternalSecret string `yaml:"-"`
-
 	// AdminPassword is the password (or pre-computed bcrypt hash) for the
 	// bootstrapped admin account.
 	// Resolution order:
@@ -181,8 +172,6 @@ func Load() (cfg *Config, warnings []string) { //nolint:nonamedreturns // gocrit
 	cfg.Port = intFromEnv("PORT", cfg.Port)
 	cfg.CORSOrigins = sliceFromEnv("CORS_ORIGINS", cfg.CORSOrigins)
 	cfg.OAuthRedirectBase = stringFromEnv("OAUTH_REDIRECT_BASE", cfg.OAuthRedirectBase)
-	cfg.CourseServiceURL = stringFromEnv("COURSE_SERVICE_URL", cfg.CourseServiceURL)
-	cfg.InternalSecret = stringFromEnv("INTERNAL_SERVICE_SECRET", cfg.InternalSecret)
 	cfg.AuthRateLimitRequests = intFromEnv("AUTH_RATE_LIMIT_REQUESTS", cfg.AuthRateLimitRequests)
 	cfg.AuthRateLimitWindowSeconds = intFromEnv("AUTH_RATE_LIMIT_WINDOW_SECONDS", cfg.AuthRateLimitWindowSeconds)
 	cfg.LeaderboardMaxEntries = positiveIntFromEnv("LEADERBOARD_MAX_ENTRIES", cfg.LeaderboardMaxEntries)
@@ -204,12 +193,10 @@ func defaultConfig() *Config {
 		DBMaxOpenConns:             defaultDBMaxOpenConns,
 		DBMaxIdleConns:             defaultDBMaxIdleConns,
 		JWTSecret:                  defaultJWTSecret,
-		InternalSecret:             defaultInternalSecret,
 		JWTExpiryH:                 defaultJWTExpiryHours,
 		Port:                       defaultPort,
 		CORSOrigins:                []string{defaultLocalOrigin, "http://localhost:5173"},
 		OAuthRedirectBase:          defaultLocalOrigin,
-		CourseServiceURL:           "http://course-service:8082",
 		AuthRateLimitRequests:      defaultAuthRateLimitRequests,
 		AuthRateLimitWindowSeconds: defaultAuthRateLimitWindowSeconds,
 		LeaderboardMaxEntries:      defaultLeaderboardMaxEntries,

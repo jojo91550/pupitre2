@@ -42,25 +42,17 @@ type Config struct {
 
 	UploadsDir string `yaml:"uploadsDir"`
 
-	UserServiceURL string `yaml:"userServiceUrl"`
-
 	GitToken string `yaml:"gitToken"`
 
 	GitCredentialsPath string `yaml:"gitCredentialsPath"`
 
 	GitCacheTTL int `yaml:"gitCacheTtlMinutes"`
 
-	CheckerServiceURL string `yaml:"checkerServiceUrl"`
-
 	DatabaseURL string `yaml:"databaseUrl"`
 
 	// DBMaxOpenConns and DBMaxIdleConns cap the database connection pool size.
 	DBMaxOpenConns int `yaml:"dbMaxOpenConns"`
 	DBMaxIdleConns int `yaml:"dbMaxIdleConns"`
-
-	// InternalSecret is the shared secret sent in X-Internal-Secret on calls to
-	// user-service and checker-service internal routes.
-	InternalSecret string `yaml:"-"`
 }
 
 // Load builds a Config from built-in defaults, then overlays an optional
@@ -77,15 +69,12 @@ func Load() (cfg *Config, warnings []string) { //nolint:nonamedreturns // gocrit
 	cfg.Port = intFromEnv("PORT", cfg.Port)
 	cfg.CORSOrigins = sliceFromEnv("CORS_ORIGINS", cfg.CORSOrigins)
 	cfg.UploadsDir = stringFromEnv("UPLOADS_DIR", cfg.UploadsDir)
-	cfg.UserServiceURL = stringFromEnv("USER_SERVICE_URL", cfg.UserServiceURL)
 	cfg.GitToken = stringFromEnv("GIT_TOKEN", cfg.GitToken)
 	cfg.GitCredentialsPath = stringFromEnv("GIT_CREDENTIALS_PATH", cfg.GitCredentialsPath)
 	cfg.GitCacheTTL = positiveIntFromEnv("GIT_CACHE_TTL", cfg.GitCacheTTL)
-	cfg.CheckerServiceURL = stringFromEnv("CHECKER_SERVICE_URL", cfg.CheckerServiceURL)
 	cfg.DatabaseURL = stringFromEnv("DATABASE_URL", cfg.DatabaseURL)
 	cfg.DBMaxOpenConns = positiveIntFromEnv("DB_MAX_OPEN_CONNS", cfg.DBMaxOpenConns)
 	cfg.DBMaxIdleConns = positiveIntFromEnv("DB_MAX_IDLE_CONNS", cfg.DBMaxIdleConns)
-	cfg.InternalSecret = stringFromEnv("INTERNAL_SERVICE_SECRET", cfg.InternalSecret)
 
 	return cfg, warnings
 }
@@ -98,10 +87,8 @@ func defaultConfig() *Config {
 		Port:               defaultPort,
 		CORSOrigins:        []string{"http://localhost:3000", "http://localhost:5173"},
 		UploadsDir:         defaultUploadsDir,
-		UserServiceURL:     "http://user-service:8081",
-		GitCredentialsPath: "/etc/course-service/git-credentials.yaml",
+		GitCredentialsPath: "/etc/pupitre/git-credentials.yaml",
 		GitCacheTTL:        defaultGitCacheTTLMinutes,
-		CheckerServiceURL:  "http://checker-service:8083",
 		DBMaxOpenConns:     defaultDBMaxOpenConns,
 		DBMaxIdleConns:     defaultDBMaxIdleConns,
 	}

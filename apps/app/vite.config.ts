@@ -11,21 +11,6 @@ import { defineConfig, loadEnv, type Plugin, type ProxyOptions } from 'vite';
 // every path is built from here, never from process.cwd().
 const ROOT = fileURLToPath(new URL('.', import.meta.url));
 
-// Routing table of docs/specs/004-api-and-routing.md: these prefixes belong to
-// course-service, everything else under /api to user-service. Keep it in step
-// with the Helm chart's pupitre.routeTable.
-const COURSE_SERVICE_PREFIXES = [
-  'courses',
-  'paths',
-  'skills',
-  'batch',
-  'uploads',
-  'admin/courses',
-  'admin/cache',
-  'admin/lab-checks',
-  'admin/exports/lab-checks',
-];
-
 // Only these request headers reach the backend. The Astro proxy forwarded every
 // client header, X-Forwarded-For and X-Internal-Secret included (audit H4).
 const FORWARDED_HEADERS = new Set([
@@ -77,9 +62,9 @@ function target(url: string): ProxyOptions {
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, ROOT, 'VITE_');
-  const userService = env.VITE_USER_SERVICE_URL || 'http://localhost:8081';
-  const courseService = env.VITE_COURSE_SERVICE_URL || 'http://localhost:8082';
-  const coursePattern = `^/api/(${COURSE_SERVICE_PREFIXES.join('|')})(/|\\?|$)`;
+  // The backend is one application (docs/specs/004-api-and-routing.md): /api
+  // and /uploads go to the same target.
+  const api = env.VITE_API_URL || 'http://localhost:8080';
 
   // Ports can be moved, e.g. by the end-to-end tests (playwright.config.ts).
   const port = Number(process.env.PUPITRE_APP_PORT || 3000);
@@ -99,9 +84,8 @@ export default defineConfig(({ mode }) => {
           ? adminApp(adminPort)
           : {
               ...adminApp(adminPort),
-              [coursePattern]: target(courseService),
-              '/uploads': target(courseService),
-              '/api': target(userService),
+              '/uploads': target(api),
+              '/api': target(api),
             },
     },
     test: {

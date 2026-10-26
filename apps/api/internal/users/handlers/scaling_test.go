@@ -83,9 +83,9 @@ func scalingState(repos *repository.Repositories, courseServiceURL string) *Stat
 		Repos: repos,
 		Config: &config.Config{
 			JWTSecret: htSecret, JWTExpiryH: htExpiry, CORSOrigins: []string{"*"},
-			InternalSecret: htInternalSecret, CourseServiceURL: courseServiceURL,
 			LeaderboardMaxEntries: 100,
 		},
+		Courses: courseSourceAt(courseServiceURL),
 	}
 }
 

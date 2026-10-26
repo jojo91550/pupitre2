@@ -15,7 +15,14 @@
     "lint": "eslint .",
     "typecheck": "pnpm -r typecheck && tsc -p e2e",
     "test": "pnpm -r test",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:backend": "playwright test -c playwright.backend.config.ts",
+    "api:dev": "node scripts/api.mjs dev",
+    "api:test": "node scripts/api.mjs test",
+    "api:lint": "node scripts/api.mjs lint",
+    "api:build": "node scripts/api.mjs build",
+    "api:up": "node scripts/api.mjs up",
+    "api:down": "node scripts/api.mjs down"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

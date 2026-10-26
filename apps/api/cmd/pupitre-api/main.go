@@ -6,6 +6,7 @@ package main
 import (
 	"os"
 
+	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 
 	"github.com/jojo91550/pupitre2/apps/api/internal/server"
@@ -13,6 +14,10 @@ import (
 
 // main runs the API and exits non-zero on a fatal start-up or serving error.
 func main() {
+	// A .env file in the working directory, if any, fills in variables the
+	// environment does not set (local development: apps/api/.env).
+	_ = godotenv.Load()
+
 	logger := initLogger()
 	zap.ReplaceGlobals(logger)
 

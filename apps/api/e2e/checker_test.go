@@ -7,69 +7,48 @@ import (
 	"testing"
 )
 
-// TestCheckerServiceHealth checks the checker-service health endpoint.
-func TestCheckerServiceHealth(t *testing.T) {
-	skipIfNoCheckerService(t)
-
-	resp := doJSON(t, http.MethodGet, globalCfg.CheckerURL+"/health", nil, "")
+// TestAPIHealth checks the single health endpoint of the API.
+func TestAPIHealth(t *testing.T) {
+	resp := doJSON(t, http.MethodGet, globalCfg.APIURL+"/health", nil, "")
 	mustStatus(t, resp, http.StatusOK)
 
 	var out struct {
-		Status string `json:"status"`
+		Status  string `json:"status"`
+		Service string `json:"service"`
 	}
 
 	decodeBody(t, resp, &out)
 
-	if out.Status != "ok" {
-		t.Fatalf("health: expected status ok, got %q", out.Status)
+	if out.Status != "ok" || out.Service != "pupitre-api" {
+		t.Fatalf("health: got %+v, want status ok from pupitre-api", out)
 	}
 }
 
-// TestEvaluateMissingFields verifies that /evaluate rejects empty payloads.
-func TestEvaluateMissingFields(t *testing.T) {
-	skipIfNoCheckerService(t)
+// TestLabCheckRequiresAuth checks that a lab check, which runs the checker
+// in-process, is refused without a token.
+func TestLabCheckRequiresAuth(t *testing.T) {
+	for _, path := range []string{
+		"/api/courses/any-course/modules/0/check",
+		"/api/courses/any-course/modules/0/steps/0/check",
+	} {
+		resp := doJSON(t, http.MethodPost, globalCfg.APIURL+path, map[string]string{}, "")
+		if resp.StatusCode != http.StatusUnauthorized {
+			t.Errorf("POST %s without a token: got %d, want 401", path, resp.StatusCode)
+		}
 
-	cases := []struct {
-		name string
-		body any
-	}{
-		{"empty_object", map[string]string{}},
-		{"missing_policy", map[string]string{"projectId": "123"}},
-		{"missing_project_id", map[string]string{"policy": "package p\ndefault allow = false"}},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			resp := doJSON(t, http.MethodPost, globalCfg.CheckerURL+"/evaluate", tc.body, "")
-			if resp.StatusCode < 400 {
-				t.Fatalf("evaluate %s: expected 4xx error, got %d", tc.name, resp.StatusCode)
-			}
-
-			resp.Body.Close()
-		})
+		resp.Body.Close()
 	}
 }
 
-// TestCheckStepMissingFields verifies that /check-step rejects empty payloads.
-func TestCheckStepMissingFields(t *testing.T) {
-	skipIfNoCheckerService(t)
+// TestServiceRoutesAreGone checks that the routes the services used to call
+// each other are not served (docs/specs/103-backend-http-api.md).
+func TestServiceRoutesAreGone(t *testing.T) {
+	for _, path := range []string{"/evaluate", "/check-step", "/internal/progress/complete", "/internal/enrollments/auto"} {
+		resp := doJSON(t, http.MethodPost, globalCfg.APIURL+path, map[string]string{}, "")
+		if resp.StatusCode != http.StatusNotFound {
+			t.Errorf("POST %s: got %d, want 404", path, resp.StatusCode)
+		}
 
-	resp := doJSON(t, http.MethodPost, globalCfg.CheckerURL+"/check-step", map[string]string{}, "")
-	if resp.StatusCode < 400 {
-		t.Fatalf("check-step: expected 4xx error, got %d", resp.StatusCode)
+		resp.Body.Close()
 	}
-
-	resp.Body.Close()
-}
-
-// TestEvaluateInvalidJSON verifies that /evaluate rejects malformed JSON.
-func TestEvaluateInvalidJSON(t *testing.T) {
-	skipIfNoCheckerService(t)
-
-	resp := doJSON(t, http.MethodPost, globalCfg.CheckerURL+"/evaluate", "not-a-json-object", "")
-	if resp.StatusCode < 400 {
-		t.Fatalf("evaluate: expected 4xx for invalid JSON, got %d", resp.StatusCode)
-	}
-
-	resp.Body.Close()
 }

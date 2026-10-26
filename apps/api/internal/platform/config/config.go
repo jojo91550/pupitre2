@@ -99,7 +99,7 @@ func Load() (*Config, []string, error) {
 	maxOpen := intSetting("DB_MAX_OPEN_CONNS", file.DBMaxOpenConns, defaultDBMaxConns, true)
 	maxIdle := intSetting("DB_MAX_IDLE_CONNS", file.DBMaxIdleConns, defaultDBMaxConns, true)
 
-	users.Port, courses.Port, checker.Port = port, port, port
+	users.Port, courses.Port = port, port
 	users.DBMaxOpenConns, courses.DBMaxOpenConns = maxOpen, maxOpen
 	users.DBMaxIdleConns, courses.DBMaxIdleConns = maxIdle, maxIdle
 

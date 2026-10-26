@@ -44,9 +44,8 @@ func TestMyPaths_SkillKind(t *testing.T) {
 
 	cfg := &config.Config{
 		JWTSecret: htSecret, JWTExpiryH: htExpiry, CORSOrigins: []string{"*"},
-		InternalSecret: htInternalSecret, CourseServiceURL: courseSvc.URL,
 	}
-	s := &State{Repos: repos, Config: cfg}
+	s := &State{Repos: repos, Config: cfg, Courses: courseSourceAt(courseSvc.URL)}
 	router := BuildRouter(s, cfg, false)
 
 	rec := htDo(t, router, http.MethodGet, "/api/my/paths", "",
@@ -112,9 +111,8 @@ func TestMyPaths_SkillKind_ModuleFetchFails(t *testing.T) {
 
 	cfg := &config.Config{
 		JWTSecret: htSecret, JWTExpiryH: htExpiry, CORSOrigins: []string{"*"},
-		InternalSecret: htInternalSecret, CourseServiceURL: courseSvc.URL,
 	}
-	s := &State{Repos: repos, Config: cfg}
+	s := &State{Repos: repos, Config: cfg, Courses: courseSourceAt(courseSvc.URL)}
 	router := BuildRouter(s, cfg, false)
 
 	rec := htDo(t, router, http.MethodGet, "/api/my/paths", "",

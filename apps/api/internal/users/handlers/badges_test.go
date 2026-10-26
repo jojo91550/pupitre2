@@ -321,8 +321,8 @@ func TestBadgeLeaderboard_RankedWithIcons(t *testing.T) {
 	repos.Badges = badges
 	s := &State{Repos: repos, Config: &config.Config{
 		JWTSecret: htSecret, JWTExpiryH: htExpiry, CORSOrigins: []string{"*"},
-		CourseServiceURL: courseSvc.URL, LeaderboardMaxEntries: 10,
-	}}
+		LeaderboardMaxEntries: 10,
+	}, Courses: courseSourceAt(courseSvc.URL)}
 	r := BuildRouter(s, s.Config, false)
 
 	rec := htDo(t, r, http.MethodGet, "/api/leaderboard", "", "")
@@ -373,8 +373,7 @@ func TestMyBadges_EnrichedFromCourseService(t *testing.T) {
 	repos.Badges = badges
 	s := &State{Repos: repos, Config: &config.Config{
 		JWTSecret: htSecret, JWTExpiryH: htExpiry, CORSOrigins: []string{"*"},
-		CourseServiceURL: courseSvc.URL,
-	}}
+	}, Courses: courseSourceAt(courseSvc.URL)}
 	r := BuildRouter(s, s.Config, false)
 
 	rec := htDo(t, r, http.MethodGet, "/api/my/badges", "", htAuthHeader(t, "student"))
@@ -414,8 +413,7 @@ func TestMyBadges_CourseServiceErrorIsTolerated(t *testing.T) {
 	repos.Badges = badges
 	s := &State{Repos: repos, Config: &config.Config{
 		JWTSecret: htSecret, JWTExpiryH: htExpiry, CORSOrigins: []string{"*"},
-		CourseServiceURL: courseSvc.URL,
-	}}
+	}, Courses: courseSourceAt(courseSvc.URL)}
 	r := BuildRouter(s, s.Config, false)
 
 	rec := htDo(t, r, http.MethodGet, "/api/my/badges", "", htAuthHeader(t, "student"))

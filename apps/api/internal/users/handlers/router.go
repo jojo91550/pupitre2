@@ -7,11 +7,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/cors"
 	"github.com/go-chi/httprate"
 
-	"github.com/jojo91550/pupitre2/apps/api/internal/platform/internalauth"
-	"github.com/jojo91550/pupitre2/apps/api/internal/platform/metrics"
 	apimiddleware "github.com/jojo91550/pupitre2/apps/api/internal/platform/middleware"
 	"github.com/jojo91550/pupitre2/apps/api/internal/users/config"
 )
@@ -26,9 +23,6 @@ func remoteIP(r *http.Request) (string, error) {
 
 	return ip, nil
 }
-
-// corsMaxAgeSeconds bounds CORS preflight cache duration, in seconds.
-const corsMaxAgeSeconds = 300
 
 // Routing invariant: no path registered here may sit under a prefix that
 // course-service owns (/api/courses, /api/admin/courses).
@@ -46,32 +40,6 @@ const corsMaxAgeSeconds = 300
 //
 // Adding a route under /api/courses or /api/admin/courses reintroduces that
 // coupling; TestRouter_NoCourseServicePrefixOverlap fails if you do.
-
-// BuildRouter assembles the HTTP router, wiring public, authenticated, admin,
-// pattern, and internal routes with their respective middleware.
-func BuildRouter(state *State, cfg *config.Config, withLogger bool) *chi.Mux {
-	internalMW := internalauth.Middleware(cfg.InternalSecret)
-
-	router := chi.NewRouter()
-	router.Use(chiMiddleware.RequestID)
-	//nolint:staticcheck // SA1019: RealIP deprecation acknowledged — service runs behind a trusted reverse proxy that sets X-Forwarded-For; the value is used for logging/rate-limiting only.
-	router.Use(chiMiddleware.RealIP)
-
-	if withLogger {
-		router.Use(chiMiddleware.Logger)
-	}
-
-	router.Use(chiMiddleware.Recoverer)
-	router.Use(chiMiddleware.RequestSize(maxRequestBodyBytes))
-	router.Use(corsHandler(cfg).Handler)
-
-	router.Get("/health", state.Health)
-	router.Get("/metrics", metrics.Handler())
-	RegisterRoutes(router, state, cfg)
-	registerInternalRoutes(router, state, internalMW)
-
-	return router
-}
 
 // RegisterRoutes mounts every public route of the users domain on router,
 // behind the 1 MB body limit, with each group's guard. It adds no global
@@ -92,17 +60,6 @@ func RegisterRoutes(router chi.Router, state *State, cfg *config.Config) {
 		registerManagerRoutes(group, state, managerMW)
 		registerExportRoutes(group, state, exportMW)
 		registerPatternRoutes(group, state, authMW, adminMW)
-	})
-}
-
-// corsHandler builds the CORS middleware from the configured allowed origins.
-func corsHandler(cfg *config.Config) *cors.Cors {
-	return cors.New(cors.Options{
-		AllowedOrigins:   cfg.CORSOrigins,
-		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
-		AllowCredentials: true,
-		MaxAge:           corsMaxAgeSeconds,
 	})
 }
 
@@ -266,25 +223,5 @@ func registerPatternRoutes(router chi.Router, state *State, authMW, adminMW func
 		group.Post("/api/admin/patterns", state.CreatePattern)
 		group.Put("/api/admin/patterns/{name}", state.UpdatePattern)
 		group.Delete("/api/admin/patterns/{name}", state.DeletePattern)
-	})
-}
-
-// registerInternalRoutes wires routes reserved for Course Service behind the
-// shared-secret middleware (X-Internal-Secret header).
-func registerInternalRoutes(router chi.Router, state *State, internalMW func(http.Handler) http.Handler) {
-	router.Group(func(group chi.Router) {
-		group.Use(internalMW)
-
-		group.Post("/internal/enrollments/auto", state.InternalAutoEnroll)
-		group.Get("/internal/enrollments/check", state.InternalCheckEnrollment)
-		group.Get("/internal/paths/check", state.InternalCheckPathEnrollment)
-		group.Get("/internal/progress/viewed", state.InternalViewedLessons)
-		group.Post("/internal/progress/complete", state.InternalMarkComplete)
-		group.Post("/internal/progress/course-complete", state.InternalMarkCourseComplete)
-		group.Post("/internal/progress/module", state.InternalRecordModuleProgress)
-		group.Get("/internal/progress/modules", state.InternalGetModuleProgress)
-		group.Get("/internal/progress/course-summary", state.InternalCourseSummary)
-		group.Get("/internal/progress/course-summaries", state.InternalCourseSummaries)
-		group.Get("/internal/progress/overview", state.InternalProgressOverview)
 	})
 }

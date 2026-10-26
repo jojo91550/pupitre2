@@ -124,7 +124,7 @@ func oidcTestState(idp *mockIdP) *State {
 
 	cfg := &config.Config{
 		JWTSecret: htSecret, JWTExpiryH: htExpiry, CORSOrigins: []string{"*"},
-		InternalSecret: htInternalSecret, OAuthStateSecret: "oauth-state-secret-key",
+		OAuthStateSecret:  "oauth-state-secret-key",
 		OAuthRedirectBase: "http://localhost:3000",
 	}
 

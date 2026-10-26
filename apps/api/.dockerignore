@@ -1,21 +1,13 @@
-# The Go images build from the repository root, so keep everything that is not
-# part of a Go build out of the context.
+# The image builds from apps/api: keep everything that is not part of the Go
+# build out of the context.
 .git
-.github
-.scannerwork
-.tokensave
-docs
+e2e
 examples
 infra
-helm
-frontend
-pupitre-desktop
-e2e
 *.md
-lab-checker-design.html
-sonar-project.properties
-cliff.toml
-renovate.json
 Makefile
+compose.yaml
 local.mk
+.env
+.env.*
 coverage*.out

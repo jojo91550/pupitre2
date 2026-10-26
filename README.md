@@ -1,7 +1,8 @@
 # pupitre2
 
-New React frontend of the pupitre e-learning platform. It replaces the Astro frontend of
-[`genesary/pupitre`](https://github.com/genesary/pupitre) and uses its Go backend as it is.
+The pupitre e-learning platform: a React frontend (two apps) and its Go backend, `pupitre-api`.
+They replace the Astro frontend and the three Go services of
+[`genesary/pupitre`](https://github.com/genesary/pupitre), with the same API.
 
 - Stack: React 19, TypeScript, Vite, React Router, Tailwind CSS v4, shadcn/ui, TanStack Query,
   pnpm.
@@ -13,15 +14,18 @@ New React frontend of the pupitre e-learning platform. It replaces the Astro fro
 
 - Node.js 24 LTS (`.nvmrc`).
 - pnpm, enabled with `corepack enable`.
-- For `pnpm dev` only: user-service and course-service running locally (ports 8081 and 8082 by
-  default). `pnpm dev:mock` needs no backend.
+- For `pnpm dev` only: the backend. Go 1.26 and Docker (`pnpm api:up` starts PostgreSQL and
+  Keycloak, `pnpm api:dev` the API on port 8080). `pnpm dev:mock` needs no backend.
 
 ## Getting started
 
 ```sh
 pnpm install
 pnpm dev:mock   # http://localhost:3000, no backend needed (docs/specs/006-mock-mode.md)
-pnpm dev        # http://localhost:3000, against the Go services
+
+pnpm api:up     # PostgreSQL and Keycloak (apps/api/compose.yaml)
+pnpm api:dev    # pupitre-api on http://localhost:8080 (settings: apps/api/.env)
+pnpm dev        # http://localhost:3000, against the API
 # Both start the two apps; the admin app is opened through http://localhost:3000/admin
 ```
 
@@ -29,11 +33,14 @@ pnpm dev        # http://localhost:3000, against the Go services
 | --- | --- |
 | `pnpm build` | Type check, then production build in `apps/app/dist/` and `apps/admin/dist/` |
 | `pnpm test:e2e` | End-to-end tests (Playwright) against the mock mode |
+| `pnpm test:e2e:backend` | End-to-end tests against the real backend (after `pnpm api:up`) |
+| `pnpm api:test`, `pnpm api:lint`, `pnpm api:build` | Go tests, lint and build of `apps/api` |
 | `pnpm test` | Unit and component tests (Vitest), every package |
 | `pnpm lint` | ESLint, including the security rules of `docs/specs/003-security.md` |
 | `pnpm typecheck` | TypeScript only, every package |
 
-The dev proxy targets can be changed with `VITE_USER_SERVICE_URL` and `VITE_COURSE_SERVICE_URL`.
+The dev proxy target can be changed with `VITE_API_URL`. Keycloak test accounts (local only):
+`alice`, `marc.manager` and `admin.kc`, see `apps/api/compose.yaml`.
 
 ## Layout
 
@@ -43,6 +50,7 @@ The dev proxy targets can be changed with `VITE_USER_SERVICE_URL` and `VITE_COUR
 | `apps/admin` | `@pupitre/admin` | The admin app, under `/admin` and `/manager`: administration and manager space |
 | `packages/core` | `@pupitre/core` | Shared by both apps: API client, session, top bar, guards, markdown, mocks |
 | `packages/ui` | `@pupitre/ui` | Design system: shadcn components, pupitre CSS, security helpers |
+| `apps/api` | Go module | The backend, `pupitre-api`: one application on port 8080 |
 | `docs/specs` | | Functional and technical specs |
 
 Details: [`docs/specs/000-scope-and-stack.md`](docs/specs/000-scope-and-stack.md).

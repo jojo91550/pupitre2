@@ -43,7 +43,7 @@ pnpm monorepo, same layout as `ebuildy/pupitre2`: two applications on one origin
 | `apps/app` | `@pupitre/app` | The learner app: sign-in, catalogue, lessons, quizzes, learner space, agenda |
 | `apps/admin` | `@pupitre/admin` | The admin app, served under `/admin` and `/manager`: administration, manager space, CSV exports, attendance |
 | `packages/core` | `@pupitre/core` | Shared by both apps: API client and types, session, top bar, guards, markdown, mock mode |
-| `apps/api` | Go module | The Go backend, imported from `genesary/pupitre` at `3cdf7b2`, as one application: `cmd/pupitre-api` on port 8080 ([`199`](docs/specs/199-backend-migration-plan.md)) |
+| `apps/api` | Go module | The Go backend, imported from `genesary/pupitre` at `3cdf7b2`, as one application: `cmd/pupitre-api` on port 8080 ([`100`](docs/specs/100-backend-scope-and-architecture.md)) |
 | `packages/ui` | `@pupitre/ui` | Design system: shadcn components, pupitre CSS, security helpers |
 | `docs/specs` | | Specs, one file per feature area |
 | `e2e` | | Playwright tests |
@@ -79,7 +79,9 @@ Node 24 (`.nvmrc`), pnpm through corepack (`corepack enable`). From the reposito
 ```sh
 pnpm install
 pnpm dev:mock    # http://localhost:3000, no backend (docs/specs/006-mock-mode.md)
-pnpm dev         # http://localhost:3000, proxied to the Go services
+pnpm api:up      # PostgreSQL and Keycloak (apps/api/compose.yaml)
+pnpm api:dev     # pupitre-api on http://localhost:8080 (settings: apps/api/.env)
+pnpm dev         # http://localhost:3000, /api and /uploads proxied to the API (VITE_API_URL)
                  # both start the two apps: the admin app (port 3001) is reached through
                  # http://localhost:3000/admin and /manager, never on its own port
 pnpm typecheck
@@ -87,14 +89,16 @@ pnpm lint
 pnpm test
 pnpm build
 pnpm test:e2e    # Playwright, against the mock mode (first time: pnpm exec playwright install chromium)
+pnpm test:e2e:backend  # Playwright against the real backend, after pnpm api:up
 ```
 
 Run `typecheck`, `lint`, `test` and `build` before handing work back. A UI change is also checked
 in the browser with `pnpm dev:mock`, in light and dark mode.
 
-In `apps/api` (Go 1.26, no pnpm): `go build ./...`, `go vet ./...`, `golangci-lint run ./...` and
-`go test ./... -race` pass before handing work back. Integration tests need PostgreSQL:
-`TEST_DATABASE_URL=postgres://… go test -tags integration -p 1 ./...`.
+In `apps/api` (Go 1.26): `pnpm api:build`, `pnpm api:lint` and `pnpm api:test` (or the
+`Makefile`) pass before handing work back. Integration tests need PostgreSQL (`pnpm api:up`):
+`make test-integration`. A change that crosses the frontend and the API is also checked with
+`pnpm test:e2e:backend`.
 
 Dependencies are pinned to exact versions. pnpm's `minimumReleaseAge` policy rejects versions that
 are too recent: pick an older version, never add an exclusion.

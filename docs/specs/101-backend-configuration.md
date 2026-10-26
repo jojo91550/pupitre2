@@ -62,7 +62,12 @@ checker-service.
 | course-service `jwtExpiryHours` | Never used |
 
 A removed key that is still set is ignored with a start-up warning naming it, so an old ConfigMap
-does not break the monolith.
+does not break the monolith. checker-service's `RATE_LIMIT_REQUESTS` and
+`RATE_LIMIT_WINDOW_SECONDS` still set the lab check limit when the `LAB_CHECK_*` variables are
+not set, with a deprecation warning.
+
+Each domain keeps its configuration package with the keys it reads; the keys above are gone from
+them too, and the checker's has no port, CORS origins or secret of its own any more.
 
 ### Lab check rate limit
 

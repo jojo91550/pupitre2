@@ -7,13 +7,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
 	"go.uber.org/zap"
 
-	"github.com/jojo91550/pupitre2/apps/api/internal/platform/httpx"
 	"github.com/jojo91550/pupitre2/apps/api/internal/users/models"
 	"github.com/jojo91550/pupitre2/apps/api/internal/users/repository"
 )
@@ -349,44 +347,12 @@ func (s *State) enrichRows(ctx context.Context, rows []map[string]string, virtua
 	}
 }
 
-// fetchCourseTitles returns a slug→title map fetched from course-service.
+// fetchCourseTitles returns the slug→title map of the public courses.
 func (s *State) fetchCourseTitles(ctx context.Context) (map[string]string, error) {
-	return s.fetchTitleMap(ctx, "/api/courses", "courses")
+	return s.courseSource().PublicCourseTitles(ctx) //nolint:wrapcheck // same-process call, already wrapped
 }
 
-// fetchPathTitles returns a path slug→title map fetched from course-service.
+// fetchPathTitles returns the slug→title map of the paths.
 func (s *State) fetchPathTitles(ctx context.Context) (map[string]string, error) {
-	return s.fetchTitleMap(ctx, "/api/paths", "paths")
-}
-
-// fetchTitleMap calls the internal course-service at the given path constant
-// and returns a slug→title map. endpointPath must be a hardcoded constant —
-// it is never derived from user input.
-func (s *State) fetchTitleMap(ctx context.Context, endpointPath, payloadKey string) (map[string]string, error) {
-	rawURL, joinErr := url.JoinPath(s.Config.CourseServiceURL, endpointPath)
-	if joinErr != nil {
-		return nil, fmt.Errorf("build URL for %s: %w", endpointPath, joinErr)
-	}
-
-	var raw map[string]json.RawMessage
-
-	err := httpx.GetJSON(ctx, rawURL, nil, &raw)
-	if err != nil {
-		return nil, fmt.Errorf("fetch %s: %w", endpointPath, err)
-	}
-
-	var entries []titleEntry
-
-	unmarshalErr := json.Unmarshal(raw[payloadKey], &entries)
-	if unmarshalErr != nil {
-		return nil, fmt.Errorf("unmarshal %s: %w", payloadKey, unmarshalErr)
-	}
-
-	titles := make(map[string]string, len(entries))
-
-	for _, entry := range entries {
-		titles[entry.Slug] = entry.Title
-	}
-
-	return titles, nil
+	return s.courseSource().PathTitles(ctx) //nolint:wrapcheck // same-process call, already wrapped
 }

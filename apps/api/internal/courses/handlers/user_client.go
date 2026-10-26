@@ -1,20 +1,13 @@
 package handlers
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"net/url"
-	"strings"
+	"errors"
 	"time"
 
 	"go.uber.org/zap"
 
-	"github.com/jojo91550/pupitre2/apps/api/internal/courses/config"
 	"github.com/jojo91550/pupitre2/apps/api/internal/courses/content"
-	"github.com/jojo91550/pupitre2/apps/api/internal/platform/httpx"
 )
 
 // courseProgress is one learner's state in one course, as course-service
@@ -98,187 +91,55 @@ type CourseSummary struct {
 	ViewedCount   int      `json:"viewedCount"`
 }
 
-// courseSummariesBody is the wire shape of
-// GET /internal/progress/course-summaries.
-type courseSummariesBody struct {
-	Summaries map[string]CourseSummary `json:"summaries"`
-}
-
-// users returns the users-domain dependency: the one wired in by the
-// monolith, or the user-service HTTP client of the standalone binary.
-func (s *State) users() UserProgress { //nolint:ireturn // the wired users domain, or its HTTP fallback
+// users returns the users domain wired in by the monolith; a State built
+// without one behaves as if the users domain were unreachable.
+func (s *State) users() UserProgress { //nolint:ireturn // the wired users domain, or none
 	if s.Users != nil {
 		return s.Users
 	}
 
-	return &httpUserProgress{config: s.Config}
+	return noUsers{}
 }
 
-// httpUserProgress implements UserProgress over the internal HTTP routes of
-// user-service.
-type httpUserProgress struct {
-	config *config.Config
-}
+// errNoUsers is returned by a State that was not wired to the users domain.
+var errNoUsers = errors.New("users domain not wired")
+
+// noUsers answers every call with errNoUsers.
+type noUsers struct{}
 
 // CourseOverview implements UserProgress.
-func (c *httpUserProgress) CourseOverview(ctx context.Context, userID, courseSlug string) (ProgressOverview, error) {
-	var body ProgressOverview
-
-	err := c.getInternalJSON(ctx, "/internal/progress/overview",
-		map[string]string{userIDJSONKey: userID, courseSlugJSONKey: courseSlug}, &body)
-	if err != nil {
-		return ProgressOverview{}, err
-	}
-
-	return body, nil
+func (noUsers) CourseOverview(context.Context, string, string) (ProgressOverview, error) {
+	return ProgressOverview{}, errNoUsers
 }
 
 // CourseSummaries implements UserProgress.
-func (c *httpUserProgress) CourseSummaries(ctx context.Context, userID string, courseSlugs []string) (map[string]CourseSummary, error) {
-	var body courseSummariesBody
-
-	err := c.getInternalJSON(ctx, "/internal/progress/course-summaries",
-		map[string]string{userIDJSONKey: userID, "courseSlugs": strings.Join(courseSlugs, ",")}, &body)
-	if err != nil {
-		return nil, err
-	}
-
-	return body.Summaries, nil
+func (noUsers) CourseSummaries(context.Context, string, []string) (map[string]CourseSummary, error) {
+	return nil, errNoUsers
 }
 
 // EnrolledInAnyPath implements UserProgress.
-func (c *httpUserProgress) EnrolledInAnyPath(ctx context.Context, userID string, pathSlugs []string) (bool, error) {
-	var result pathCheckResponse
-
-	err := c.getInternalJSON(ctx, "/internal/paths/check",
-		map[string]string{userIDJSONKey: userID, "pathSlugs": strings.Join(pathSlugs, ",")}, &result)
-	if err != nil {
-		return false, err
-	}
-
-	return result.Enrolled, nil
+func (noUsers) EnrolledInAnyPath(context.Context, string, []string) (bool, error) {
+	return false, errNoUsers
 }
 
 // IsEnrolled implements UserProgress.
-func (c *httpUserProgress) IsEnrolled(ctx context.Context, userID, courseSlug string) (bool, error) {
-	var result struct {
-		Enrolled bool `json:"enrolled"`
-	}
-
-	err := c.getInternalJSON(ctx, "/internal/enrollments/check",
-		map[string]string{userIDJSONKey: userID, courseSlugJSONKey: courseSlug}, &result)
-	if err != nil {
-		return false, err
-	}
-
-	return result.Enrolled, nil
-}
+func (noUsers) IsEnrolled(context.Context, string, string) (bool, error) { return false, errNoUsers }
 
 // AutoEnroll implements UserProgress.
-func (c *httpUserProgress) AutoEnroll(ctx context.Context, userID, courseSlug string) error {
-	return c.postInternal(ctx, "/internal/enrollments/auto", map[string]string{
-		userIDJSONKey:     userID,
-		courseSlugJSONKey: courseSlug,
-	})
-}
+func (noUsers) AutoEnroll(context.Context, string, string) error { return errNoUsers }
 
 // MarkLessonComplete implements UserProgress.
-func (c *httpUserProgress) MarkLessonComplete(ctx context.Context, userID, courseSlug, lessonSlug string) error {
-	return c.postInternal(ctx, "/internal/progress/complete", map[string]string{
-		userIDJSONKey:     userID,
-		courseSlugJSONKey: courseSlug,
-		"lessonSlug":      lessonSlug,
-	})
-}
+func (noUsers) MarkLessonComplete(context.Context, string, string, string) error { return errNoUsers }
 
 // MarkCourseComplete implements UserProgress.
-func (c *httpUserProgress) MarkCourseComplete(ctx context.Context, completion CourseCompletion) error {
-	return c.postInternal(ctx, "/internal/progress/course-complete", completion)
-}
+func (noUsers) MarkCourseComplete(context.Context, CourseCompletion) error { return errNoUsers }
 
 // RecordModule implements UserProgress.
-func (c *httpUserProgress) RecordModule(ctx context.Context, result ModuleResult) error {
-	return c.postInternal(ctx, "/internal/progress/module", result)
-}
-
-// internalURL builds a user-service internal URL with the given query
-// parameters.
-func (c *httpUserProgress) internalURL(path string, params map[string]string) (string, error) {
-	target, err := url.Parse(c.config.UserServiceURL + path)
-	if err != nil {
-		return "", fmt.Errorf("build user-service URL %s: %w", path, err)
-	}
-
-	query := target.Query()
-	for key, value := range params {
-		query.Set(key, value)
-	}
-
-	target.RawQuery = query.Encode()
-
-	return target.String(), nil
-}
-
-// setInternalHeader attaches the X-Internal-Secret header to outgoing
-// service-to-service requests.
-func (c *httpUserProgress) setInternalHeader(req *http.Request) {
-	if c.config.InternalSecret != "" {
-		req.Header.Set("X-Internal-Secret", c.config.InternalSecret)
-	}
-}
-
-// getInternalJSON performs an authenticated GET against a user-service
-// internal endpoint and decodes the response into dest.
-func (c *httpUserProgress) getInternalJSON(ctx context.Context, path string, params map[string]string, dest any) error {
-	target, err := c.internalURL(path, params)
-	if err != nil {
-		return err
-	}
-
-	err = httpx.GetJSON(ctx, target, c.setInternalHeader, dest)
-	if err != nil {
-		return fmt.Errorf("user-service %s: %w", path, err)
-	}
-
-	return nil
-}
+func (noUsers) RecordModule(context.Context, ModuleResult) error { return errNoUsers }
 
 // postInternalTimeout bounds a detached write to user-service, so a slow or
 // unreachable dependency cannot leak goroutines indefinitely.
 const postInternalTimeout = 10 * time.Second
-
-// postInternal sends payload as JSON to a user-service internal endpoint
-// and reports whether it was accepted. The response body is drained so the
-// connection returns to the keep-alive pool.
-func (c *httpUserProgress) postInternal(ctx context.Context, path string, payload any) error {
-	var buf bytes.Buffer
-
-	err := json.NewEncoder(&buf).Encode(payload)
-	if err != nil {
-		return fmt.Errorf("encode %s payload: %w", path, err)
-	}
-
-	//nolint:gosec // URL built from the operator-configured USER_SERVICE_URL and a fixed route
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.config.UserServiceURL+path, &buf)
-	if err != nil {
-		return fmt.Errorf("build POST %s: %w", path, err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	c.setInternalHeader(req)
-
-	resp, err := httpx.Do(req) //nolint:bodyclose // httpx.Drain closes it
-	if err != nil {
-		return fmt.Errorf("POST %s: %w", path, err)
-	}
-	defer httpx.Drain(resp)
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return fmt.Errorf("user-service %s returned %d", path, resp.StatusCode)
-	}
-
-	return nil
-}
 
 // courseProgress fetches userID's full progress in courseSlug in one call.
 //

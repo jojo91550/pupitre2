@@ -2,18 +2,10 @@ package handlers
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"net/http"
-	"strings"
-
-	"go.uber.org/zap"
 
 	"github.com/jojo91550/pupitre2/apps/api/internal/users/models"
 )
-
-// summariesJSONKey is the JSON key carrying the per-course summary map.
-const summariesJSONKey = "summaries"
 
 // maxSummaryCourseSlugs caps how many courses one course-summaries request
 // may ask about. A course's prerequisite list is a handful of entries, so
@@ -41,67 +33,6 @@ type ProgressOverview struct {
 	TotalScore    int64               `json:"totalScore"`
 	PassedModules []string            `json:"passedModules"`
 	ViewedCount   int                 `json:"viewedCount"`
-}
-
-// InternalProgressOverview godoc
-// @Summary  Get a learner's full progress for one course (internal)
-// @Tags     Internal
-// @Produce  json
-// @Param    userId      query  string  true  "User UUID"
-// @Param    courseSlug  query  string  true  "Course slug"
-// @Success  200  {object}  ProgressOverview
-// @Router   /internal/progress/overview [get].
-func (s *State) InternalProgressOverview(writer http.ResponseWriter, req *http.Request) {
-	ctx := req.Context()
-	userID := req.URL.Query().Get("userId")
-	courseSlug := req.URL.Query().Get("courseSlug")
-
-	overview, err := s.ProgressOverview(ctx, userID, courseSlug)
-	if errors.Is(err, errMissingProgressKeys) {
-		s.Error(writer, http.StatusBadRequest, err.Error())
-
-		return
-	}
-
-	if err != nil {
-		zap.L().Error("failed to load progress overview",
-			zap.String("userID", userID), zap.String("courseSlug", courseSlug), zap.Error(err))
-		s.Error(writer, http.StatusInternalServerError, "DB error")
-
-		return
-	}
-
-	s.JSON(writer, http.StatusOK, overview)
-}
-
-// InternalCourseSummaries godoc
-// @Summary  Get aggregate progress for several courses at once (internal)
-// @Tags     Internal
-// @Produce  json
-// @Param    userId       query  string  true  "User UUID"
-// @Param    courseSlugs  query  string  true  "Comma-separated course slugs"
-// @Success  200  {object}  map[string]interface{}
-// @Router   /internal/progress/course-summaries [get].
-func (s *State) InternalCourseSummaries(writer http.ResponseWriter, req *http.Request) {
-	ctx := req.Context()
-	userID := req.URL.Query().Get("userId")
-	slugs := splitCommaList(req.URL.Query().Get("courseSlugs"))
-
-	summaries, err := s.CourseSummaries(ctx, userID, slugs)
-	if errors.Is(err, errMissingUserID) || errors.Is(err, errTooManyCourseSlugs) {
-		s.Error(writer, http.StatusBadRequest, err.Error())
-
-		return
-	}
-
-	if err != nil {
-		zap.L().Error("failed to load course summaries", zap.String("userID", userID), zap.Error(err))
-		s.Error(writer, http.StatusInternalServerError, "DB error")
-
-		return
-	}
-
-	s.JSON(writer, http.StatusOK, map[string]any{summariesJSONKey: summaries})
 }
 
 // loadCourseProgress reads the lesson and module progress of every course
@@ -158,35 +89,6 @@ func toModuleProgressRows(rows []models.ModuleProgress) []moduleProgressRow {
 			Passed:      row.Passed,
 			Attempts:    row.Attempts,
 		})
-	}
-
-	return out
-}
-
-// splitCommaList splits a comma-separated query parameter into its
-// non-empty, trimmed, deduplicated entries, preserving first-seen order.
-func splitCommaList(raw string) []string {
-	if raw == "" {
-		return nil
-	}
-
-	seen := make(map[string]struct{})
-
-	var out []string
-
-	for entry := range strings.SplitSeq(raw, ",") {
-		entry = strings.TrimSpace(entry)
-		if entry == "" {
-			continue
-		}
-
-		if _, dup := seen[entry]; dup {
-			continue
-		}
-
-		seen[entry] = struct{}{}
-
-		out = append(out, entry)
 	}
 
 	return out

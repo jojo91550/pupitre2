@@ -3,6 +3,7 @@ dist/
 coverage/
 test-results/
 playwright-report/
+playwright-report-backend/
 *.tsbuildinfo
 .vite/
 
@@ -21,3 +22,8 @@ playwright-report/
 coverage.out
 coverage.integration.out
 local.mk
+
+# pupitre-api local files
+apps/api/uploads/
+apps/api/git-credentials.yaml
+apps/api/bin/

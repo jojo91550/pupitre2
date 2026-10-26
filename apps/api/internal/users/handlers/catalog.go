@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"maps"
-	"net/url"
 	"slices"
 	"strings"
 	"sync"
@@ -12,8 +11,6 @@ import (
 
 	"go.uber.org/zap"
 	"golang.org/x/sync/singleflight"
-
-	"github.com/jojo91550/pupitre2/apps/api/internal/platform/httpx"
 )
 
 // catalogTTL is how long a course or path definition fetched from
@@ -111,11 +108,6 @@ type catalogEntry[T any] struct {
 	value     T
 	found     bool
 	expiresAt time.Time
-}
-
-// NewCatalog builds a Catalog reading from the course-service at baseURL.
-func NewCatalog(baseURL string) *Catalog {
-	return NewCatalogFrom(&httpCourseSource{baseURL: strings.TrimRight(baseURL, "/")})
 }
 
 // NewCatalogFrom builds a Catalog reading from source.
@@ -342,71 +334,9 @@ type CourseSource interface {
 	// PublicCourseSessions returns the sessions of a course as an anonymous
 	// visitor sees it: an error for a private or unknown course.
 	PublicCourseSessions(ctx context.Context, courseSlug string) ([]CourseSessionInfo, error)
-}
-
-// httpCourseSource implements CourseSource over course-service's public
-// routes.
-type httpCourseSource struct {
-	baseURL string
-}
-
-// Courses implements CourseSource.
-func (c *httpCourseSource) Courses(ctx context.Context, slugs []string) ([]CourseInfo, error) {
-	var body struct {
-		Courses []CourseInfo `json:"courses"`
-	}
-
-	err := httpx.GetJSON(ctx, c.batchURL("/api/batch/courses", slugs), nil, &body)
-	if err != nil {
-		return nil, fmt.Errorf("GET /api/batch/courses: %w", err)
-	}
-
-	return body.Courses, nil
-}
-
-// Paths implements CourseSource.
-func (c *httpCourseSource) Paths(ctx context.Context, slugs []string) ([]PathInfo, error) {
-	var body struct {
-		Paths []PathInfo `json:"paths"`
-	}
-
-	err := httpx.GetJSON(ctx, c.batchURL("/api/batch/paths", slugs), nil, &body)
-	if err != nil {
-		return nil, fmt.Errorf("GET /api/batch/paths: %w", err)
-	}
-
-	return body.Paths, nil
-}
-
-// SkillModules implements CourseSource.
-func (c *httpCourseSource) SkillModules(ctx context.Context, skills []string) (map[string][]SkillModule, error) {
-	var body struct {
-		Skills map[string][]SkillModule `json:"skills"`
-	}
-
-	err := httpx.GetJSON(ctx, c.batchURL("/api/batch/skills", skills), nil, &body)
-	if err != nil {
-		return nil, fmt.Errorf("GET /api/batch/skills: %w", err)
-	}
-
-	return body.Skills, nil
-}
-
-// PublicCourseSessions implements CourseSource.
-func (c *httpCourseSource) PublicCourseSessions(ctx context.Context, courseSlug string) ([]CourseSessionInfo, error) {
-	var info struct {
-		Sessions []CourseSessionInfo `json:"sessions,omitempty"`
-	}
-
-	err := httpx.GetJSON(ctx, c.baseURL+"/api/courses/"+url.PathEscape(courseSlug), nil, &info)
-	if err != nil {
-		return nil, fmt.Errorf("GET /api/courses/%s: %w", courseSlug, err)
-	}
-
-	return info.Sessions, nil
-}
-
-// batchURL builds a course-service batch URL for the given slugs.
-func (c *httpCourseSource) batchURL(path string, slugs []string) string {
-	return c.baseURL + path + "?" + url.Values{"slugs": {strings.Join(slugs, ",")}}.Encode()
+	// PublicCourseTitles returns the title of every public course, by slug,
+	// as the anonymous catalogue lists them. CSV exports label rows with it.
+	PublicCourseTitles(ctx context.Context) (map[string]string, error)
+	// PathTitles returns the title of every path, by slug.
+	PathTitles(ctx context.Context) (map[string]string, error)
 }

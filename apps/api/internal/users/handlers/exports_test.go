@@ -17,13 +17,11 @@ import (
 // courseSvcURL, so enrichment paths can be exercised.
 func newExportRouter(repos *repository.Repositories, courseSvcURL string) http.Handler {
 	cfg := &config.Config{
-		JWTSecret:        htSecret,
-		JWTExpiryH:       htExpiry,
-		CORSOrigins:      []string{"*"},
-		InternalSecret:   htInternalSecret,
-		CourseServiceURL: courseSvcURL,
+		JWTSecret:   htSecret,
+		JWTExpiryH:  htExpiry,
+		CORSOrigins: []string{"*"},
 	}
-	s := &State{Repos: repos, Config: cfg}
+	s := &State{Repos: repos, Config: cfg, Courses: courseSourceAt(courseSvcURL)}
 
 	return BuildRouter(s, cfg, false)
 }

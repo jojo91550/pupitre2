@@ -161,13 +161,11 @@ func newXPGateRouter(t *testing.T, repos *repository.Repositories, xpRequired in
 	}})
 
 	cfg := &config.Config{
-		JWTSecret:        htSecret,
-		JWTExpiryH:       htExpiry,
-		CORSOrigins:      []string{"*"},
-		InternalSecret:   htInternalSecret,
-		CourseServiceURL: srv.URL,
+		JWTSecret:   htSecret,
+		JWTExpiryH:  htExpiry,
+		CORSOrigins: []string{"*"},
 	}
-	s := &State{Repos: repos, Config: cfg}
+	s := &State{Repos: repos, Config: cfg, Courses: courseSourceAt(srv.URL)}
 
 	return BuildRouter(s, cfg, false)
 }
@@ -177,13 +175,11 @@ func newDeadCourseRouter(t *testing.T, repos *repository.Repositories) http.Hand
 	t.Helper()
 
 	cfg := &config.Config{
-		JWTSecret:        htSecret,
-		JWTExpiryH:       htExpiry,
-		CORSOrigins:      []string{"*"},
-		InternalSecret:   htInternalSecret,
-		CourseServiceURL: "http://127.0.0.1:0",
+		JWTSecret:   htSecret,
+		JWTExpiryH:  htExpiry,
+		CORSOrigins: []string{"*"},
 	}
-	s := &State{Repos: repos, Config: cfg}
+	s := &State{Repos: repos, Config: cfg, Courses: courseSourceAt("http://127.0.0.1:0")}
 
 	return BuildRouter(s, cfg, false)
 }
