@@ -16,3 +16,8 @@ playwright-report/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Go (apps/api)
+coverage.out
+coverage.integration.out
+local.mk

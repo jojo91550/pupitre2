@@ -44,7 +44,9 @@ removed, and [004](004-api-and-routing.md) is updated in the same change.
   merging the three, `/api` and `/uploads` routed to the API by one prefix rule, the internal
   secret and the service URLs removed.
 - Probes: `/health` for liveness and readiness. Graceful shutdown in 15 s on `SIGTERM`.
-- Uploads (`UPLOADS_DIR`) stay on the volume course-service used.
+- Uploads (`UPLOADS_DIR`): the chart sets `/data/uploads` but mounts no volume there, on a read-only
+  root filesystem ([190](190-backend-defects.md) B22). The API's chart mounts a volume at
+  `/data/uploads` (a `PersistentVolumeClaim`, `ReadWriteMany` when the API has several replicas).
 - `infra/kind` and `infra/manifests` (local kind cluster, PostgreSQL manifest) move to
   `apps/api/infra` and build one image instead of three. The `Makefile` keeps its targets with one
   image (`docker-build`, `kind-load`, `helm-install`, `dev`, `logs`, `status`); targets of the
