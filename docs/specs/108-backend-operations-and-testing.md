@@ -170,6 +170,9 @@ Three workflows, in `.github/workflows`:
 
 Both are adapted from the reference's `ci-containers.yaml` and `release.yaml`.
 
+Third-party actions are pinned to a commit SHA, with the version in a comment; GitHub's own
+(`actions/*`, `github/*`) use their major tag. Dependabot updates both.
+
 ## Releases
 
 A release is a tag `v<major>.<minor>.<patch>` pushed on `main`, by hand, as in the reference:
