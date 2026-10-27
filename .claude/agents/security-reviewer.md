@@ -36,6 +36,13 @@ API (`apps/api`):
   secret accepted at start-up (audit C1).
 - A rate limit, CORS or header rule loosened.
 
+Beyond these lists, anything you know to be a vulnerability (OWASP Top 10, CWE): access to
+another user's data by changing an id (IDOR), server-side request forgery, open redirects,
+race conditions on a check then a write, weak or misused cryptography and JWT validation,
+unsafe file uploads, unbounded input or queries (denial of service), unsafe deserialization,
+command injection, a risky or unmaintained dependency added. The lists above are the minimum,
+not the limit.
+
 ## Rules
 
 - **The Go API's behaviour is the one of `genesary/pupitre` at `3cdf7b2`.** A defect that the

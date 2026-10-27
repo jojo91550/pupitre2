@@ -153,7 +153,8 @@ Three workflows, in `.github/workflows`:
   critical or high vulnerability that has a fix).
 - `ai-review.yaml`, on pull requests: Claude reviews the change with the project's reviewers
   (`.claude/skills/review`, `.claude/agents/security-reviewer.md` and `parity-reviewer.md`)
-  and comments on the pull request. Needs the `CLAUDE_CODE_OAUTH_TOKEN` secret (a Claude
+  and comments on the pull request: each finding with its fix, then at most five
+  non-blocking best-practice suggestions. It never pushes a change. Needs the `CLAUDE_CODE_OAUTH_TOKEN` secret (a Claude
   subscription token, from `claude setup-token`) or the `ANTHROPIC_API_KEY` secret.
 - `strix.yaml`, on pull requests: [Strix](https://github.com/usestrix/strix) runs a quick AI
   penetration test of the changed files and fails on a medium or worse finding; run by hand,
