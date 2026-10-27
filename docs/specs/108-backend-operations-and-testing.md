@@ -140,7 +140,8 @@ services ([104](104-backend-in-process-calls.md)). Production has none of them.
 
 Three workflows, in `.github/workflows`:
 
-- `api.yaml`, on changes under `apps/api`: `golangci-lint`; `go build`, `go vet`, `go test -race`
+- `api.yaml`, on changes under `apps/api`: `golangci-lint`; `govulncheck` (known vulnerabilities
+  of the code pupitre-api calls); `go build`, `go vet`, `go test -race`
   with coverage; integration tests against PostgreSQL 18; then the binary is started and the Go
   e2e suite runs against it.
 - `web.yaml`, on changes outside `apps/api` and the docs: `typecheck`, `lint`, `test`, `build`,
@@ -150,6 +151,20 @@ Three workflows, in `.github/workflows`:
   packages or `docker/`: KICS scans both Dockerfiles (fails on high or medium findings), and
   both images are built. On a tag, they are pushed to GHCR and scanned by Trivy (fails on a
   critical or high vulnerability that has a fix).
+- `ai-review.yaml`, on pull requests: Claude reviews the change with the project's reviewers
+  (`.claude/skills/review`, `.claude/agents/security-reviewer.md` and `parity-reviewer.md`)
+  and comments on the pull request. Needs the `CLAUDE_CODE_OAUTH_TOKEN` secret (a Claude
+  subscription token, from `claude setup-token`) or the `ANTHROPIC_API_KEY` secret.
+- `strix.yaml`, on pull requests: [Strix](https://github.com/usestrix/strix) runs a quick AI
+  penetration test of the changed files and fails on a medium or worse finding; run by hand,
+  it scans the whole repository. Needs the `LLM_API_KEY` secret; the model is the `STRIX_LLM`
+  variable. Neither runs on `main`: what reaches it was reviewed in its pull request. Both are
+  skipped without their secret and on pull requests from forks.
+- `codeql.yaml`, on `main`, on pull requests and weekly: CodeQL (`security-extended` queries)
+  on the TypeScript, the Go and the workflows; findings go to the Security tab.
+- `.github/dependabot.yml`: one grouped update pull request per month for npm, Go modules and
+  actions, for versions at least 7 days old. Dependabot alerts and security updates are turned
+  on in the repository settings.
 - `release.yaml`, on tags `v*`: the GitHub Release, with the changelog of the commits since the
   previous tag (git-cliff, `cliff.toml`); `-rc`, `-beta` and `-alpha` tags are pre-releases.
 

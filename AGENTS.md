@@ -93,7 +93,9 @@ pnpm test:e2e    # Playwright, against the mock mode (first time: pnpm exec play
 pnpm test:e2e:backend  # Playwright against the real backend, after pnpm api:up
 ```
 
-Run `typecheck`, `lint`, `test` and `build` before handing work back. A UI change is also checked
+Run `typecheck`, `lint`, `test` and `build` before handing work back. In Claude Code, `/review`
+(`.claude/skills/review`) reviews the branch with the project's reviewers, as the `AI review`
+workflow does on pull requests. A UI change is also checked
 in the browser with `pnpm dev:mock`, in light and dark mode.
 
 In `apps/api` (Go 1.26): `pnpm api:build`, `pnpm api:lint` and `pnpm api:test` (or the

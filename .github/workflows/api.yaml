@@ -38,6 +38,19 @@ jobs:
           working-directory: apps/api
           args: --timeout=10m
 
+  vulncheck:
+    name: Vulnerabilities
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: apps/api/go.mod
+          cache-dependency-path: apps/api/go.sum
+      # Known vulnerabilities of the Go modules and standard library that
+      # pupitre-api actually calls.
+      - run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
+
   test:
     name: Test and build
     runs-on: ubuntu-latest

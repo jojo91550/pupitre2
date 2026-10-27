@@ -30,3 +30,6 @@ apps/api/bin/
 # binaries built with a bare `go build` in apps/api
 apps/api/pupitre-api
 *.exe
+
+# Strix reports
+strix_runs/
