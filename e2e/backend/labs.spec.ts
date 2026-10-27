@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -29,8 +29,7 @@ async function fakeProject(project: Record<string, unknown>) {
 
 /** A git repository holding the lab's text, as a course repository does. */
 function labRepository(): string {
-  const dir = join(tmpdir(), 'pupitre-e2e-lab-repo');
-  rmSync(dir, { recursive: true, force: true });
+  const dir = mkdtempSync(join(tmpdir(), 'pupitre-e2e-lab-repo-'));
   mkdirSync(join(dir, 'lab'), { recursive: true });
   writeFileSync(
     join(dir, 'lab', 'content.md'),

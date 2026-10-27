@@ -162,6 +162,9 @@ Three workflows, in `.github/workflows`:
   skipped without their secret and on pull requests from forks.
 - `codeql.yaml`, on `main`, on pull requests and weekly: CodeQL (`security-extended` queries)
   on the TypeScript, the Go and the workflows; findings go to the Security tab.
+  `.github/codeql/codeql-config.yml` leaves out what only gives false positives: the generated
+  MSW worker, the course YAML and `go/log-injection` (zap escapes its fields). An alert checked
+  and found harmless is dismissed in the Security tab with the reason.
 - `.github/dependabot.yml`: one grouped update pull request per month for npm, Go modules and
   actions, for versions at least 7 days old. Dependabot alerts and security updates are turned
   on in the repository settings.
