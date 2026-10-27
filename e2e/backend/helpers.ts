@@ -31,13 +31,21 @@ export async function signIn(page: Page, account: Account, path = '/my-courses')
   await expect(page).toHaveURL(new RegExp(`${escape(path)}$`));
 }
 
-/** A token of the local admin account, for setting data up through the API. */
+let cachedAdminToken: string | undefined;
+
+/**
+ * A token of the local admin account, for setting data up through the API.
+ * Signed in once per worker: the sign-in routes allow 10 calls a minute per
+ * address (AUTH_RATE_LIMIT_REQUESTS), Keycloak sign-ins included.
+ */
 export async function adminToken(request: APIRequestContext): Promise<string> {
+  if (cachedAdminToken) return cachedAdminToken;
   const response = await request.post(`${API}/api/auth/login`, {
     data: { email: LOCAL_ADMIN.email, password: LOCAL_ADMIN.password },
   });
   expect(response.ok(), `local admin login: ${response.status()}`).toBeTruthy();
-  return ((await response.json()) as { token: string }).token;
+  cachedAdminToken = ((await response.json()) as { token: string }).token;
+  return cachedAdminToken;
 }
 
 /** Calls the API as the local admin. */
