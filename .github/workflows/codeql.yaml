@@ -48,6 +48,7 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
           queries: security-extended
+          config-file: ./.github/codeql/codeql-config.yml
       - name: Build pupitre-api
         if: ${{ matrix.build-mode == 'manual' }}
         working-directory: apps/api
