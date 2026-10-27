@@ -17,7 +17,7 @@
     "@pupitre/core": "workspace:*",
     "@pupitre/ui": "workspace:*",
     "@tanstack/react-query": "5.104.5",
-    "lucide-react": "1.57.0",
+    "lucide-react": "1.60.0",
     "radix-ui": "1.8.1",
     "react": "19.3.1",
     "react-dom": "19.3.1",
