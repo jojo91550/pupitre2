@@ -8,6 +8,8 @@ import { defineConfig, devices } from '@playwright/test';
 //
 //   pnpm api:up && pnpm test:e2e:backend
 
+const FAKE_GITLAB_PORT = process.env.FAKE_GITLAB_PORT ?? '3103';
+
 export default defineConfig({
   testDir: './e2e/backend',
   fullyParallel: false,
@@ -30,10 +32,21 @@ export default defineConfig({
   ],
   webServer: [
     {
+      // The GitLab the lab checks read (e2e/backend/labs.spec.ts).
+      command: 'node e2e/backend/fake-gitlab.mjs',
+      url: `http://localhost:${FAKE_GITLAB_PORT}/health`,
+      reuseExistingServer: !process.env.CI,
+      env: { PORT: FAKE_GITLAB_PORT },
+    },
+    {
       command: 'node scripts/api.mjs dev',
       url: 'http://localhost:8080/health',
       reuseExistingServer: !process.env.CI,
       timeout: 180_000,
+      // An API already running (`pnpm api:dev`) is reused as it is: start it
+      // with these GitLab settings for the lab tests. The checker needs a
+      // token; the fake GitLab ignores it.
+      env: { GITLAB_BASE_URL: `http://localhost:${FAKE_GITLAB_PORT}`, GITLAB_TOKEN: 'fake-gitlab-token' },
     },
     {
       command: 'pnpm dev',

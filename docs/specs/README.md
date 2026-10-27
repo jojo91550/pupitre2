@@ -23,6 +23,8 @@ Specs 100 to 199 describe the **backend**: the Go services of `genesary/pupitre`
   keeps the existing Go backend.
 - **Security audit** of 2026-10-20: its frontend requirements are in [003](003-security.md).
 
+Coverage of every page and service of `genesary/pupitre` is tracked in [`parity.md`](../../parity.md).
+
 ## Conventions
 
 - Specs are written in English. **UI strings stay in French**, because the interface is in

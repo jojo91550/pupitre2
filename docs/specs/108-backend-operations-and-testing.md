@@ -129,7 +129,7 @@ default, or a local clone.
 | Repository and migration tests | `internal/*/repository`, `internal/*/db`, tag `integration` | needs PostgreSQL |
 | Go end-to-end tests | `apps/api/e2e`, tag `e2e` | against a running binary at `API_URL`; also checks the lab check routes need a token and the service routes are gone |
 | Frontend Playwright, mock | `e2e/*.spec.ts`, `pnpm test:e2e` | against the mock mode, as before |
-| Frontend Playwright, backend | `e2e/backend/`, `pnpm test:e2e:backend` | against both apps, `pupitre-api`, and compose's PostgreSQL and Keycloak: real Keycloak sign-in of each role, every page of each role, a learner taking a course to the badge. Written to pass again on the data of an earlier run |
+| Frontend Playwright, backend | `e2e/backend/`, `pnpm test:e2e:backend` | against both apps, `pupitre-api`, and compose's PostgreSQL and Keycloak: real Keycloak sign-in of each role, every page of each role, a learner taking a course to the badge, GitLab lab step checks against a fake GitLab (`e2e/backend/fake-gitlab.mjs`, adapted from `ebuildy/pupitre2`; `GITLAB_BASE_URL` points the API at it, the lab's text comes from a local git repository). Written to pass again on the data of an earlier run |
 
 The handler tests of each domain used `httptest` servers standing in for the other services. They
 keep them: each domain's `standalone_test.go` holds, for the tests only, the old service's router
