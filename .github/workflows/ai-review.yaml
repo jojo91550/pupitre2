@@ -34,11 +34,11 @@ jobs:
       - name: Check the credentials
         if: ${{ env.HAS_CREDENTIALS != 'true' }}
         run: echo "::notice::Neither CLAUDE_CODE_OAUTH_TOKEN nor ANTHROPIC_API_KEY is set, AI review skipped."
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: ${{ env.HAS_CREDENTIALS == 'true' }}
         with:
           fetch-depth: 0
-      - uses: anthropics/claude-code-action@a26b07d8c778b0c43f64618e5fd29fd0f8af72e8 # v1.0.250
+      - uses: anthropics/claude-code-action@e4a6faad497d33dbc7144135c75e41f82f0bf6c0 # v1.0.255
         if: ${{ env.HAS_CREDENTIALS == 'true' }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}

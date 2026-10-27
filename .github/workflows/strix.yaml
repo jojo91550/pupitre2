@@ -41,12 +41,12 @@ jobs:
       - name: Check the API key
         if: ${{ env.LLM_API_KEY == '' }}
         run: echo "::notice::LLM_API_KEY is not set, Strix scan skipped."
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: ${{ env.LLM_API_KEY != '' }}
         with:
           # Strix scopes a pull request scan to the changed files.
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         if: ${{ env.LLM_API_KEY != '' }}
         with:
           python-version: '3.12'
@@ -63,7 +63,7 @@ jobs:
           --instruction "pupitre2: React apps (apps/app, apps/admin, packages/*) and the Go API
           (apps/api). Security rules: AGENTS.md and docs/specs/003-security.md. Known backend
           defects kept on purpose are listed in docs/specs/190-backend-defects.md."
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ always() && env.LLM_API_KEY != '' }}
         with:
           name: strix-report
