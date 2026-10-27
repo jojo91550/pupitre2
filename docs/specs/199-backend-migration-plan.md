@@ -65,11 +65,16 @@ B5, B6, B7, B12, B11, B10, then the others. Each one updates 190.
 - First, the images: the frontend image and the release workflows that publish both images to
   GHCR on a tag ([108](108-backend-operations-and-testing.md), "Releases"). A first tag gives the
   chart versions to pin.
-- The Helm chart (its own repository) deploys one API and the frontend image
-  ([108](108-backend-operations-and-testing.md)).
-- Switch-over on an existing installation: deploy the monolith on the same database with the
-  merged ConfigMap, check `/health`, move the `/api` route to it, then remove the three services.
-  Rollback is the reverse route move: the schema is unchanged, so the old services still work.
+- The Helm chart, [`jojo91550/pupitre2-helm`](https://github.com/jojo91550/pupitre2-helm),
+  deploys one API and the frontend image ([108](108-backend-operations-and-testing.md),
+  "Deployment"); it mounts the uploads volume ([190](190-backend-defects.md) B22).
+  `apps/api/infra/kind` and the kind targets of the `Makefile` deploy it locally.
+- Switch-over on an existing installation: one `helm upgrade` of the release with the converted
+  values creates the API on the same database, routes `/api` and `/uploads` to it and removes the
+  three services. Rollback is `helm rollback`: the schema is unchanged but for the manager group
+  mapping, so the old services still work. The chart's `README.md` has the steps.
+- Done when the chart installs on an empty cluster and upgrades a release of the reference chart
+  with its data, and `helm lint --strict` and `helm unittest` pass in its CI.
 
 ## After
 

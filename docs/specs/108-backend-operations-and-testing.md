@@ -71,22 +71,49 @@ target, `VITE_API_URL` (default `http://localhost:8080`). `VITE_USER_SERVICE_URL
 
 ## Deployment
 
-- The Helm chart stays in its own repository (`pupitre-helm`). Its update is part of batch B4 of
-  [199](199-backend-migration-plan.md): one Deployment and one Service for the API, one ConfigMap
-  merging the three, `/api` and `/uploads` routed to the API by one prefix rule, the internal
-  secret and the service URLs removed.
-- Probes: `/health` for liveness and readiness. Graceful shutdown in 15 s on `SIGTERM`.
-- `JWT_SECRET` must be set to a real secret of at least 32 characters: the reference chart's
-  default (`change-me-in-production-…`) is refused at start-up ([190](190-backend-defects.md) B4).
-- `/metrics` stays public in the API, as in the reference. The reference chart routes it from the
-  ingress; the API's chart should not, since Prometheus scrapes the pod directly
-  ([190](190-backend-defects.md), "Kept as the reference").
-- Uploads (`UPLOADS_DIR`): the chart sets `/data/uploads` but mounts no volume there, on a read-only
-  root filesystem ([190](190-backend-defects.md) B22). The API's chart mounts a volume at
-  `/data/uploads` (a `PersistentVolumeClaim`, `ReadWriteMany` when the API has several replicas).
-- `apps/api/infra/kind` and `infra/manifests` (local kind cluster) stay as they were: they install
-  the chart, which still deploys three services until B4. The kind and Helm targets of the
-  `Makefile` come back in B4, with one image.
+The Helm chart lives in its own repository,
+[`jojo91550/pupitre2-helm`](https://github.com/jojo91550/pupitre2-helm), adapted from
+`genesary/pupitre-helm` at `48e9ecb` (batch B4 of [199](199-backend-migration-plan.md)). Its
+`README.md` holds the install and the switch-over from the reference chart; `helm unittest`
+checks what follows.
+
+- **One API**: one Deployment, Service, ServiceAccount, ConfigMap (the keys of the user-service and
+  course-service ConfigMaps merged, the service URLs removed), and the optional HPA, PDB and
+  NetworkPolicy, under `api.*`. Image `pupitre-api` at the chart's `appVersion`, port 8080,
+  `/health` for the startup, liveness and readiness probes, `terminationGracePeriodSeconds` 30
+  for the 15 s graceful shutdown. Resources and database pools are the sums of the services'.
+- **The frontend**: image `pupitre-front` on port 3000, user 101, read-only root filesystem with
+  `/tmp` mounted, no configuration and no egress.
+- **Routing**: one table for the Ingress and the HTTPRoute: `/api`, `/uploads` and `/metrics`
+  (prefix) and `/health` (exact) to the API, `/` to the frontend. `/metrics` stays public, as the
+  reference chart routes it ([190](190-backend-defects.md) B15, "Kept as the reference"). Cookies reach the API unchanged, as the OAuth state check needs
+  ([105](105-backend-authentication.md)).
+- **Secrets**: the internal secret is gone. `JWT_SECRET` comes from `jwtExistingSecret`, from
+  `jwtSecret` (refused by the chart when shorter than 32 characters or equal to the reference's
+  placeholder, as the API refuses them, [190](190-backend-defects.md) B4), or is generated
+  (64 characters) on install and kept across upgrades, like the admin password. A release
+  upgraded from the reference chart with its placeholder gets a generated secret instead.
+- **Uploads**: `UPLOADS_DIR` is `/data/uploads`, a `PersistentVolumeClaim` by default (kept on
+  uninstall, `fsGroup` 1000), `ReadWriteMany` when the API has several replicas, or an existing
+  claim; an emptyDir when persistence is disabled ([190](190-backend-defects.md) B22).
+- **Unchanged from the reference**: `admin.*`, `sso.*` (OIDC seeding, client secrets as files,
+  `groupAdmins` authoritative), `database.*`, the bundled PostgreSQL, `ingress.*`, `httpRoute.*`,
+  the git token and the optional `course-repo-secret` of per-URL git credentials.
+- **Switch-over**: `helm upgrade` of an existing release with the converted values creates the API
+  and removes the three services, on the same database. With the bundled PostgreSQL and
+  persistence, the StatefulSet is deleted first with `--cascade=orphan`: the reference puts its
+  chart version in the `volumeClaimTemplates`, which an upgrade cannot change (this chart does
+  not). Rollback is `helm rollback`, after the same StatefulSet deletion and after removing the
+  group mappings to `manager`, which the reference's schema refuses. Both ways were run on a
+  minikube cluster from a release of the reference chart with data.
+- **Releases**: a tag `<version>` (no `v`) on the chart repository publishes it to
+  `oci://ghcr.io/jojo91550/charts/pupitre`, as the reference does.
+
+`apps/api/infra/kind` deploys the chart on a local kind cluster, with the bundled PostgreSQL and
+the demo catalogue: `make kind-create`, then `make kind-dev` (image, load, `helm upgrade
+--install`, rollout). The API answers on `http://localhost:8080` through its NodePort, so
+`pnpm dev` runs the frontend against it. `HELM_CHART` names the chart: the published one by
+default, or a local clone.
 
 ## Tests
 
