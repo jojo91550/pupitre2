@@ -1,0 +1,26 @@
+name: Setup
+description: Install the tools of mise.toml (Node.js, pnpm) and the workspace dependencies
+
+runs:
+  using: composite
+  steps:
+    - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+      with:
+        # Same version as the dev container
+        version: 2026.10.18
+        install: true
+        cache: true
+
+    - id: pnpm-store
+      shell: bash
+      run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.pnpm-store.outputs.path }}
+        key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+        restore-keys: pnpm-store-${{ runner.os }}-
+
+    # pnpm installs with --frozen-lockfile when CI is set
+    - shell: bash
+      run: mise run install

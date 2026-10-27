@@ -1,0 +1,46 @@
+FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
+
+ARG MISE_VERSION=v2026.10.18
+# Same version as @playwright/test in package.json
+ARG PLAYWRIGHT_VERSION=1.64.0
+# Needed by mise's shell completion
+ARG USAGE_VERSION=7.1.1
+ARG WORKSPACE=/workspaces/pupitre2
+
+USER vscode
+WORKDIR /home/vscode
+
+ENV PATH="/home/vscode/.local/bin:/home/vscode/.local/share/mise/shims:${PATH}" \
+    MISE_TRUSTED_CONFIG_PATHS="${WORKSPACE}"
+
+RUN curl -fsSL https://mise.run | MISE_VERSION=${MISE_VERSION} sh \
+    && echo 'eval "$(mise activate bash)"' >> ~/.bashrc \
+    && echo 'eval "$(mise activate zsh)"' >> ~/.zshrc
+
+# Tools of mise.toml (Node, pnpm), installed globally so the shims work everywhere
+COPY --chown=vscode:vscode mise.toml /tmp/mise/mise.toml
+RUN cd /tmp/mise \
+    && mise trust \
+    && mise install \
+    && mise use --global node@"$(mise current node)" pnpm@"$(mise current pnpm)" usage@${USAGE_VERSION} \
+    && rm -rf /tmp/mise
+
+# Shell completion for mise and pnpm: bash-completion loads the bash scripts on demand,
+# zsh autoloads _mise from fpath and sources the pnpm script once compdef exists
+RUN mkdir -p ~/.local/share/bash-completion/completions ~/.zfunc \
+    && mise completion bash > ~/.local/share/bash-completion/completions/mise \
+    && pnpm completion bash > ~/.local/share/bash-completion/completions/pnpm \
+    && mise completion zsh > ~/.zfunc/_mise \
+    && pnpm completion zsh > ~/.zfunc/pnpm.zsh \
+    && sed -i 's|^source \$ZSH/oh-my-zsh.sh|fpath=(~/.zfunc $fpath)\n&|' ~/.zshrc \
+    && echo 'source ~/.zfunc/pnpm.zsh' >> ~/.zshrc
+
+# Chromium and its system libraries for the e2e tests. sudo gets Node's own directory,
+# not the mise shims: as root, mise would refuse vscode's untrusted global config
+RUN sudo env "PATH=$(dirname "$(mise which node)"):${PATH}" npx -y playwright@${PLAYWRIGHT_VERSION} install-deps chromium \
+    && npx -y playwright@${PLAYWRIGHT_VERSION} install chromium \
+    && sudo rm -rf /var/lib/apt/lists/* \
+    && rm -rf ~/.npm
+
+# Mount point of the node_modules volume, owned by vscode
+RUN sudo mkdir -p ${WORKSPACE}/node_modules && sudo chown -R vscode:vscode /workspaces
