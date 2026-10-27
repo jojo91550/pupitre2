@@ -27,3 +27,6 @@ local.mk
 apps/api/uploads/
 apps/api/git-credentials.yaml
 apps/api/bin/
+# binaries built with a bare `go build` in apps/api
+apps/api/pupitre-api
+*.exe
