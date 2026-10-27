@@ -1,71 +1,44 @@
+# Values of the pupitre2-helm chart for a local kind cluster
+# (docs/specs/108-backend-operations-and-testing.md, "Deployment").
+# The API runs in the cluster on http://localhost:8080; the frontend runs on
+# the host with `pnpm dev`, which proxies /api and /uploads to it.
+
+# Local test value, never deployed.
 jwtSecret: "test-jwt-secret-for-kind-cluster-min-32-chars!!"
 
-courseService:
+api:
   image:
-    repository: localhost/pupitre-course-service
+    repository: pupitre-api
     tag: local
     pullPolicy: Never
   service:
     type: NodePort
-    port: 8082
-    nodePort: 30082
+    port: 8080
+    nodePort: 30080
+  env:
+    LOG_FORMAT: "text"
+    GITLAB_BASE_URL: "http://gitlab.local:8880"
   extraEnv:
     # Seeds the demo catalogue on startup so a fresh cluster is browsable.
     # "true" only creates the courses that are missing; use "overwrite" to
     # replace them after editing internal/courses/db/seed/courses/.
     - name: SEED_DEV_COURSES
       value: "true"
+  uploads:
+    persistence:
+      size: 1Gi
 
-checkerService:
-  image:
-    repository: localhost/pupitre-checker-service
-    tag: local
-    pullPolicy: Never
-  service:
-    type: ClusterIP
-    port: 8083
-  gitLabToken: ""
-  env:
-    GITLAB_BASE_URL: "http://gitlab.local:8880"
-
-userService:
-  image:
-    repository: localhost/pupitre-user-service
-    tag: local
-    pullPolicy: Never
-  service:
-    type: NodePort
-    port: 8081
-    nodePort: 30081
-
+# The frontend runs on the host (`pnpm dev`).
 frontend:
-  image:
-    repository: localhost/pupitre-frontend
-    tag: local
-    pullPolicy: Never
-  service:
-    type: NodePort
-    port: 3000
-    nodePort: 30080
+  replicaCount: 0
 
 sso:
-  enabled: true
   redirectBase: "http://localhost:3000"
-  providers:
-    - id: github
-      name: GitHub
-      clientId: "Iv23lio9LgGJ8blbGG7e"
-      clientSecret: "c8465a66ca28b389a2810ff116f44c97a35b6ae9"
 
 ingress:
   enabled: false
-  host: localhost:3000
 
 postgresql:
   enabled: true
-  auth:
-    username: pupitre
-    password: pupitre_secret
-    database: pupitre
   persistence:
     enabled: false

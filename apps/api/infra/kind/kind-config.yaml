@@ -3,21 +3,11 @@ kind: Cluster
 nodes:
 - role: control-plane
   extraPortMappings:
-  # ── Platform services ──────────────────────────────────────
+  # ── Platform ───────────────────────────────────────────────
+  # pupitre-api's NodePort (infra/kind/kind-values.yaml): the frontend's
+  # `pnpm dev` proxies /api and /uploads to http://localhost:8080.
   - containerPort: 30080
-    hostPort: 8080    # frontend (npm run dev in dev mode)
-    protocol: TCP
-  - containerPort: 30081
-    hostPort: 8081    # user-service
-    protocol: TCP
-  - containerPort: 30082
-    hostPort: 8082    # course-service
-    protocol: TCP
-  - containerPort: 30083
-    hostPort: 8083    # checker-service
-    protocol: TCP
-  - containerPort: 30090
-    hostPort: 9090    # Prometheus / metrics
+    hostPort: 8080
     protocol: TCP
   # ── GitLab CE ──────────────────────────────────────────────
   - containerPort: 30880
