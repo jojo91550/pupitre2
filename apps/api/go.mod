@@ -5,7 +5,7 @@ go 1.26.10
 require (
 	github.com/coreos/go-oidc/v3 v3.20.0
 	github.com/go-asn1-ber/asn1-ber v1.5.8
-	github.com/go-chi/chi/v5 v5.3.2
+	github.com/go-chi/chi/v5 v5.4.0
 	github.com/go-chi/cors v1.2.2
 	github.com/go-chi/httprate v0.16.0
 	github.com/go-git/go-git/v5 v5.19.2
