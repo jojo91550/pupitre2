@@ -43,6 +43,13 @@ layout, quiz palette, podium…) are those of the current Astro frontend, not a 
 - Code reused from the reference rewrite is restyled the same way ([090](090-gaps-and-defects.md),
   rule 6). Its theme is not imported.
 - A design change is a separate, explicit decision, never a side effect of the rewrite.
+- Decided change: in light mode, the learner app's page background is the drawing of
+  `ebuildy/pupitre2` (`apps/app/public/images/pupitre-background.svg`, on `body` in
+  `apps/app/src/index.css`), in place of the page wrappers' gradient (`.cat-outer`,
+  `.course-outer`, `.page-outer`, `.skill-outer`, `.up-outer`, `.agenda-wrap`). It covers the
+  viewport once and stays put while the page scrolls; its embedded fonts are cut down to the
+  glyphs drawn. Dark mode keeps
+  `--color-page`; the admin app is unchanged.
 
 ## Light / dark mode
 
