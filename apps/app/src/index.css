@@ -5,12 +5,16 @@
 
 /* Page background of the learner app, light mode only: the drawing is light and opaque.
    Taken from ebuildy/pupitre2 (apps/app/src/index.css and
-   apps/app/public/images/pupitre-background.svg). */
+   apps/app/public/images/pupitre-background.svg, its fonts cut down to the glyphs drawn).
+   Unlike there, it covers the viewport once and stays put: `contain` tiled it down long
+   pages, with an edge between copies. */
 :root:not(.dark) body {
   background-color: #f7f9fc; /* shown while the image loads */
   background-image: url('/images/pupitre-background.svg');
-  background-size: contain;
+  background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 /* The page wrappers' gradient would hide it. */
