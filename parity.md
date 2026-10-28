@@ -108,6 +108,7 @@ checked by `internal/server/router_test.go`: every route of
 | Kept as the reference | - | B2, B3, B15 (`/metrics`), B16, B17 (e-mail verification), B18, B21 | Documented or relied on by genesary | [190](docs/specs/190-backend-defects.md), "Kept as the reference" |
 | Language | French | French only, strings grouped for a later translation | | [005](docs/specs/005-ui-theme-navigation.md) |
 | Look | Pupitre's CSS | Pupitre's CSS, unchanged | The design is kept as is | [005](docs/specs/005-ui-theme-navigation.md) |
+| Page background | `--color-page` and the page wrappers' gradient | Learner app, light mode: the drawing of `ebuildy/pupitre2` | Decision of the project | [005](docs/specs/005-ui-theme-navigation.md) |
 
 ## To do
 
