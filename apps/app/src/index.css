@@ -21,3 +21,150 @@
 :root:not(.dark) :is(.cat-outer, .course-outer, .page-outer, .skill-outer, .up-outer, .agenda-wrap) {
   background: transparent;
 }
+
+/* Catalogue grid (routes/Catalogue.tsx): up to five columns of larger cards than pupitre's
+   `.courses-grid-lg`, which stays untouched in the pupitre CSS. Unlayered, so these rules
+   win over the `@layer components` ones. */
+.cat-grid {
+  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (min-width: 768px) {
+  .cat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  .cat-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1280px) {
+  .cat-grid {
+    gap: 20px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .cat-grid {
+    gap: 12px;
+  }
+}
+
+.cat-grid .rail-card {
+  border-radius: 16px;
+}
+.cat-grid .rail-card-thumb {
+  height: 140px;
+}
+.cat-grid .rail-card-thumb > span {
+  font-size: 3rem;
+}
+.cat-grid .rail-card-cat {
+  top: 8px;
+  right: 8px;
+  padding: 3px 9px 3px 7px;
+  font-size: 0.7rem;
+}
+.cat-grid .rail-card-body {
+  padding: 14px;
+  gap: 8px;
+}
+.cat-grid .rail-card-title {
+  font-size: 0.95rem;
+}
+@media (max-width: 640px) {
+  .cat-grid .rail-card-thumb {
+    height: 104px;
+  }
+  .cat-grid .rail-card-thumb > span {
+    font-size: 2.3rem;
+  }
+  .cat-grid .rail-card-body {
+    padding: 10px;
+  }
+  .cat-grid .rail-card-title {
+    font-size: 0.85rem;
+  }
+}
+
+/* A filter change remounts the grid: its cards rise and fade in, one after another
+   (--i, capped so a long list does not keep the last cards waiting). */
+@keyframes cat-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+    filter: blur(3px);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cat-grid .rail-card {
+    animation: cat-card-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation-delay: calc(min(var(--i, 0), 14) * 35ms);
+  }
+}
+
+/* Difficulty filter of the catalogue: a range slider in a field shaped like `.input`
+   (Débutant to Avancé; the full range shows every course). */
+.cat-diff-range {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 38px;
+  padding: 0 14px;
+  border: 1.5px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-paper);
+  backdrop-filter: blur(8px);
+  font-size: 0.85rem;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.cat-diff-range:focus-within {
+  border-color: var(--color-blue);
+  box-shadow: 0 0 0 3px rgb(27 134 242 / 0.12);
+}
+.cat-diff-range-name {
+  color: var(--color-ink-soft);
+  white-space: nowrap;
+}
+.cat-diff-range-slider {
+  width: 130px;
+  flex-shrink: 0;
+}
+.cat-diff-range-value {
+  /* Wide enough for « Intermédiaire → Avancé »: the field keeps its width while sliding. */
+  min-width: 11.5em;
+  font-weight: 600;
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .cat-diff-range {
+    width: 100%;
+  }
+  .cat-diff-range-slider {
+    width: auto;
+    flex: 1;
+  }
+  .cat-diff-range-value {
+    min-width: 0;
+  }
+}
+
+/* The catalogue's content sits on a white panel over the background drawing, which made the
+   cards and filters hard to read. Light mode only: dark mode has no drawing. */
+:root:not(.dark) .cat-panel {
+  padding: 28px 32px 36px;
+  border: 1px solid var(--color-line);
+  border-radius: 20px;
+  background: var(--color-paper);
+  box-shadow: 0 10px 40px rgb(30 41 59 / 0.08);
+}
+@media (max-width: 640px) {
+  :root:not(.dark) .cat-panel {
+    padding: 16px 14px 24px;
+    border-radius: 16px;
+  }
+}

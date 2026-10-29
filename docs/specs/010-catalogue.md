@@ -41,7 +41,9 @@ All filters combine, and the list updates without a reload.
   case-insensitively.
 - **Categories**: chips, shown only when there are at least two categories. A « Tout » chip resets
   the selection. Each chip has a colour dot and the number of courses. Several can be selected.
-- **Difficulty**: a select (all, « Débutant », « Intermédiaire », « Avancé »).
+- **Difficulty**: a range slider with two thumbs, from « Débutant » to « Avancé ». A course passes
+  if its difficulty is within the range; the full range (the default, shown « Toutes ») shows
+  every course, those without a difficulty included.
 - **Skill**: the `?skill=<slug>` URL parameter, set by skill links.
   - A course passes the filter if it teaches that skill and if its difficulty is at least the
     user's level for that skill (`beginner` < `intermediate` < `advanced`). Without a known level,
