@@ -42,5 +42,8 @@ RUN sudo env "PATH=$(dirname "$(mise which node)"):${PATH}" npx -y playwright@${
     && sudo rm -rf /var/lib/apt/lists/* \
     && rm -rf ~/.npm
 
-# Mount point of the node_modules volume, owned by vscode
-RUN sudo mkdir -p ${WORKSPACE}/node_modules && sudo chown -R vscode:vscode /workspaces
+# Mount point of the node_modules volume. A new volume copies its owner and mode: on Linux,
+# the dev container CLI changes vscode's UID to the host's, so the mode (like /tmp's) lets
+# vscode write whatever its UID
+RUN sudo mkdir -p ${WORKSPACE}/node_modules && sudo chown -R vscode:vscode /workspaces \
+    && sudo chmod 1777 ${WORKSPACE}/node_modules
