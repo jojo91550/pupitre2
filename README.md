@@ -21,22 +21,23 @@ They replace the Astro frontend and the three Go services of
 
 ### With mise
 
-[mise](https://mise.jdx.dev/) installs Node.js and pnpm from `mise.toml` and runs the tasks. Each
+[mise](https://mise.jdx.dev/) installs Node.js, pnpm and Go from `mise.toml` and runs the tasks. Each
 task installs the dependencies first when needed.
 
 ```sh
-mise install          # Node.js 24, pnpm and prek, versions from mise.toml
+mise install          # Node.js 24, pnpm, prek, Go and golangci-lint, versions from mise.toml
 mise run setup:prek        # Git hooks, see "Contributing"
 mise run dev:mock     # http://localhost:3000, no backend needed (docs/specs/006-mock-mode.md)
 mise run dev          # http://localhost:3000, against the Go services
 # Both start the two apps; the admin app is opened through http://localhost:3000/admin
 mise run check        # typecheck, lint, test and build
-mise tasks            # every task: build, lint, typecheck, test, test:e2e…
+mise run api:dev      # pupitre-api on http://localhost:8080 (after mise run api:up)
+mise tasks            # every task: build, lint, typecheck, test, test:e2e, api:test…
 ```
 
 ### In a dev container
 
-`.devcontainer/` builds an image with mise, Node.js, pnpm and Playwright's Chromium already
+`.devcontainer/` builds an image with mise, Node.js, pnpm, Go, golangci-lint and Playwright's Chromium already
 installed. Open the folder in VS Code, run "Dev Containers: Reopen in Container", then
 `mise run dev:mock`. `node_modules` lives in a Docker volume, apart from the host's.
 

@@ -17,12 +17,12 @@ RUN curl -fsSL https://mise.run | MISE_VERSION=${MISE_VERSION} sh \
     && echo 'eval "$(mise activate bash)"' >> ~/.bashrc \
     && echo 'eval "$(mise activate zsh)"' >> ~/.zshrc
 
-# Tools of mise.toml (Node, pnpm), installed globally so the shims work everywhere
+# Tools of mise.toml (Node, pnpm, Go, golangci-lint), installed globally so the shims work everywhere
 COPY --chown=vscode:vscode mise.toml /tmp/mise/mise.toml
 RUN cd /tmp/mise \
     && mise trust \
     && mise install \
-    && mise use --global node@"$(mise current node)" pnpm@"$(mise current pnpm)" usage@${USAGE_VERSION} \
+    && mise use --global node@"$(mise current node)" pnpm@"$(mise current pnpm)" go@"$(mise current go)" golangci-lint@"$(mise current golangci-lint)" usage@${USAGE_VERSION} \
     && rm -rf /tmp/mise
 
 # Shell completion for mise and pnpm: bash-completion loads the bash scripts on demand,
