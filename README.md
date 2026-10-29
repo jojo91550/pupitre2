@@ -8,6 +8,7 @@ They replace the Astro frontend and the three Go services of
   pnpm.
 - Authentication: OIDC through Keycloak only.
 - Specs: [`docs/specs`](docs/specs/README.md).
+- Calling the admin API to add courses (PowerShell and Linux): [`docs/guides/admin-api-courses.md`](docs/guides/admin-api-courses.md).
 - Agent rules: [`AGENTS.md`](AGENTS.md).
 
 ## Requirements
