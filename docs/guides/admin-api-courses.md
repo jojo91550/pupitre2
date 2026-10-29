@@ -36,26 +36,36 @@ chat. Prefer reading it into a variable as below, which keeps it out of the shel
 ## 2. Set up the shell
 
 The API is reached through the site's address: `http://localhost:3000/api` locally (`pnpm dev`),
-`https://<your domain>/api` in production.
+or `http://localhost:8080/api` when only the API runs (`pnpm api:dev`); `https://<your
+domain>/api` in production.
 
 PowerShell (Windows PowerShell 5.1 or PowerShell 7):
 
 ```powershell
 $Api = 'http://localhost:3000/api'
-$Token = Read-Host 'Token'
+$Token = [System.Net.NetworkCredential]::new('', (Read-Host 'Token' -AsSecureString)).Password
 $Headers = @{ Authorization = "Bearer $Token" }
 
-# Sends a JSON file or string as UTF-8, so accents survive Windows PowerShell 5.1.
+# Sends JSON and reads the answer as UTF-8. Windows PowerShell 5.1 would read the answer as
+# Latin-1 (the API sends no charset), and sending it back would then damage the accents.
 function Send-Json($Method, $Path, $Json) {
-  Invoke-RestMethod -Method $Method -Uri "$Api$Path" -Headers $Headers `
-    -ContentType 'application/json; charset=utf-8' `
-    -Body ([System.Text.Encoding]::UTF8.GetBytes($Json))
+  $Params = @{ Method = $Method; Uri = "$Api$Path"; Headers = $Headers; UseBasicParsing = $true }
+  if ($Json) {
+    $Params.ContentType = 'application/json; charset=utf-8'
+    $Params.Body = [System.Text.Encoding]::UTF8.GetBytes($Json)
+  }
+  $Text = [System.Text.Encoding]::UTF8.GetString((Invoke-WebRequest @Params).RawContentStream.ToArray())
+  if ($Text) { $Text | ConvertFrom-Json }
 }
+function Get-Json($Path) { Send-Json Get $Path }
 
-Invoke-RestMethod -Uri "$Api/auth/me" -Headers $Headers   # shows your account: role must be admin
+Get-Json '/auth/me'   # shows your account: role must be admin
 ```
 
-Linux (bash, with `curl`, and `jq` for the markdown import and the edits):
+`Read-Host -AsSecureString` hides the token as you paste it.
+
+Linux (bash, with `curl`, and `jq` for the markdown import and the edits: `sudo apt install jq`
+on Debian or Ubuntu):
 
 ```sh
 API=http://localhost:3000/api
@@ -130,10 +140,13 @@ Preview first: nothing is written, the answer lists the modules and the warnings
 PowerShell:
 
 ```powershell
-$Body = @{ markdown = (Get-Content -Raw -Encoding UTF8 docs/guides/examples/git-basics.md) } | ConvertTo-Json
+$Body = @{ markdown = [string](Get-Content -Raw -Encoding UTF8 docs/guides/examples/git-basics.md) } | ConvertTo-Json
 Send-Json Post '/admin/courses/import/preview' $Body
 Send-Json Post '/admin/courses/import' $Body
 ```
+
+The `[string]` matters: without it, Windows PowerShell 5.1 sends the file as an object
+(`{"value": …, "PSPath": …}`) and the API answers `400 Invalid import request`.
 
 Linux:
 
@@ -172,7 +185,7 @@ right before writing, so you do not overwrite another admin's change
 PowerShell (rename the course):
 
 ```powershell
-$Def = Invoke-RestMethod -Uri "$Api/admin/courses/docker-intro/definition" -Headers $Headers
+$Def = Get-Json '/admin/courses/docker-intro/definition'
 $Def.spec.title = 'Docker : les bases'
 Send-Json Put '/admin/courses/docker-intro/definition' (@{ spec = $Def.spec } | ConvertTo-Json -Depth 50)
 ```
@@ -207,7 +220,7 @@ Needed for a course with `public: false`. Find the ids first (`GET /admin/users/
 PowerShell:
 
 ```powershell
-Invoke-RestMethod -Uri "$Api/admin/users/search?q=alice" -Headers $Headers
+Get-Json '/admin/users/search?q=alice'
 Send-Json Post '/admin/enrollments/docker-intro' (@{ userId = '<user id>' } | ConvertTo-Json)
 Send-Json Post '/admin/enrollments/docker-intro/groups' (@{ groupId = '<group id>' } | ConvertTo-Json)
 ```
