@@ -151,11 +151,13 @@ The `[string]` matters: without it, Windows PowerShell 5.1 sends the file as an 
 Linux:
 
 ```sh
-jq -Rs '{markdown: .}' docs/guides/examples/git-basics.md > /tmp/import.json
+BODY_FILE=$(mktemp)
+jq -Rs '{markdown: .}' docs/guides/examples/git-basics.md > "$BODY_FILE"
 curl -fsS -X POST "$API/admin/courses/import/preview" -H "$AUTH" -H 'Content-Type: application/json' \
-  --data-binary @/tmp/import.json
+  --data-binary @"$BODY_FILE"
 curl -fsS -X POST "$API/admin/courses/import" -H "$AUTH" -H 'Content-Type: application/json' \
-  --data-binary @/tmp/import.json
+  --data-binary @"$BODY_FILE"
+rm "$BODY_FILE"
 ```
 
 The body goes through a file: passed as `-d "$BODY"`, a document over 128 KiB would exceed
