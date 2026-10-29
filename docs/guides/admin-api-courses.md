@@ -151,10 +151,15 @@ The `[string]` matters: without it, Windows PowerShell 5.1 sends the file as an 
 Linux:
 
 ```sh
-BODY=$(jq -Rs '{markdown: .}' docs/guides/examples/git-basics.md)
-curl -fsS -X POST "$API/admin/courses/import/preview" -H "$AUTH" -H 'Content-Type: application/json' -d "$BODY"
-curl -fsS -X POST "$API/admin/courses/import" -H "$AUTH" -H 'Content-Type: application/json' -d "$BODY"
+jq -Rs '{markdown: .}' docs/guides/examples/git-basics.md > /tmp/import.json
+curl -fsS -X POST "$API/admin/courses/import/preview" -H "$AUTH" -H 'Content-Type: application/json' \
+  --data-binary @/tmp/import.json
+curl -fsS -X POST "$API/admin/courses/import" -H "$AUTH" -H 'Content-Type: application/json' \
+  --data-binary @/tmp/import.json
 ```
+
+The body goes through a file: passed as `-d "$BODY"`, a document over 128 KiB would exceed
+Linux's limit on one argument.
 
 Answer: `201 {"slug":"git-basics","mode":"create","moduleCount":4}`.
 
@@ -202,15 +207,21 @@ curl -fsS "$API/admin/courses/docker-intro/definition" -H "$AUTH" \
 `ConvertTo-Json` needs `-Depth`: without it, Windows PowerShell cuts the modules and the questions
 at the second level.
 
-Delete:
+Delete: the course is removed at once, with no confirmation and no way back. Save its definition
+first:
 
 ```powershell
+Invoke-WebRequest -UseBasicParsing -Uri "$Api/admin/courses/docker-intro/definition" -Headers $Headers -OutFile docker-intro.backup.json
 Invoke-RestMethod -Method Delete -Uri "$Api/admin/courses/docker-intro/definition" -Headers $Headers
 ```
 
 ```sh
+curl -fsS "$API/admin/courses/docker-intro/definition" -H "$AUTH" -o docker-intro.backup.json
 curl -fsS -X DELETE "$API/admin/courses/docker-intro/definition" -H "$AUTH"
 ```
+
+The backup is the `{ "slug", "spec" }` body of step 3: `POST` it to `/admin/courses` to create
+the course again.
 
 ## 6. Enrol learners
 
@@ -260,14 +271,18 @@ introuvable » to the learner. A private repository needs `GIT_TOKEN` or `GIT_CR
 | `401 Missing Authorization header`, `401 Invalid token`, `401 Session expired` | No token, a wrong one, or one revoked by « Déconnexion » or expired: get a new one (step 1) |
 | `403` | The account is not admin |
 | `400 slug is required`, `400` invalid slug | The body has no `slug`, or it holds other characters than `a-z`, `0-9` and `-` |
-| `400` invalid course | The JSON does not match the definition (a typo in a field, a string instead of a list…) |
+| `400 Invalid course spec` | The JSON is malformed, or a field has the wrong type (a string instead of a list…) |
 | `404` | Unknown course (edit, delete, `replace` and `append` imports) |
 | `409` | The slug is taken: pick another, or edit the course instead |
+
+A misspelt field name is **not** an error: the API drops unknown keys without a word and still
+answers `201`. Read the course back (`GET /admin/courses/<slug>/definition`) to check that every
+field is there.
 
 PowerShell stops on an error; the API's message is in `$_.ErrorDetails.Message`:
 
 ```powershell
-try { Send-Json Post '/admin/courses' $Json } catch { $_.ErrorDetails.Message }
+try { Send-Json Post '/admin/courses' (Get-Content -Raw -Encoding UTF8 docs/guides/examples/docker-intro.json) } catch { $_.ErrorDetails.Message }
 ```
 
 With `curl`, drop `-f` to see the message of an error answer.
