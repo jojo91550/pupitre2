@@ -85,5 +85,5 @@ description = "Stop pupitre-api's local dependencies"
 run = "pnpm api:down"
 
 [tasks.check]
-description = "Everything required before handing work back: typecheck, lint, test, build"
+description = "Frontend checks: typecheck, lint, test, build (the API has api:build, api:lint and api:test)"
 depends = ["typecheck", "lint", "test", "build"]
