@@ -184,6 +184,10 @@
     border-radius: 20px;
     box-shadow: 0 10px 40px rgb(30 41 59 / 0.08);
   }
+  /* « Lecture focus » centres the lesson column (pupitre's mx-auto, which this margin outranks). */
+  :root:not(.dark) body.focus-mode .lesson-center {
+    margin-inline: auto;
+  }
   :root:not(.dark) .lesson-right {
     top: 76px;
     height: calc(100vh - 56px - 40px);
@@ -203,6 +207,10 @@
   background: var(--color-paper);
   border: 2px solid color-mix(in srgb, var(--color-good) 60%, transparent);
   box-shadow: 0 6px 20px rgb(59 178 115 / 0.14);
+}
+:is(:root, :root.dark) .mb-card:hover {
+  border-color: var(--color-good);
+  box-shadow: 0 8px 26px rgb(59 178 115 / 0.25);
 }
 .mb-card-ribbon {
   position: absolute;
