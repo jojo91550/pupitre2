@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { TourStep } from '@/lib/tour-steps';
 
@@ -84,25 +84,52 @@ describe('tour runner (spec 007)', () => {
     expect(await screen.findByText('Étape 1 sur 3 : Un')).toBeInTheDocument();
   });
 
+  // Steps of the `loaded` shortcut (spec 007, "Navigation between pages").
+  const LOADING: TourStep[] = [
+    { id: 'card', targets: ['absent'], optional: true, loaded: 'page-loaded', title: 'Carte', text: '' },
+    { id: 'end', title: 'Fin', text: '' },
+  ];
+
+  /** A page that shows its `loaded` marker after `delay` ms, or never. */
+  function LoadingPage({ delay }: { delay?: number }) {
+    const [loaded, setLoaded] = useState(false);
+    useEffect(() => {
+      if (delay === undefined) return;
+      const timer = setTimeout(() => setLoaded(true), delay);
+      return () => clearTimeout(timer);
+    }, [delay]);
+    return loaded ? <span data-tour="page-loaded" /> : null;
+  }
+
   it('skips an optional step at once when its page says it loaded without the target', async () => {
-    const steps: TourStep[] = [
-      { id: 'card', targets: ['absent'], optional: true, loaded: 'page-loaded', title: 'Carte', text: '' },
-      { id: 'end', title: 'Fin', text: '' },
-    ];
-    renderSteps(steps, <span data-tour="page-loaded" />);
+    renderSteps(LOADING, <span data-tour="page-loaded" />);
     expect(await screen.findByText('Fin')).toBeInTheDocument();
     expect(screen.getByText('1 / 1')).toBeInTheDocument();
   });
 
-  it('keeps waiting for an optional step while its page is still loading', async () => {
-    const steps: TourStep[] = [
-      { id: 'card', targets: ['absent'], optional: true, loaded: 'page-loaded', title: 'Carte', text: '' },
-      { id: 'end', title: 'Fin', text: '' },
-    ];
-    renderSteps(steps, null);
-    await act(() => new Promise((resolve) => setTimeout(resolve, 300)));
-    expect(screen.getByText('…')).toBeInTheDocument();
-    expect(screen.queryByText('Fin')).toBeNull();
+  describe('while the page loads', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    const advance = (ms: number) => act(() => void vi.advanceTimersByTime(ms));
+
+    it('waits, then skips the step after 3 s when the page never says it loaded', () => {
+      renderSteps(LOADING, <LoadingPage />);
+      advance(2900);
+      expect(screen.getByText('…')).toBeInTheDocument();
+      expect(screen.queryByText('Fin')).toBeNull();
+      advance(200);
+      expect(screen.getByText('Fin')).toBeInTheDocument();
+    });
+
+    it('skips the step as soon as the page says it loaded, without waiting 3 s', () => {
+      renderSteps(LOADING, <LoadingPage delay={500} />);
+      advance(400);
+      expect(screen.getByText('…')).toBeInTheDocument();
+      // The marker renders at 500 ms; the next poll (every 100 ms) skips the step.
+      advance(150);
+      advance(100);
+      expect(screen.getByText('Fin')).toBeInTheDocument();
+    });
   });
 });
-
