@@ -46,6 +46,7 @@ Coverage of every page and service of `genesary/pupitre` is tracked in [`parity.
 | [004](004-api-and-routing.md) | API client, routing to the services, errors, route inventory | F004, F005 |
 | [006](006-mock-mode.md) | Mock mode: running and testing the frontend without the backend | - |
 | [005](005-ui-theme-navigation.md) | Theme, dark mode, navigation, toasts, page states, accessibility | F010-F012, F018 |
+| [007](007-guided-tour.md) | Guided tour of the learner app, led by the bird of the logo (new) | F186-F189 |
 | [010](010-catalogue.md) | Catalogue, filters, course card, "Reprendre" | F040-F044 |
 | [011](011-course-page-and-enrollment.md) | Course page, enrollment, prerequisites, badge, sessions | F045-F050 |
 | [012](012-lesson-player.md) | Lesson player, markdown rendering, media, progress | F053-F063, F100 |

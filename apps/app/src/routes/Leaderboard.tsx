@@ -87,7 +87,7 @@ export function Leaderboard() {
     <div className="page-outer">
       <div className="page-inner">
         <div className="text-center mb-12">
-          <h1 className="page-title mb-1.5">Classement</h1>
+          <h1 data-tour="page-title" className="page-title mb-1.5">Classement</h1>
           <p className="text-[.9rem] text-ink-soft">badges obtenus</p>
         </div>
 

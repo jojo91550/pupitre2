@@ -94,7 +94,7 @@ export function MySkills() {
     <div className="page-outer">
       <div className="page-inner">
         <div className="flex items-baseline justify-between gap-4 mb-7 flex-wrap">
-          <h1 className="page-title">Mes compétences</h1>
+          <h1 data-tour="page-title" className="page-title">Mes compétences</h1>
         </div>
 
         {pending ? (
