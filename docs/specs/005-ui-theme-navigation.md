@@ -50,6 +50,15 @@ layout, quiz palette, podium…) are those of the current Astro frontend, not a 
   viewport once and stays put while the page scrolls; its embedded fonts are cut down to the
   glyphs drawn. Dark mode keeps
   `--color-page`; the admin app is unchanged.
+- Decided change: the catalogue ([010](010-catalogue.md)) has a larger grid of up to five
+  columns, its cards rise and fade in each time a filter changes, its difficulty filter is a range
+  slider, and in light mode its content sits on a white panel (`.cat-panel`) over the background
+  drawing. The rules are in `apps/app/src/index.css` (`.cat-grid`, `.cat-diff-range`,
+  `.cat-panel`); the pupitre CSS copies are unchanged.
+- Decided change: so that text stays readable over the drawing, the reading columns sit on a
+  white panel in light mode: the course page's content column (`.course-main`), the lesson and its
+  table of contents (`.lesson-center`, `.lesson-right`) and the quiz (`.quiz-main`). Below 640 px
+  the columns are simply white. Dark mode is unchanged.
 
 ## Light / dark mode
 

@@ -93,8 +93,9 @@
 @keyframes cat-card-in {
   from {
     opacity: 0;
+    /* opacity and transform only: they stay on the compositor, while the cards already blur
+       their backdrop. */
     transform: translateY(14px) scale(0.96);
-    filter: blur(3px);
   }
 }
 @media (prefers-reduced-motion: no-preference) {
@@ -166,5 +167,29 @@
   :root:not(.dark) .cat-panel {
     padding: 16px 14px 24px;
     border-radius: 16px;
+  }
+}
+
+/* Reading pages: the course page's content column, the lesson with its table of contents, and
+   the quiz. As for `.cat-panel`, the text sits on a white panel in light mode and the drawing
+   stays visible around it; on phones the columns are simply white. Dark mode is unchanged. */
+:root:not(.dark) :is(.course-main, .lesson-center, .lesson-right, .quiz-main) {
+  background: var(--color-paper);
+}
+@media (min-width: 641px) {
+  :root:not(.dark) :is(.course-main, .lesson-center, .quiz-main) {
+    width: auto;
+    margin: 20px;
+    border: 1px solid var(--color-line);
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgb(30 41 59 / 0.08);
+  }
+  :root:not(.dark) .lesson-right {
+    top: 76px;
+    height: calc(100vh - 56px - 40px);
+    margin: 20px 20px 20px 0;
+    border: 1px solid var(--color-line);
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgb(30 41 59 / 0.08);
   }
 }

@@ -57,7 +57,7 @@ function Slider({
           key={index}
           aria-label={thumbLabels?.[index]}
           aria-valuetext={getValueText?.(_values[index] ?? min)}
-          className="block size-4 shrink-0 cursor-grab rounded-full border-2 border-primary bg-white shadow-sm ring-ring/50 transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden active:cursor-grabbing disabled:pointer-events-none disabled:opacity-50"
+          className="block size-4 shrink-0 cursor-grab rounded-full border-2 border-primary bg-card shadow-sm ring-ring/50 transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden active:cursor-grabbing disabled:pointer-events-none disabled:opacity-50"
         />
       ))}
     </SliderPrimitive.Root>

@@ -57,7 +57,14 @@ All filters combine, and the list updates without a reload.
 ## Sorting and layout
 
 - Courses sorted by title (`localeCompare` with `fr`, ignoring accents and case).
-- Responsive grid of cards.
+- Responsive grid of cards (`.cat-grid`, a decided change of [005](005-ui-theme-navigation.md)):
+  2 columns on mobile, 3 from 768 px, 4 from 1024 px, 5 from 1280 px, with larger cards than the
+  Astro page (140 px thumbnail, 104 px on mobile).
+- Each time a filter changes (search, difficulty, category, skill), the grid remounts and its
+  cards rise and fade in one after another (35 ms apart, capped at 15 cards; `opacity` and
+  `transform` only). No animation under `prefers-reduced-motion: reduce`.
+- In light mode, the page content sits on a white panel over the background drawing; dark mode
+  has no drawing and no panel.
 - Empty state: « Aucun cours ne correspond à votre recherche. »
 
 ## Course card

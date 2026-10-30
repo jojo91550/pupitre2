@@ -8,6 +8,14 @@ import { useSession } from '@pupitre/core/lib/session';
 import { Slider } from '@pupitre/ui/components/ui/slider';
 import { ContinueHero } from '@/components/ContinueHero';
 import { CourseCard } from '@/components/CourseCard';
+import {
+  ALL_LEVELS,
+  LEVELS,
+  levelLabel,
+  matchesDifficulty,
+  rangeLabel,
+  type DifficultyRange,
+} from '@/lib/difficulty-range';
 
 import {
   categoryColors,
@@ -25,20 +33,6 @@ function SearchIcon() {
       <path d="m21 21-4.35-4.35" />
     </svg>
   );
-}
-
-/** Difficulty levels of the slider, in LEVEL_ORDER: index 1 to 3. */
-const LEVELS = ['beginner', 'intermediate', 'advanced'];
-const ALL_LEVELS: [number, number] = [1, LEVELS.length];
-
-function levelLabel(order: number): string {
-  return DIFFICULTY_LABELS[LEVELS[order - 1] ?? ''] ?? '';
-}
-
-function rangeLabel([low, high]: [number, number]): string {
-  if (low === 1 && high === LEVELS.length) return 'Toutes';
-  if (low === high) return levelLabel(low);
-  return `${levelLabel(low)} → ${levelLabel(high)}`;
 }
 
 function progressOf(course: MyCourse): number {
@@ -63,7 +57,7 @@ export function Catalogue() {
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
   const [query, setQuery] = useState('');
-  const [difficulty, setDifficulty] = useState<[number, number]>(ALL_LEVELS);
+  const [difficulty, setDifficulty] = useState<DifficultyRange>(ALL_LEVELS);
   const [categories, setCategories] = useState<Set<string>>(new Set());
 
   // The search applies after 280 ms, like the Astro page.
@@ -98,12 +92,7 @@ export function Catalogue() {
       )
       .filter((c) => categories.size === 0 || categories.has(c.category))
       .filter((c) => matchesSkill(c, skill, levels))
-      .filter((c) => {
-        // The full range keeps courses without a known difficulty.
-        if (difficulty[0] === 1 && difficulty[1] === LEVELS.length) return true;
-        const order = LEVEL_ORDER[c.difficulty] ?? 0;
-        return order >= difficulty[0] && order <= difficulty[1];
-      })
+      .filter((c) => matchesDifficulty(c, difficulty))
       .sort((a, b) => a.title.localeCompare(b.title, 'fr', { sensitivity: 'base' }));
   }, [all, query, categories, skill, levels, difficulty]);
 
@@ -147,7 +136,8 @@ export function Catalogue() {
               thumbLabels={['Difficulté minimale', 'Difficulté maximale']}
               getValueText={levelLabel}
             />
-            <span className="cat-diff-range-value" aria-live="polite">
+            {/* No aria-live: the focused thumb already announces its level (aria-valuetext). */}
+            <span className="cat-diff-range-value">
               {rangeLabel(difficulty)}
             </span>
           </div>
