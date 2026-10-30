@@ -5,8 +5,17 @@ import { useSearchParams } from 'react-router';
 import { listCourses, myCourses, mySkills } from '@pupitre/core/lib/api';
 import type { Course, MyCourse, SkillLevel } from '@pupitre/core/lib/api-types';
 import { useSession } from '@pupitre/core/lib/session';
+import { Slider } from '@pupitre/ui/components/ui/slider';
 import { ContinueHero } from '@/components/ContinueHero';
 import { CourseCard } from '@/components/CourseCard';
+import {
+  ALL_LEVELS,
+  LEVELS,
+  levelLabel,
+  matchesDifficulty,
+  rangeLabel,
+  type DifficultyRange,
+} from '@/lib/difficulty-range';
 
 import {
   categoryColors,
@@ -48,7 +57,7 @@ export function Catalogue() {
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
   const [query, setQuery] = useState('');
-  const [difficulty, setDifficulty] = useState('');
+  const [difficulty, setDifficulty] = useState<DifficultyRange>(ALL_LEVELS);
   const [categories, setCategories] = useState<Set<string>>(new Set());
 
   // The search applies after 280 ms, like the Astro page.
@@ -83,9 +92,11 @@ export function Catalogue() {
       )
       .filter((c) => categories.size === 0 || categories.has(c.category))
       .filter((c) => matchesSkill(c, skill, levels))
-      .filter((c) => !difficulty || c.difficulty === difficulty)
+      .filter((c) => matchesDifficulty(c, difficulty))
       .sort((a, b) => a.title.localeCompare(b.title, 'fr', { sensitivity: 'base' }));
   }, [all, query, categories, skill, levels, difficulty]);
+
+  const filterKey = [query.trim(), difficulty.join('-'), skill ?? '', [...categories].sort().join(',')].join('|');
 
   const skillEntry = levels.find((level) => level.skill === skill);
   const toggleCategory = (slug: string) =>
@@ -98,7 +109,7 @@ export function Catalogue() {
 
   return (
     <div className="cat-outer">
-      <div className="page-inner">
+      <div className="page-inner cat-panel">
         <h1 className="cat-page-title">Catalogue</h1>
 
         <div className="flex items-center gap-2.5 mb-3.5 flex-wrap" data-tour="catalogue-search">
@@ -113,17 +124,23 @@ export function Catalogue() {
               onChange={(event) => setSearch(event.target.value)}
             />
           </div>
-          <select
-            className="input cat-diff-filter"
-            aria-label="Difficulté"
-            value={difficulty}
-            onChange={(event) => setDifficulty(event.target.value)}
-          >
-            <option value="">Toutes difficultés</option>
-            <option value="beginner">Débutant</option>
-            <option value="intermediate">Intermédiaire</option>
-            <option value="advanced">Avancé</option>
-          </select>
+          <div className="cat-diff-range" role="group" aria-label="Difficulté">
+            <span className="cat-diff-range-name">Difficulté</span>
+            <Slider
+              className="cat-diff-range-slider"
+              min={1}
+              max={LEVELS.length}
+              step={1}
+              value={difficulty}
+              onValueChange={([low = 1, high = LEVELS.length]) => setDifficulty([low, high])}
+              thumbLabels={['Difficulté minimale', 'Difficulté maximale']}
+              getValueText={levelLabel}
+            />
+            {/* No aria-live: the focused thumb already announces its level (aria-valuetext). */}
+            <span className="cat-diff-range-value">
+              {rangeLabel(difficulty)}
+            </span>
+          </div>
           <span className="cat-count-label">{visible.length > 0 ? `${visible.length} cours` : ''}</span>
         </div>
 
@@ -195,14 +212,16 @@ export function Catalogue() {
                 <p className="text-soft text-sm">Essayez d'ajuster votre recherche ou vos filtres</p>
               </div>
             ) : (
-              <div className="courses-grid-lg">
+              // Keyed on the filters: a new filter remounts the grid, which replays the cards' entrance.
+              <div key={filterKey} className="courses-grid-lg cat-grid">
                 {visible.map((course, index) => (
                   <CourseCard
-                    tour={index === 0}
                     key={course.slug}
                     course={course}
                     color={colorOf(course.category)}
                     enrolled={enrolledIds.has(course.slug)}
+                    index={index}
+                    tour={index === 0}
                   />
                 ))}
               </div>

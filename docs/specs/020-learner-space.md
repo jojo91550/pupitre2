@@ -69,8 +69,12 @@ Every `/my-*` page and `/skills/:slug` require a signed-in user ([002](002-roles
 - Data: `GET /api/my/badges` and `GET /api/courses` (the possible badges are the courses'
   `badge`).
 - Three statistics: badges earned, badges to unlock, percentage.
-- « Obtenus (N) » section: icon, name, course, date.
-- « À débloquer (N) » section: greyed-out icon, « 🔒 Non obtenu », link to the course.
+- « Obtenus (N) » section: icon, name, course, date. Each card stands out: solid card, green
+  border, green ring around the icon and a « ✓ Obtenu » label (a decided change of
+  [005](005-ui-theme-navigation.md)).
+- « À débloquer (N) » section: greyed-out icon, « 🔒 Non obtenu », link to the course. The card
+  stays readable: opaque, with a dashed border; only the icon is greyed out, and it gets its
+  colours back on hover.
 - Clicking a badge **may** show its statistics (`GET /api/badges/{slug}`: number of holders).
 
 ## My XP - `/my-xp`

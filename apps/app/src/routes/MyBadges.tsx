@@ -77,6 +77,7 @@ export function MyBadges() {
                 <div className="auto-grid">
                   {earned.map((badge) => (
                     <Link key={badge.courseSlug} to={`/courses/${badge.courseSlug}`} className="mb-card">
+                      <span className="mb-card-ribbon">✓ Obtenu</span>
                       <div className="mb-card-icon">{badge.icon || '🏅'}</div>
                       <div className="mb-card-name">{badge.name || badge.courseSlug}</div>
                       <div className="mb-card-course">{titleOf(badge.courseSlug)}</div>
