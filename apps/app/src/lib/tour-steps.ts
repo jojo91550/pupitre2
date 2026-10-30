@@ -16,6 +16,8 @@ export type TourStep = {
   targets?: string[];
   /** Skipped when its target does not show up. */
   optional?: boolean;
+  /** `data-tour` the page sets once its data loaded: an optional step without its target is skipped then. */
+  loaded?: string;
   /** Needs the course of the `course-card` step: skipped without it. */
   needsCourse?: boolean;
   /** Roles that see the step; absent: every role. */
@@ -31,8 +33,8 @@ const COURSE_PATH = '/courses/:slug';
 const TOUR: StepDef[] = [
   { id: 'catalogue', path: '/courses', targets: ['nav-catalogue'] },
   { id: 'search', path: '/courses', targets: ['catalogue-search'] },
-  { id: 'course-card', path: '/courses', targets: ['course-card'], optional: true },
-  { id: 'continue', path: '/courses', targets: ['continue-hero'], optional: true },
+  { id: 'course-card', path: '/courses', targets: ['course-card'], optional: true, loaded: 'catalogue-loaded' },
+  { id: 'continue', path: '/courses', targets: ['continue-hero'], optional: true, loaded: 'catalogue-loaded' },
   { id: 'course-page', path: COURSE_PATH, targets: ['page-title'], needsCourse: true },
   { id: 'course-modules', path: COURSE_PATH, targets: ['course-modules'], needsCourse: true },
   { id: 'course-action', path: COURSE_PATH, targets: ['course-action'], needsCourse: true },

@@ -15,8 +15,6 @@ import { TourSpotlight } from './TourSpotlight';
 
 /** How long a step waits for its target after a navigation. */
 const TARGET_WAIT_MS = 3000;
-/** An optional step's page is already loaded: it is skipped sooner. */
-const OPTIONAL_WAIT_MS = 1000;
 const POLL_MS = 100;
 
 type Found = { element: Element } | 'hidden' | null;
@@ -43,24 +41,34 @@ function courseOf(element: Element): string | null {
   return /^\/courses\/([^/?#]+)$/.exec(href)?.[1] ?? null;
 }
 
-/** The target's box, followed on scroll and resize. */
+/**
+ * The target's box, read again when the page scrolls or resizes, or when the
+ * target or the page body changes size (content loading above it).
+ */
 function useTrackedRect(element: Element | null): DOMRect | null {
   const [tracked, setTracked] = useState<{ element: Element; rect: DOMRect } | null>(null);
   useEffect(() => {
     if (!element) return;
     let frame = 0;
-    let last = '';
-    const tick = () => {
-      const rect = element.getBoundingClientRect();
-      const key = `${rect.top},${rect.left},${rect.width},${rect.height}`;
-      if (key !== last) {
-        last = key;
-        setTracked({ element, rect });
-      }
-      frame = requestAnimationFrame(tick);
+    const measure = () => {
+      frame = 0;
+      setTracked({ element, rect: element.getBoundingClientRect() });
     };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(measure);
+    };
+    schedule();
+    window.addEventListener('scroll', schedule, { capture: true, passive: true });
+    window.addEventListener('resize', schedule);
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedule);
+    observer?.observe(element);
+    observer?.observe(document.body);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', schedule, { capture: true });
+      window.removeEventListener('resize', schedule);
+      observer?.disconnect();
+    };
   }, [element]);
   return tracked && tracked.element === element ? tracked.rect : null;
 }
@@ -163,7 +171,9 @@ export function TourRunner({ steps, onEnd, skipLabel = TOUR_MESSAGES.skip, retur
         setPhase({ kind: 'shown', element });
       } else if (
         found === 'hidden' ||
-        performance.now() - startedAt >= (step.optional ? OPTIONAL_WAIT_MS : TARGET_WAIT_MS)
+        // An optional step goes as soon as its page says it loaded without it.
+        (step.optional && step.loaded && document.querySelector(`[data-tour="${step.loaded}"]`)) ||
+        performance.now() - startedAt >= TARGET_WAIT_MS
       ) {
         if (step.optional) skipStep(step);
         else setPhase({ kind: 'shown', element: null });

@@ -185,7 +185,8 @@ export function Catalogue() {
             </button>
           </div>
         ) : (
-          <div>
+          // Marks the end of loading for the guided tour (docs/specs/007-guided-tour.md).
+          <div data-tour={signedIn && mine.isPending ? undefined : 'catalogue-loaded'}>
             {heroCourse && <ContinueHero course={heroCourse} />}
             {visible.length === 0 ? (
               <div className="cat-empty">

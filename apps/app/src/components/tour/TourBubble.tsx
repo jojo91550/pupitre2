@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
+import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 
 import { SPOTLIGHT_MARGIN } from './TourSpotlight';
 
@@ -36,14 +36,21 @@ function useDocked() {
   return docked;
 }
 
-/** Keeps Tab inside the bubble while the tour runs. */
+/**
+ * Keeps Tab inside the bubble while the tour runs, also while a step waits for
+ * its target and the bubble itself holds focus.
+ */
 function trapTab(event: KeyboardEvent<HTMLDivElement>) {
   if (event.key !== 'Tab') return;
   const focusable = [...event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled)')];
-  if (focusable.length === 0) return;
+  if (focusable.length === 0) {
+    event.preventDefault();
+    return;
+  }
   const first = focusable[0]!;
   const last = focusable[focusable.length - 1]!;
-  if (event.shiftKey && document.activeElement === first) {
+  const onBubble = document.activeElement === event.currentTarget;
+  if (event.shiftKey && (onBubble || document.activeElement === first)) {
     event.preventDefault();
     last.focus();
   } else if (!event.shiftKey && document.activeElement === last) {
@@ -82,6 +89,8 @@ export function TourBubble({
 }: TourBubbleProps) {
   const docked = useDocked();
   const ref = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const textId = useId();
   const [size, setSize] = useState({ width: 320, height: 160 });
 
   useLayoutEffect(() => {
@@ -110,8 +119,8 @@ export function TourBubble({
       role="dialog"
       tabIndex={offer ? undefined : -1}
       aria-modal={offer ? undefined : true}
-      aria-labelledby="tour-title"
-      aria-describedby="tour-text"
+      aria-labelledby={titleId}
+      aria-describedby={textId}
       onKeyDown={offer ? undefined : trapTab}
     >
       {/* Keyed by step: the card fades in and the bird flaps again at each step. */}
@@ -119,7 +128,7 @@ export function TourBubble({
         <div className="tour-head">
           <img src="/pioupitre.png" alt="" className="tour-bird" />
           <div>
-            <div id="tour-title" className="tour-title">
+            <div id={titleId} className="tour-title">
               {title}
             </div>
             {counter && <div className="tour-count">{counter}</div>}
@@ -130,7 +139,7 @@ export function TourBubble({
             </button>
           )}
         </div>
-        <div id="tour-text" className="tour-text">
+        <div id={textId} className="tour-text">
           {children}
         </div>
         <div className="tour-actions">{actions}</div>

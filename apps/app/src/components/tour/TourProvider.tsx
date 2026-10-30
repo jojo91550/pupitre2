@@ -45,8 +45,8 @@ export function TourProvider({ children }: { children: ReactNode }) {
   // The user the tour runs for: a sign-out or another sign-in stops it.
   const [runningFor, setRunningFor] = useState<string | null>(null);
   const [run, setRun] = useState(0);
-  // Bumped after writing the stored state, so the offer is read again.
-  const [, setStored] = useState(0);
+  // Bumped after writing the stored state, so it is read again.
+  const [stored, setStored] = useState(0);
 
   const userId = user?.id;
   const role = user?.role;
@@ -81,8 +81,10 @@ export function TourProvider({ children }: { children: ReactNode }) {
     [record],
   );
 
-  const offer =
-    user && !running && !isReadingPage(pathname) && shouldOfferTour(readTourState(user.id)) ? user : null;
+  // `stored` is the trigger for a fresh read after a write.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const state = useMemo(() => (userId ? readTourState(userId) : null), [userId, stored]);
+  const offer = user && !running && !isReadingPage(pathname) && shouldOfferTour(state) ? user : null;
 
   const value = useMemo(() => ({ startTour, running }), [startTour, running]);
 

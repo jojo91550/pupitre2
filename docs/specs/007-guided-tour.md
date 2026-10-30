@@ -169,7 +169,8 @@ when it is reached: the total then drops (by 4 when the catalogue is empty).
 - A step on another page navigates with the router (`useNavigate`): every page of the tour is in
   the learner app, so there is no page load.
 - After the navigation, the tour waits for the target to appear, for at most **3 s** (pages load
-  their data); an optional step waits at most **1 s**, its page being already loaded. Meanwhile
+  their data). An optional step goes as soon as its page has loaded without its target: the
+  catalogue marks its loaded results with `data-tour="catalogue-loaded"`. Meanwhile
   the bird is shown alone with a small "…" bubble. After 3 s, the step is shown centred (see
   "Optional steps").
 - « Précédent » navigates back to the page of the previous step when needed.
