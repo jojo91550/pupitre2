@@ -235,7 +235,7 @@ export function Agenda() {
       <div className="cal-area">
         <div className="cal-topbar">
           <span className="text-[1.3rem]">📅</span>
-          <span className="cal-topbar-title">Agenda</span>
+          <span className="cal-topbar-title" data-tour="page-title">Agenda</span>
           <button
             className="cal-today-btn"
             onClick={() => {

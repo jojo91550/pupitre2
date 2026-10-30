@@ -1,7 +1,7 @@
 import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
 
 import { RequireAuth } from '@pupitre/core/components/RequireAuth';
-import { Layout } from '@pupitre/core/components/Layout';
+import { LearnerLayout } from '@/components/tour/LearnerLayout';
 import { AuthCallback } from '@/routes/AuthCallback';
 import { Login } from '@/routes/Login';
 import { Catalogue } from '@/routes/Catalogue';
@@ -50,7 +50,7 @@ const routes: RouteObject[] = [
   { path: '/register', element: <Navigate to="/login" replace /> },
   {
     path: '/',
-    element: <Layout />,
+    element: <LearnerLayout />,
     children: [
       { index: true, element: <Navigate to="/courses" replace /> },
       { path: 'dashboard', element: <Navigate to="/courses" replace /> },

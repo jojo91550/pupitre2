@@ -123,7 +123,7 @@ export function Catalogue() {
       <div className="page-inner cat-panel">
         <h1 className="cat-page-title">Catalogue</h1>
 
-        <div className="flex items-center gap-2.5 mb-3.5 flex-wrap">
+        <div className="flex items-center gap-2.5 mb-3.5 flex-wrap" data-tour="catalogue-search">
           <div className="relative flex-1 min-w-[160px] max-w-[420px]">
             <SearchIcon />
             <input
@@ -212,7 +212,8 @@ export function Catalogue() {
             </button>
           </div>
         ) : (
-          <div>
+          // Marks the end of loading for the guided tour (docs/specs/007-guided-tour.md).
+          <div data-tour={signedIn && mine.isPending ? undefined : 'catalogue-loaded'}>
             {heroCourse && <ContinueHero course={heroCourse} />}
             {visible.length === 0 ? (
               <div className="cat-empty">
@@ -230,6 +231,7 @@ export function Catalogue() {
                     color={colorOf(course.category)}
                     enrolled={enrolledIds.has(course.slug)}
                     index={index}
+                    tour={index === 0}
                   />
                 ))}
               </div>

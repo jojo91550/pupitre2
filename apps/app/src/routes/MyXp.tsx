@@ -31,7 +31,7 @@ export function MyXp() {
   return (
     <div className="page-outer">
       <div className="page-inner">
-        <h1 className="page-title mb-1">Mon XP</h1>
+        <h1 data-tour="page-title" className="page-title mb-1">Mon XP</h1>
         <p className="text-[.9rem] text-ink-soft mb-7">
           {xp.isSuccess ? `${total.toLocaleString('fr-FR')} points accumulés` : 'Chargement…'}
         </p>

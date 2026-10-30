@@ -16,6 +16,7 @@ import { takeCourseReturn } from '@/lib/course-return';
 import { usePatternStyles } from '@pupitre/core/lib/use-pattern-styles';
 
 import { LabContent } from '@/components/lab/LabContent';
+import { LessonTip } from '@/components/tour/LessonTip';
 
 // /courses/:slug/lessons/:index (docs/specs/012-lesson-player.md), markup of
 // pupitre's pages/courses/[slug]/lessons/[index].astro.
@@ -131,7 +132,7 @@ function Lesson({ slug, courseTitle, module, modules }: LessonProps) {
   return (
     <>
       <div className="lesson-layout">
-        <aside className={`lesson-left${drawerOpen ? ' nav-open' : ''}`}>
+        <aside className={`lesson-left${drawerOpen ? ' nav-open' : ''}`} data-tour="lesson-modules">
           <Link to={`/courses/${slug}`} className="lesson-back-link">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -168,7 +169,7 @@ function Lesson({ slug, courseTitle, module, modules }: LessonProps) {
         </aside>
 
         <main className="lesson-center">
-          <button className="lesson-mobile-open" onClick={() => setDrawerOpen(true)}>
+          <button className="lesson-mobile-open" data-tour="lesson-modules-mobile" onClick={() => setDrawerOpen(true)}>
             ☰ Modules
           </button>
           <div className="lesson-breadcrumb">
@@ -178,7 +179,7 @@ function Lesson({ slug, courseTitle, module, modules }: LessonProps) {
             <span>›</span>
             <span>{module.name}</span>
           </div>
-          <h1 className="lesson-title">{module.name}</h1>
+          <h1 className="lesson-title" data-tour="page-title">{module.name}</h1>
 
           {module.type === 'lab' ? (
             <div className="prose">
@@ -217,7 +218,7 @@ function Lesson({ slug, courseTitle, module, modules }: LessonProps) {
             />
           )}
 
-          <div className="lesson-nav">
+          <div className="lesson-nav" data-tour="lesson-nav">
             {previous ? (
               <Link to={moduleHref(slug, previous)} className="btn btn-secondary">
                 ◂ Précédent
@@ -258,6 +259,7 @@ function Lesson({ slug, courseTitle, module, modules }: LessonProps) {
       </div>
 
       <div className={`nav-overlay${drawerOpen ? ' active' : ''}`} onClick={() => setDrawerOpen(false)} />
+      <LessonTip />
 
       <div className="floating-progress">
         <div className="floating-prog-bar">

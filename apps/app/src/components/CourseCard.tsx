@@ -13,13 +13,24 @@ import {
 
 // A course card of the catalogue grid (docs/specs/010-catalogue.md).
 
-type CourseCardProps = { course: Course; color: CategoryColor; enrolled: boolean; index: number };
+type CourseCardProps = {
+  course: Course;
+  color: CategoryColor;
+  enrolled: boolean;
+  /** Position in the grid: staggers the entrance animation (index.css, .cat-grid). */
+  index: number;
+  /** The card the guided tour points at (docs/specs/007-guided-tour.md). */
+  tour?: boolean;
+};
 
-export function CourseCard({ course, color, enrolled, index }: CourseCardProps) {
+export function CourseCard({ course, color, enrolled, index, tour = false }: CourseCardProps) {
   const difficulty = course.difficulty;
   return (
-    // --i staggers the entrance animation (index.css, .cat-grid).
-    <div className="rail-card relative" style={{ '--cat-color': color.dot, '--i': index } as CSSProperties}>
+    <div
+      className="rail-card relative"
+      data-tour={tour ? 'course-card' : undefined}
+      style={{ '--cat-color': color.dot, '--i': index } as CSSProperties}
+    >
       {/* Stretched link: the whole card opens the course, skill chips stay links of their own. */}
       <Link to={`/courses/${course.slug}`} className="absolute inset-0 z-0" aria-label={course.title} />
       <div className="rail-card-thumb-wrap">

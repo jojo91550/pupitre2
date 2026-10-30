@@ -109,6 +109,7 @@ checked by `internal/server/router_test.go`: every route of
 | Language | French | French only, strings grouped for a later translation | | [005](docs/specs/005-ui-theme-navigation.md) |
 | Look | Pupitre's CSS | Pupitre's CSS, unchanged | The design is kept as is | [005](docs/specs/005-ui-theme-navigation.md) |
 | Page background | `--color-page` and the page wrappers' gradient | Learner app, light mode: the drawing of `ebuildy/pupitre2` | Decision of the project | [005](docs/specs/005-ui-theme-navigation.md) |
+| Guided tour | None | A tour of the learner app led by the bird of the logo and a first lesson tip, state kept in the browser | New feature of pupitre2 | [007](docs/specs/007-guided-tour.md) |
 
 ## To do
 

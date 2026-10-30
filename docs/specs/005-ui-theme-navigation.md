@@ -82,7 +82,7 @@ shadcn `Sheet` component, closed by a click on a link or on the backdrop.
 | « Mon apprentissage » | 📚 Catalogue · 🎓 Mes cours · 🗺️ Mes parcours · 👥 Mes groupes |
 | « Progression & Gamification » | 🏅 Mes badges · ⚡ Mon XP · 🏆 Classement |
 | « Compétences & Planning » | 🎯 Mes compétences · 📅 Agenda |
-| - | Theme toggle · 🚪 Déconnexion (in red) |
+| - | 🐤 Visite guidée (signed in, learner app only, [007](007-guided-tour.md)) · Theme toggle · 🚪 Déconnexion (in red) |
 
 The entry of the current page is highlighted (same path or sub-path).
 
