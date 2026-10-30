@@ -59,6 +59,11 @@ layout, quiz palette, podium…) are those of the current Astro frontend, not a 
   white panel in light mode: the course page's content column (`.course-main`), the lesson and its
   table of contents (`.lesson-center`, `.lesson-right`) and the quiz (`.quiz-main`). Below 640 px
   the columns are simply white. Dark mode is unchanged.
+- Decided change: earned and locked badges are easier to tell apart, in both modes
+  ([020](020-learner-space.md), "My badges"). An earned badge has a solid card, a green border,
+  a green ring around its icon and a « ✓ Obtenu » label; a badge to unlock has an opaque card
+  with a dashed border instead of a 55 % opacity one, only its icon in grey, and its colours back
+  on hover. The badge card of the course page follows: dashed border while the badge is to earn.
 
 ## Light / dark mode
 
