@@ -110,6 +110,8 @@ checked by `internal/server/router_test.go`: every route of
 | Look | Pupitre's CSS | Pupitre's CSS, unchanged | The design is kept as is | [005](docs/specs/005-ui-theme-navigation.md) |
 | Page background | `--color-page` and the page wrappers' gradient | Learner app, light mode: the drawing of `ebuildy/pupitre2` | Decision of the project | [005](docs/specs/005-ui-theme-navigation.md) |
 | Catalogue layout | Grid of `.courses-grid-lg`, difficulty select | Up to five columns of larger cards, entrance animation on each filter change, difficulty range slider, white panel in light mode; white panels behind the course page's content, the lesson and the quiz too; earned and locked badges easier to tell apart | Decision of the project | [005](docs/specs/005-ui-theme-navigation.md), [010](docs/specs/010-catalogue.md) |
+| Base font size | 16 px | 17 px, the whole interface about 6 % larger | Readability, decision of the project | [005](docs/specs/005-ui-theme-navigation.md) |
+| Light mode panels | Content over the page background | A white panel on every learner page | Readability over the background drawing, decision of the project | [005](docs/specs/005-ui-theme-navigation.md) |
 | Dark mode cards | Translucent, blurred cards over `--color-page` | Solid `--color-paper` cards everywhere, like the course page's module rows | Decision of the project | [005](docs/specs/005-ui-theme-navigation.md) |
 | Guided tour | None | A tour of the learner app led by the bird of the logo and a first lesson tip, state kept in the browser | New feature of pupitre2 | [007](docs/specs/007-guided-tour.md) |
 

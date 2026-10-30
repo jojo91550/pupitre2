@@ -29,6 +29,12 @@
 /* Contrast fixes the pupitre CSS needs: dark mode (spec 090, A26), locked modules (A27). */
 @import './contrast-fixes.css';
 
+/* Larger text for readability (a decided change of spec 005): pupitre's base was 16px, and
+   almost every size and spacing is in rem, so the whole interface grows by about 6 %. */
+html {
+  font-size: 17px;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 /*

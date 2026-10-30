@@ -170,6 +170,33 @@
   }
 }
 
+/* The other learner pages get the catalogue's white panel too, in light mode: their content
+   sits on it instead of on the drawing (spec 005). The course page's left column is solid white
+   instead of pupitre's blurred, translucent white. */
+:root:not(.dark) :is(.page-outer, .skill-outer, .up-outer) > .page-inner,
+:root:not(.dark) .page-content {
+  padding: 28px 32px 36px;
+  border: 1px solid var(--color-line);
+  border-radius: 20px;
+  background: var(--color-paper);
+  box-shadow: 0 10px 40px rgb(30 41 59 / 0.08);
+}
+@media (max-width: 640px) {
+  :root:not(.dark) :is(.page-outer, .skill-outer, .up-outer) > .page-inner,
+  :root:not(.dark) .page-content {
+    padding: 16px 14px 24px;
+    border-radius: 16px;
+  }
+}
+/* The profile has no outer wrapper: the panel needs its own room under the top bar. */
+:root:not(.dark) .page-content {
+  margin-block: 32px;
+}
+:root:not(.dark) .course-sidebar {
+  background: var(--color-paper);
+  backdrop-filter: none;
+}
+
 /* Reading pages: the course page's content column, the lesson with its table of contents, and
    the quiz. As for `.cat-panel`, the text sits on a white panel in light mode and the drawing
    stays visible around it; on phones the columns are simply white. Dark mode is unchanged. */

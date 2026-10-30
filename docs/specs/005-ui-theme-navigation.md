@@ -24,6 +24,9 @@ theme, declared in `packages/ui/src/styles/globals.css` (`:root` and `.dark`).
 | `purple` / `purple-soft` | `#7c3aed` / `#f3e8ff` | - / `#1a0e38` | skill badges |
 
 - Radius: `--radius: 10px` (cards: 16 px).
+- Base font size: 17 px instead of pupitre's 16 px, for readability (decided change): almost every
+  size and spacing is in `rem`, so the whole interface grows by about 6 %. Set on `html` in
+  `packages/ui/src/styles/globals.css`, for both apps.
 - Fonts: Hanken Grotesk (text), Caveat (the "pupitre" logo), JetBrains Mono (code), served locally
   (see [003](003-security.md) S6).
 - The logo is `apps/app/public/pioupitre.png`, next to the word "pupitre" in Caveat.
@@ -59,6 +62,9 @@ layout, quiz palette, podium…) are those of the current Astro frontend, not a 
   white panel in light mode: the course page's content column (`.course-main`), the lesson and its
   table of contents (`.lesson-center`, `.lesson-right`) and the quiz (`.quiz-main`). Below 640 px
   the columns are simply white. Dark mode is unchanged.
+- Decided change: the other learner pages get the same white panel in light mode (My courses,
+  paths, groups, badges, XP, leaderboard, skills, a skill's page, public profile, profile), and the
+  course page's left column is solid white instead of a blurred translucent white.
 - Decided change: in dark mode, every card is solid, like the module rows of the course page: a
   plain `--color-paper` background, without the transparency and backdrop blur of the pupitre
   cards (catalogue cards and « Reprendre », stats, XP, paths, skills, groups, leaderboard, public
