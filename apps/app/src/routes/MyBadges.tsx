@@ -32,7 +32,7 @@ export function MyBadges() {
     <div className="page-outer">
       <div className="page-inner">
         <div className="mb-8">
-          <h1 className="page-title mb-1">Mes badges</h1>
+          <h1 data-tour="page-title" className="page-title mb-1">Mes badges</h1>
           <p className="text-[.9rem] text-ink-soft">
             {pending || error
               ? 'Chargement…'

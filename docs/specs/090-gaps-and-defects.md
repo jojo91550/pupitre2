@@ -15,7 +15,7 @@ server-side sessions). pupitre2 only rewrites the frontend. The specs therefore 
 | Desktop app | Out of scope | Tauri local check kept and compatible ([014](014-labs.md)) |
 | Languages | French and English | French only, with strings grouped for a future translation |
 | API contract | Generated OpenAPI | Types written by hand from the Go structs, as the current OpenAPI is incomplete |
-| Guided tour | None | A tour of the learner app led by Pioupitre, state kept in the browser ([007](007-guided-tour.md)) |
+| Guided tour | None | A tour of the learner app led by the bird of the logo, state kept in the browser ([007](007-guided-tour.md)) |
 
 The reference features that belong to its backend (admin account bootstrap, demo data,
 server-side performance invariants, health and metrics, rate limiting) do not apply to a frontend

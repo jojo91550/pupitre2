@@ -14,9 +14,11 @@ import { SiteNavLink } from './SiteLink';
 type SideMenuProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Shows « Visite guidée » (learner app, docs/specs/007-guided-tour.md). */
+  onStartTour?: () => void;
 };
 
-export function SideMenu({ open, onOpenChange }: SideMenuProps) {
+export function SideMenu({ open, onOpenChange, onStartTour }: SideMenuProps) {
   const session = useSession();
   const theme = useTheme();
   const close = () => onOpenChange(false);
@@ -50,6 +52,19 @@ export function SideMenu({ open, onOpenChange }: SideMenuProps) {
               </div>
             ))}
             <div className="nav-drawer-section">
+              {session && onStartTour && (
+                <button
+                  type="button"
+                  className="nav-drawer-link w-full text-left"
+                  onClick={() => {
+                    close();
+                    onStartTour();
+                  }}
+                >
+                  <span className="nav-drawer-icon">🐤</span>
+                  Visite guidée
+                </button>
+              )}
               <button type="button" className="nav-drawer-link w-full text-left" onClick={toggleTheme}>
                 <span className="nav-drawer-icon">{theme === 'dark' ? '☀️' : '🌙'}</span>
                 <span>{theme === 'dark' ? 'Mode clair' : 'Mode sombre'}</span>

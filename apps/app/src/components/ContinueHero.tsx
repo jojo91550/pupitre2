@@ -12,7 +12,7 @@ export function ContinueHero({ course }: { course: MyCourse }) {
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   const open = () => navigate(`/courses/${course.slug}`);
   return (
-    <div className="continue-hero" role="link" tabIndex={0} onClick={open} onKeyDown={(e) => e.key === 'Enter' && open()}>
+    <div className="continue-hero" data-tour="continue-hero" role="link" tabIndex={0} onClick={open} onKeyDown={(e) => e.key === 'Enter' && open()}>
       <div className="continue-thumb">{courseIcon({ category: course.category })}</div>
       <div className="continue-meta">
         <div className="continue-badge">Reprendre</div>

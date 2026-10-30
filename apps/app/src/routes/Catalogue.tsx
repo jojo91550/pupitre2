@@ -101,7 +101,7 @@ export function Catalogue() {
       <div className="page-inner">
         <h1 className="cat-page-title">Catalogue</h1>
 
-        <div className="flex items-center gap-2.5 mb-3.5 flex-wrap">
+        <div className="flex items-center gap-2.5 mb-3.5 flex-wrap" data-tour="catalogue-search">
           <div className="relative flex-1 min-w-[160px] max-w-[420px]">
             <SearchIcon />
             <input
@@ -195,8 +195,9 @@ export function Catalogue() {
               </div>
             ) : (
               <div className="courses-grid-lg">
-                {visible.map((course) => (
+                {visible.map((course, index) => (
                   <CourseCard
+                    tour={index === 0}
                     key={course.slug}
                     course={course}
                     color={colorOf(course.category)}

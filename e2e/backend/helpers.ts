@@ -1,5 +1,7 @@
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
 
+import { skipTour } from '../helpers';
+
 // Shared steps of the tests against the real backend (playwright.backend.config.ts).
 
 /** Accounts of the Keycloak test realm (apps/api/infra/keycloak/pupitre-realm.json). */
@@ -23,6 +25,7 @@ const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** Signs in through the Keycloak page and waits to land on `path`. */
 export async function signIn(page: Page, account: Account, path = '/my-courses') {
+  await skipTour(page);
   await page.goto(`/login?redirect=${encodeURIComponent(path)}`);
   await page.getByRole('button', { name: 'Se connecter avec Keycloak' }).click();
   await page.locator('#username').fill(account.username);

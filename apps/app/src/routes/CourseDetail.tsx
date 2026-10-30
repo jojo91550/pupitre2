@@ -158,7 +158,7 @@ export function CourseDetail() {
       <div className="course-page">
         <aside className="course-sidebar">
           <div className="course-thumb">{courseIcon(data, '📖')}</div>
-          <h1 className="course-title-head">{data.title}</h1>
+          <h1 className="course-title-head" data-tour="page-title">{data.title}</h1>
           <div className="course-tags">
             {data.difficulty && (
               <span className={`badge ${DIFFICULTY_BADGES[data.difficulty] ?? 'badge-blue'}`}>
@@ -194,12 +194,12 @@ export function CourseDetail() {
               )}
             </div>
           )}
-          <div>
+          <div data-tour="course-action">
             <EnrollArea course={data} enrolled={enrolled} modules={allModules} />
           </div>
         </aside>
 
-        <div className="course-main">
+        <div className="course-main" data-tour="course-modules">
           <div className="course-main-header">
             <h2 className="text-[1rem] font-bold">Contenu du cours</h2>
             <span className="text-soft text-sm">

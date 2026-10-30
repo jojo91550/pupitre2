@@ -1,4 +1,4 @@
-# 007 - Guided tour with Pioupitre
+# 007 - Guided tour
 
 Features: F186 (guided tour), F187 (restart the tour), F188 (role-dependent steps), F189 (first
 lesson tip).
@@ -9,8 +9,9 @@ These features are **new**: neither the Astro frontend of `genesary/pupitre` nor
 
 ## Goal
 
-A signed-in user who discovers the platform is guided through it by **Pioupitre**, the bird of
-the logo (`apps/app/public/pioupitre.png`, [005](005-ui-theme-navigation.md)), acting as a coach.
+A signed-in user who discovers the platform is guided through it by **the bird of the logo**
+(`apps/app/public/pioupitre.png`, [005](005-ui-theme-navigation.md)), acting as a coach. The bird
+has no name on screen: the file is called `pioupitre`, the platform is « pupitre ».
 The bird flies from one element to the next, across the pages of the learner app, and explains
 in a speech bubble what each part is for: where to find a course, what a course page holds, where
 the courses, paths, groups, progress, badges, XP, skills and agenda are.
@@ -26,7 +27,7 @@ is explained by a short tip the first time the user opens one (see "First lesson
 - Signed-in users only. A visitor on the public catalogue is not offered the tour.
 - **No backend change** (AGENTS.md, "Constraints"): no new route, no new column. The tour state
   is kept in the browser (see "Persistence").
-- No new dependency: the tour is built on `radix-ui` (already a dependency) and pupitre's CSS.
+- No new dependency: the tour is a few React components and a small stylesheet in pupitre's tokens.
   Libraries such as `react-joyride`, `driver.js` or `shepherd.js` are not used: they bring their
   own theme, which would go against the pupitre design ([005](005-ui-theme-navigation.md),
   "Visual design"), and add a dependency for little code ([003](003-security.md) S7).
@@ -37,10 +38,10 @@ is explained by a short tip the first time the user opens one (see "First lesson
 
 After sign-in, on the first page of the learner app that has a `Layout` (not `/login`,
 `/auth/callback`, a lesson or a quiz), if the tour has never been offered to this user in this
-browser (see "Persistence"), Pioupitre appears at the bottom right with a welcome bubble:
+browser (see "Persistence"), the bird appears at the bottom right with a welcome bubble:
 
-> **Bonjour {username} !** Je suis Pioupitre, je vais vous faire visiter pupitre en quelques
-> étapes.
+> **Bonjour {username} !** Bienvenue sur pupitre ! Je vais vous faire visiter la plateforme en
+> quelques étapes.
 
 Buttons: « C'est parti ! » (primary), « Plus tard » (ghost). A close button (`aria-label`
 « Fermer la visite ») does the same as « Plus tard ».
@@ -58,7 +59,8 @@ read. It waits for the next eligible page.
 
 - The side menu gets an entry « 🐤 Visite guidée », in the last block, before the theme toggle
   ([005](005-ui-theme-navigation.md), "Side menu"). It closes the menu and starts the tour at
-  step 1, from any page.
+  step 1, from any page. Its label is written in `SideMenu`: `@pupitre/core` cannot import the
+  app's messages.
 - The entry is shown to signed-in users only.
 
 ## Steps
@@ -72,8 +74,8 @@ not break the tour.
 | 1 | `catalogue` | `/courses` | `nav-catalogue` (top bar link) | Le catalogue | Tous les cours de la plateforme sont ici. C'est votre point de départ. |
 | 2 | `search` | `/courses` | `catalogue-search` | Trouver un cours | Cherchez par titre, ou filtrez par catégorie et par niveau. |
 | 3 | `course-card` | `/courses` | `course-card` (first card) | Un cours | Chaque carte est un cours. Ouvrons celui-ci ensemble. |
-| 4 | `continue` | `/courses` | `continue-hero` | Reprendre | Pioupitre garde votre place : reprenez la dernière leçon en un clic. |
-| 5 | `course-page` | `/courses/:slug` | page title | La page du cours | Sa description, son niveau, sa durée et le badge à gagner. |
+| 4 | `continue` | `/courses` | `continue-hero` | Reprendre | pupitre garde votre place : reprenez la dernière leçon en un clic. |
+| 5 | `course-page` | `/courses/:slug` | page title | La page du cours | Sa description, son niveau, ses compétences et le badge à gagner. |
 | 6 | `course-modules` | `/courses/:slug` | `course-modules` (module list) | Le programme | Les modules du cours, à suivre dans l'ordre. Certains se débloquent quand le précédent est terminé. |
 | 7 | `course-action` | `/courses/:slug` | `course-action` (enrollment area) | S'inscrire | Inscrivez-vous ici pour commencer. Ensuite, ce bloc affiche votre progression et l'XP du cours. |
 | 8 | `my-courses` | `/my-courses` | `nav-my-courses` (top bar link) | Mes cours | Les cours auxquels vous êtes inscrit, avec votre progression. |
@@ -105,7 +107,9 @@ not break the tour.
 - **Steps 3, 5, 6 and 7** are skipped when the catalogue has no course.
 - **Step 4** is skipped when the « Reprendre » hero is not shown (no lesson started).
 - A step whose target is missing for another reason (page in error, element hidden at this
-  width) is **not** skipped: its bubble is shown centred on the page, without a highlight.
+  width) is **not** skipped: its bubble is shown centred on the page, without a highlight. A
+  target that is in the page but hidden (the top bar links under 640 px) is shown centred at
+  once, without waiting.
 
 ### Role-dependent steps (F188)
 
@@ -121,23 +125,26 @@ These steps point at the top bar entry; the tour does not open the admin app (it
 which would end the tour).
 
 The progress counter counts only the steps the user will see (« 3 / 19 » for a student whose
-catalogue has courses and who has started a lesson).
+catalogue has courses and who has started a lesson). An optional step is known to be skipped only
+when it is reached: the total then drops (by 4 when the catalogue is empty).
 
 ## Display
 
-### Pioupitre and the bubble
+### The bird and the bubble
 
-- Pioupitre is the logo image, 56 px, next to the bubble, on the side nearest to the target. Its
-  `alt` is empty (decorative): the bubble carries the text.
+- The bird is the logo image, 56 px, in the bubble's header, next to the title and the counter.
+  Its `alt` is empty (decorative): the bubble carries the text.
 - The bubble is a card in pupitre's tokens: `--card` background, `--border`, 16 px radius, the
   card shadow, Hanken Grotesk; title in bold, text in `--foreground`, counter in
   `--muted-foreground`. It stays readable in light and dark mode (AA contrast).
 - Buttons: « Précédent » (ghost, hidden on step 1), « Suivant » (primary; « Terminer » on the last
   step), « Passer la visite » (link style). Counter « n / total ».
-- Max width 320 px; at 360 px of viewport width, the bubble is docked at the bottom of the screen,
-  full width minus the page padding, and the bird sits on its top edge.
-- The bubble is positioned with Radix `Popover` anchored on the target (collision handling,
-  flipping). It is never cut by the viewport.
+- Max width 320 px. Below 640 px of viewport width (the width under which the top bar hides its
+  links), the bubble is docked at the bottom of the screen, full width minus 16 px on each side;
+  the bird stays in its header.
+- The bubble is placed by the tour itself: below the target, above it when there is no room
+  below, centred on the target and kept 16 px inside the viewport. Without a target it is centred
+  on the screen.
 
 ### Highlight
 
@@ -151,8 +158,9 @@ catalogue has courses and who has started a lesson).
 
 ### Animation
 
-- Between two steps, Pioupitre flies from its position to the next one (about 600 ms, a slight
-  arc, `transform` only), then the bubble fades in.
+- Between two steps, the bubble and the bird fly from their position to the next one (600 ms,
+  `transform` only, eased), the spotlight follows, the text fades in and the bird flaps its
+  wings.
 - Under `prefers-reduced-motion: reduce`, there is no flight and no fade: the bird and the bubble
   appear in place.
 
@@ -161,21 +169,24 @@ catalogue has courses and who has started a lesson).
 - A step on another page navigates with the router (`useNavigate`): every page of the tour is in
   the learner app, so there is no page load.
 - After the navigation, the tour waits for the target to appear, for at most **3 s** (pages load
-  their data). Meanwhile Pioupitre is shown alone with a small "…" bubble. After 3 s, the step is
-  shown centred (see "Optional steps").
+  their data); an optional step waits at most **1 s**, its page being already loaded. Meanwhile
+  the bird is shown alone with a small "…" bubble. After 3 s, the step is shown centred (see
+  "Optional steps").
 - « Précédent » navigates back to the page of the previous step when needed.
 - Pages behind `RequireAuth` are reachable because the user is signed in. If the session expires
-  during the tour, the guard redirects to `/login` and the tour stops.
+  during the tour, the guard redirects to `/login` and the tour stops. A sign-out, or a sign-in as
+  someone else, stops it too: it never resumes for the next user.
 
 ## Keyboard and accessibility
 
-- The bubble is a non-modal `role="dialog"` with `aria-labelledby` (title) and `aria-describedby`
-  (text). Focus moves to the « Suivant » button at each step and is trapped in the bubble while
-  the tour runs.
+- The bubble is a `role="dialog"` with `aria-labelledby` (title) and `aria-describedby` (text),
+  `aria-modal` while the tour runs, since the page under it cannot be used. Focus moves to the
+  « Suivant » button at each step and is trapped in the bubble while the tour runs.
+- The first-visit offer is a non-modal dialog: it does not take focus and the page stays usable.
 - Keys: `→` / `Enter` next, `←` previous, `Escape` ends the tour (same as « Passer la visite »).
 - Each step is announced through an `aria-live="polite"` region (« Étape 3 sur 19 : Un cours »).
-- When the tour ends, focus returns to the element that had it before (the menu entry for a
-  restart, the page otherwise).
+- When the tour ends, focus returns to the element that had it before: the menu button for a
+  restart (the side menu hands focus back to it as it closes), the page otherwise.
 
 ## Ending the tour
 
@@ -190,7 +201,7 @@ catalogue has courses and who has started a lesson).
 
 The tour does not enter a lesson: that needs an enrollment, and the tour changes no data. Instead,
 the **first time** the user opens a lesson page (`/courses/:slug/lessons/:index`, any course),
-Pioupitre shows a short tip of three steps, with the same bubble, spotlight, buttons and keys as
+the bird shows a short tip of three steps, with the same bubble, spotlight, buttons and keys as
 the tour:
 
 | # | Target (`data-tour`) | Title | Text |
@@ -227,14 +238,16 @@ the tour:
 
 | Path | Content |
 | --- | --- |
-| `apps/app/src/components/tour/TourProvider.tsx` | Tour state (current step, running), `startTour()`, the first-visit offer; mounted once in the learner app around the router outlet |
-| `apps/app/src/components/tour/TourBubble.tsx` | Pioupitre, the bubble, the buttons, the keyboard |
+| `apps/app/src/components/tour/LearnerLayout.tsx` | The learner app's layout: `Layout` of `@pupitre/core` inside `TourProvider`, used by `router.tsx` |
+| `apps/app/src/components/tour/TourProvider.tsx` | Whether the tour runs, `startTour()`, the first-visit offer; the context lives in `tour-context.ts` |
+| `apps/app/src/components/tour/TourRunner.tsx` | Runs a step list: navigation, waiting for the target, skipping, keyboard, counter; used by the tour and the lesson tip |
+| `apps/app/src/components/tour/TourBubble.tsx` | The bird, the bubble and its placement, the focus trap |
 | `apps/app/src/components/tour/TourSpotlight.tsx` | The dimming layer with the cut-out |
 | `apps/app/src/components/tour/LessonTip.tsx` | The first lesson tip, mounted by `LessonPage` |
 | `apps/app/src/lib/tour-steps.ts` | The step lists (tour and lesson tip), the role filter, `TOUR_VERSION` |
 | `apps/app/src/lib/tour-storage.ts` | Reading and writing the persisted state |
 | `apps/app/src/lib/messages/tour.ts` | The French strings |
-| `packages/ui/src/styles/tour.css` | The bubble, the spotlight and the flight (a new file, not one of the copied pupitre CSS files) |
+| `apps/app/src/components/tour/tour.css` | The bubble, the spotlight and the flight, in pupitre's tokens (a new file, not one of the copied pupitre CSS files) |
 
 - `TopBar`, `SideMenu` (in `@pupitre/core`) and the learner pages get `data-tour` attributes only;
   their markup and classes are otherwise unchanged.
@@ -246,6 +259,8 @@ the tour:
 
 - The tour works in `pnpm dev:mock` with the test accounts of [006](006-mock-mode.md); no new
   mock route is needed.
+- The other end-to-end tests keep the tour out of the way: the `signIn` helpers mark it as seen
+  (`skipTour` in `e2e/helpers.ts`); the tour tests pass `{ tour: true }`.
 - Unit tests (Vitest): role filter of the steps, optional steps, persistence (absent, invalid,
   older version, current version), keyboard handling.
 - E2E (Playwright, `e2e/tour.spec.ts`, mock mode):

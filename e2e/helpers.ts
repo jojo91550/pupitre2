@@ -16,8 +16,26 @@ export const TRAP_ID = '9c8b7a65-4d3e-4f21-b0a9-8e7d6c5b4a39';
 
 const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/** Signs in as `username` from the sign-in page, and waits to land on `path`. */
-export async function signIn(page: Page, username: string, path = '/my-courses') {
+/**
+ * Marks the guided tour and the first lesson tip as seen for every account
+ * (docs/specs/007-guided-tour.md), so they do not cover the pages under test.
+ */
+export async function skipTour(page: Page) {
+  await page.addInitScript(() => {
+    const getItem = Storage.prototype.getItem;
+    Storage.prototype.getItem = function (key: string) {
+      if (key.startsWith('pupitre.tour.')) return JSON.stringify({ version: 999, status: 'completed', lessonTip: 'seen' });
+      return getItem.call(this, key);
+    };
+  });
+}
+
+/**
+ * Signs in as `username` from the sign-in page, and waits to land on `path`.
+ * The guided tour stays out of the way unless `tour` is set.
+ */
+export async function signIn(page: Page, username: string, path = '/my-courses', { tour = false } = {}) {
+  if (!tour) await skipTour(page);
   await page.goto(`/login?redirect=${encodeURIComponent(path)}`);
   await page.getByRole('button', { name: 'Se connecter avec Keycloak' }).click();
   await expect(page.getByRole('heading', { name: /Keycloak simulé/ })).toBeVisible();
