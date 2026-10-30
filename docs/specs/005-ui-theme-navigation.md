@@ -24,6 +24,10 @@ theme, declared in `packages/ui/src/styles/globals.css` (`:root` and `.dark`).
 | `purple` / `purple-soft` | `#7c3aed` / `#f3e8ff` | - / `#1a0e38` | skill badges |
 
 - Radius: `--radius: 10px` (cards: 16 px).
+- Base font size: 17 px instead of pupitre's 16 px, for readability (decided change): almost every
+  size and spacing is in `rem`, so the whole interface grows by about 6 %. Set on `html` in
+  `packages/ui/src/styles/globals.css` as `106.25%`, which still follows the user's own default
+  font size, for both apps.
 - Fonts: Hanken Grotesk (text), Caveat (the "pupitre" logo), JetBrains Mono (code), served locally
   (see [003](003-security.md) S6).
 - The logo is `apps/app/public/pioupitre.png`, next to the word "pupitre" in Caveat.
@@ -59,6 +63,19 @@ layout, quiz palette, podium…) are those of the current Astro frontend, not a 
   white panel in light mode: the course page's content column (`.course-main`), the lesson and its
   table of contents (`.lesson-center`, `.lesson-right`) and the quiz (`.quiz-main`). Below 640 px
   the columns are simply white. Dark mode is unchanged.
+- Decided change: the other learner pages get the same white panel in light mode (My courses,
+  paths, groups, badges, XP, leaderboard, skills, a skill's page, public profile, profile), and the
+  course page's left column is solid white instead of a blurred translucent white.
+- Decided change: in dark mode, every card is solid, like the module rows of the course page: a
+  plain `--color-paper` background, without the transparency and backdrop blur of the pupitre
+  cards (catalogue cards and « Reprendre », stats, XP, paths, skills, groups, leaderboard, public
+  profile, course sidebar, sessions, members table). Only the background colour changes: the
+  category borders, gradients and the « done » / « booked » variants keep theirs. In
+  `packages/ui/src/styles/contrast-fixes.css`.
+- Decided change: in dark mode, the catalogue cards' thumbnails are tinted with their category
+  colour (20 % over `--color-paper`) instead of the light pastel dimmed by a filter, their borders
+  use `--color-line` (the category top border stays), and the « Reprendre » and « +200 XP » pills
+  and the « Reprendre » progress track get dark variants. In `apps/app/src/index.css`.
 - Decided change: earned and locked badges are easier to tell apart, in both modes
   ([020](020-learner-space.md), "My badges"). An earned badge has a solid card, a green border,
   a green ring around its icon and a « ✓ Obtenu » label; a badge to unlock has an opaque card
@@ -144,7 +161,9 @@ Every page that loads data has three states, with shared components:
 - Default Tailwind breakpoints; no page scrolls horizontally at 360 px.
 - Every icon button has an `aria-label`.
 - Full keyboard navigation, visible focus (`--ring`).
-- AA contrast on text, in light and dark mode.
+- AA contrast on text, in light and dark mode. The dark overrides the pupitre CSS lacks are in
+  `packages/ui/src/styles/contrast-fixes.css` ([090](090-gaps-and-defects.md), A26 and A27), checked
+  by `e2e/contrast.spec.ts`.
 - Dialogs (`Dialog`, `AlertDialog`) manage focus and close with Escape.
 - Every deletion goes through a confirmation `AlertDialog`.
 

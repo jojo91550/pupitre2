@@ -170,6 +170,33 @@
   }
 }
 
+/* The other learner pages get the catalogue's white panel too, in light mode: their content
+   sits on it instead of on the drawing (spec 005). The course page's left column is solid white
+   instead of pupitre's blurred, translucent white. */
+:root:not(.dark) :is(.page-outer, .skill-outer, .up-outer) > .page-inner,
+:root:not(.dark) .page-content {
+  padding: 28px 32px 36px;
+  border: 1px solid var(--color-line);
+  border-radius: 20px;
+  background: var(--color-paper);
+  box-shadow: 0 10px 40px rgb(30 41 59 / 0.08);
+}
+@media (max-width: 640px) {
+  :root:not(.dark) :is(.page-outer, .skill-outer, .up-outer) > .page-inner,
+  :root:not(.dark) .page-content {
+    padding: 16px 14px 24px;
+    border-radius: 16px;
+  }
+}
+/* The profile has no outer wrapper: the panel needs its own room under the top bar. */
+:root:not(.dark) .page-content {
+  margin-block: 32px;
+}
+:root:not(.dark) .course-sidebar {
+  background: var(--color-paper);
+  backdrop-filter: none;
+}
+
 /* Reading pages: the course page's content column, the lesson with its table of contents, and
    the quiz. As for `.cat-panel`, the text sits on a white panel in light mode and the drawing
    stays visible around it; on phones the columns are simply white. Dark mode is unchanged. */
@@ -267,4 +294,36 @@
   background: var(--color-paper);
   border-style: dashed;
   border-color: color-mix(in srgb, var(--color-ink-soft) 45%, transparent);
+}
+
+/* « XP de ce cours » on the course page is a link: pupitre's `.course-xp-card` sets no display,
+   so the card stayed inline and its background, border and bar broke apart (spec 090, A28). */
+.course-xp-card {
+  display: block;
+}
+
+/* Catalogue cards: the thumbnail colour of the category, light in light mode. */
+.rail-card-thumb {
+  background: var(--thumb-bg, var(--color-fill));
+}
+
+/* Catalogue in dark mode. pupitre kept the light pastel thumbnails and dimmed them with a filter,
+   which made them muddy and dulled the icons; the light card borders, the pale yellow
+   « Reprendre » and « +200 XP » pills and the near-white progress track glared. */
+:root.dark .rail-card-thumb {
+  background: color-mix(in srgb, var(--cat-color, var(--color-blue)) 20%, var(--color-paper));
+  filter: none;
+}
+:root.dark .rail-card {
+  border-right-color: var(--color-line);
+  border-bottom-color: var(--color-line);
+  border-left-color: var(--color-line);
+}
+:root.dark :is(.continue-badge, .badge-xp-reward) {
+  background: var(--color-orange-soft);
+  border-color: var(--fix-amber-border);
+  color: var(--fix-amber-ink);
+}
+:root.dark .continue-prog {
+  background: var(--color-line);
 }
