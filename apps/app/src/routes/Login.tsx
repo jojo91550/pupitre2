@@ -2,6 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router';
 
 import { getPublicSettings, oidcAuthorize } from '@pupitre/core/lib/api';
+import { DEMO_ACCOUNTS, withLoginHint } from '@/lib/demo-accounts';
 import { rememberFlow } from '@/lib/oidc-flow';
 import { landingPath } from '@pupitre/core/lib/auth-paths';
 import { SiteNavigate } from '@pupitre/core/components/SiteLink';
@@ -10,6 +11,10 @@ import { safeExternalUrl, safeRedirect } from '@pupitre/ui/lib/security';
 
 // /login (docs/specs/001), with the card of pupitre's pages/login.astro. Keycloak
 // is the only sign-in method: the e-mail, LDAP and registration parts are gone.
+
+// The Vite dev server against the local realm lists its test accounts. Mock mode
+// has its own account picker (mocks/mock-keycloak-page.tsx).
+const SHOW_DEMO_ACCOUNTS = import.meta.env.DEV && import.meta.env.MODE !== 'mock';
 
 function SsoIcon() {
   return (
@@ -28,11 +33,11 @@ export function Login() {
   const settings = useQuery({ queryKey: ['settings', 'public'], queryFn: getPublicSettings });
 
   const signIn = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (loginHint?: string) => {
       const { url, state } = await oidcAuthorize();
       const target = safeExternalUrl(url);
       if (!target) throw new Error("L'adresse de connexion renvoyée par le serveur est invalide.");
-      return { target, state };
+      return { target: SHOW_DEMO_ACCOUNTS && loginHint ? withLoginHint(target, loginHint) : target, state };
     },
     onSuccess: ({ target, state }) => {
       rememberFlow(state, redirect || null);
@@ -71,11 +76,34 @@ export function Login() {
               type="button"
               className="sso-btn"
               disabled={signIn.isPending}
-              onClick={() => signIn.mutate()}
+              onClick={() => signIn.mutate(undefined)}
             >
               {signIn.isPending ? <span className="spinner" /> : <SsoIcon />}
               <span>Se connecter avec Keycloak</span>
             </button>
+            {SHOW_DEMO_ACCOUNTS && (
+              <>
+                <div className="divider !my-1" />
+                <p className="text-ink-soft text-[.78rem] text-center">
+                  Comptes de démonstration (développement uniquement)
+                </p>
+                {DEMO_ACCOUNTS.map(({ username, password, description }) => (
+                  <button
+                    key={username}
+                    type="button"
+                    className="sso-btn !justify-start text-left"
+                    disabled={signIn.isPending}
+                    onClick={() => signIn.mutate(username)}
+                  >
+                    <span className="flex-1 min-w-0">
+                      <span className="block font-semibold truncate">{username}</span>
+                      <span className="block text-[.78rem] text-ink-soft truncate">{description}</span>
+                    </span>
+                    <code className="text-[.78rem] text-ink-soft select-all">{password}</code>
+                  </button>
+                ))}
+              </>
+            )}
           </div>
         ) : (
           settings.isSuccess && (

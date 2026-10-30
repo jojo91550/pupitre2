@@ -21,6 +21,11 @@ finding H7): hiding the form in the frontend does not close the `POST /api/auth/
    - If `oidc_enabled === "true"`: a single button « Se connecter avec Keycloak ».
    - Otherwise: the message « La connexion n'est pas configurée. Contactez un administrateur. »
    - If a valid session already exists, the page redirects to the landing page (see below).
+   - Under the Vite dev server only (`import.meta.env.DEV`, not mock mode), the button is followed
+     by « Comptes de démonstration »: the test accounts of the local realm
+     (`apps/api/infra/keycloak/pupitre-realm.json`) with their passwords. Clicking one starts the
+     same flow with Keycloak's `login_hint`, which pre-fills the username. Production builds
+     contain neither the list nor the passwords.
 2. **Click on the button**:
    - store the requested destination (the `redirect` parameter, **validated**, see "Redirect
      after sign-in") in `sessionStorage`;
