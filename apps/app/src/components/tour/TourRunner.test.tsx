@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -34,6 +35,14 @@ function renderTour(onEnd = vi.fn()) {
   );
   render(<RouterProvider router={router} />);
   return onEnd;
+}
+
+function renderSteps(steps: TourStep[], page: ReactNode) {
+  const router = createMemoryRouter(
+    [{ path: '/', element: <>{page}<TourRunner steps={steps} onEnd={vi.fn()} /></> }],
+    { initialEntries: ['/'] },
+  );
+  render(<RouterProvider router={router} />);
 }
 
 const key = (name: string) => act(() => void fireEvent.keyDown(document, { key: name }));
@@ -74,4 +83,26 @@ describe('tour runner (spec 007)', () => {
     renderTour();
     expect(await screen.findByText('Étape 1 sur 3 : Un')).toBeInTheDocument();
   });
+
+  it('skips an optional step at once when its page says it loaded without the target', async () => {
+    const steps: TourStep[] = [
+      { id: 'card', targets: ['absent'], optional: true, loaded: 'page-loaded', title: 'Carte', text: '' },
+      { id: 'end', title: 'Fin', text: '' },
+    ];
+    renderSteps(steps, <span data-tour="page-loaded" />);
+    expect(await screen.findByText('Fin')).toBeInTheDocument();
+    expect(screen.getByText('1 / 1')).toBeInTheDocument();
+  });
+
+  it('keeps waiting for an optional step while its page is still loading', async () => {
+    const steps: TourStep[] = [
+      { id: 'card', targets: ['absent'], optional: true, loaded: 'page-loaded', title: 'Carte', text: '' },
+      { id: 'end', title: 'Fin', text: '' },
+    ];
+    renderSteps(steps, null);
+    await act(() => new Promise((resolve) => setTimeout(resolve, 300)));
+    expect(screen.getByText('…')).toBeInTheDocument();
+    expect(screen.queryByText('Fin')).toBeNull();
+  });
 });
+
