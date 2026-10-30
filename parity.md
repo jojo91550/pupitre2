@@ -103,13 +103,14 @@ checked by `internal/server/router_test.go`: every route of
 | Topic | genesary | pupitre2 | Why | Spec |
 | --- | --- | --- | --- | --- |
 | Sign-in | E-mail and password, registration, GitHub, LDAP, OIDC | OIDC through Keycloak only | Decision of the project; the backend still serves the other routes, turned off by settings (audit H7) | [001](docs/specs/001-keycloak-authentication.md) |
-| Frontend defects | 25 defects of the Astro pages | Fixed | Found while writing the specs | [090](docs/specs/090-gaps-and-defects.md) A1-A25 |
+| Frontend defects | 28 defects of the Astro pages | Fixed | Found while writing the specs, and in use (A26-A28) | [090](docs/specs/090-gaps-and-defects.md) A1-A28 |
 | Backend defects | Audit findings and defects found during the move | Fixed: B1, B4-B14, B15 (security headers), B17 (`correctAnswer`), B19, B20, B22-B24 | Security and real bugs, each approved and tested | [190](docs/specs/190-backend-defects.md) |
 | Kept as the reference | - | B2, B3, B15 (`/metrics`), B16, B17 (e-mail verification), B18, B21 | Documented or relied on by genesary | [190](docs/specs/190-backend-defects.md), "Kept as the reference" |
 | Language | French | French only, strings grouped for a later translation | | [005](docs/specs/005-ui-theme-navigation.md) |
 | Look | Pupitre's CSS | Pupitre's CSS, unchanged | The design is kept as is | [005](docs/specs/005-ui-theme-navigation.md) |
 | Page background | `--color-page` and the page wrappers' gradient | Learner app, light mode: the drawing of `ebuildy/pupitre2` | Decision of the project | [005](docs/specs/005-ui-theme-navigation.md) |
 | Catalogue layout | Grid of `.courses-grid-lg`, difficulty select | Up to five columns of larger cards, entrance animation on each filter change, difficulty range slider, white panel in light mode; white panels behind the course page's content, the lesson and the quiz too; earned and locked badges easier to tell apart | Decision of the project | [005](docs/specs/005-ui-theme-navigation.md), [010](docs/specs/010-catalogue.md) |
+| Dark mode cards | Translucent, blurred cards over `--color-page` | Solid `--color-paper` cards everywhere, like the course page's module rows | Decision of the project | [005](docs/specs/005-ui-theme-navigation.md) |
 | Guided tour | None | A tour of the learner app led by the bird of the logo and a first lesson tip, state kept in the browser | New feature of pupitre2 | [007](docs/specs/007-guided-tour.md) |
 
 ## To do

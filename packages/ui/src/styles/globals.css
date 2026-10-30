@@ -26,6 +26,8 @@
 @import './pupitre/learning.css';
 @import './pupitre/admin.css';
 @import './pupitre/compat.css';
+/* Contrast fixes the pupitre CSS needs: dark mode (spec 090, A26), locked modules (A27). */
+@import './contrast-fixes.css';
 
 @custom-variant dark (&:is(.dark *));
 

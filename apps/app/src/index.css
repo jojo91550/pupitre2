@@ -268,3 +268,35 @@
   border-style: dashed;
   border-color: color-mix(in srgb, var(--color-ink-soft) 45%, transparent);
 }
+
+/* « XP de ce cours » on the course page is a link: pupitre's `.course-xp-card` sets no display,
+   so the card stayed inline and its background, border and bar broke apart (spec 090, A28). */
+.course-xp-card {
+  display: block;
+}
+
+/* Catalogue cards: the thumbnail colour of the category, light in light mode. */
+.rail-card-thumb {
+  background: var(--thumb-bg, var(--color-fill));
+}
+
+/* Catalogue in dark mode. pupitre kept the light pastel thumbnails and dimmed them with a filter,
+   which made them muddy and dulled the icons; the light card borders, the pale yellow
+   « Reprendre » and « +200 XP » pills and the near-white progress track glared. */
+:root.dark .rail-card-thumb {
+  background: color-mix(in srgb, var(--cat-color, var(--color-blue)) 20%, var(--color-paper));
+  filter: none;
+}
+:root.dark .rail-card {
+  border-right-color: var(--color-line);
+  border-bottom-color: var(--color-line);
+  border-left-color: var(--color-line);
+}
+:root.dark :is(.continue-badge, .badge-xp-reward) {
+  background: var(--color-orange-soft);
+  border-color: #92400e;
+  color: #fbbf24;
+}
+:root.dark .continue-prog {
+  background: var(--color-line);
+}
