@@ -26,7 +26,8 @@ theme, declared in `packages/ui/src/styles/globals.css` (`:root` and `.dark`).
 - Radius: `--radius: 10px` (cards: 16 px).
 - Base font size: 17 px instead of pupitre's 16 px, for readability (decided change): almost every
   size and spacing is in `rem`, so the whole interface grows by about 6 %. Set on `html` in
-  `packages/ui/src/styles/globals.css`, for both apps.
+  `packages/ui/src/styles/globals.css` as `106.25%`, which still follows the user's own default
+  font size, for both apps.
 - Fonts: Hanken Grotesk (text), Caveat (the "pupitre" logo), JetBrains Mono (code), served locally
   (see [003](003-security.md) S6).
 - The logo is `apps/app/public/pioupitre.png`, next to the word "pupitre" in Caveat.

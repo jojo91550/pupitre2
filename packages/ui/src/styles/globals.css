@@ -30,9 +30,10 @@
 @import './contrast-fixes.css';
 
 /* Larger text for readability (a decided change of spec 005): pupitre's base was 16px, and
-   almost every size and spacing is in rem, so the whole interface grows by about 6 %. */
+   almost every size and spacing is in rem, so the whole interface grows by about 6 %. A
+   percentage (17px at the browser default) still follows the user's own default font size. */
 html {
-  font-size: 17px;
+  font-size: 106.25%;
 }
 
 @custom-variant dark (&:is(.dark *));

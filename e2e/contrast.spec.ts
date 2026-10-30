@@ -6,7 +6,11 @@ import { ACCOUNTS, signIn } from './helpers';
 // dark mode; A27: locked modules): each must reach the WCAG AA ratio (4.5:1) against the
 // background it really sits on, its ancestors' opacity included.
 
-/** Contrast ratio of an element's text against its composited background. */
+/**
+ * Contrast ratio of an element's text against its composited background. Only background colours
+ * are composited, not background images: text on a gradient card (`.continue-hero`, `.xp-hero`)
+ * would be misread, so such elements are not checked here.
+ */
 async function contrast(locator: Locator): Promise<number> {
   return locator.evaluate((element) => {
     type Rgba = { r: number; g: number; b: number; a: number };
@@ -63,36 +67,36 @@ for (const colorScheme of ['light', 'dark'] as const) {
 }
 
 test.describe('dark mode', () => {
-test.beforeEach(async ({ page }) => {
-  await page.emulateMedia({ colorScheme: 'dark' });
-});
+  test.beforeEach(async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'dark' });
+  });
 
-test('the learner pages stay readable in dark mode', async ({ page }) => {
-  await signIn(page, ACCOUNTS.alice, '/courses');
-  await expectReadable(page, page.locator('.chip-reset'), '« Tout » chip');
+  test('the learner pages stay readable in dark mode', async ({ page }) => {
+    await signIn(page, ACCOUNTS.alice, '/courses');
+    await expectReadable(page, page.locator('.chip-reset'), '« Tout » chip');
 
-  await page.goto('/courses/kubernetes-basics');
-  await expectReadable(page, page.locator('.mod-name').first(), 'module name');
+    await page.goto('/courses/kubernetes-basics');
+    await expectReadable(page, page.locator('.mod-name').first(), 'module name');
 
-  await page.goto('/courses/atelier-kubernetes');
-  await expectReadable(page, page.locator('.session-title').first(), 'session title');
+    await page.goto('/courses/atelier-kubernetes');
+    await expectReadable(page, page.locator('.session-title').first(), 'session title');
 
-  await page.goto('/agenda');
-  await expectReadable(page, page.locator('.cal-today-btn'), '« Aujourd’hui »');
-  await expectReadable(page, page.locator('.cal-month-btn'), 'month');
-  await expectReadable(page, page.locator('.cal-cell:not(.other-month):not(.today) .cal-day-num').first(), 'day number');
-  await expectReadable(page, page.locator('.ev-course').first(), 'upcoming session');
-});
+    await page.goto('/agenda');
+    await expectReadable(page, page.locator('.cal-today-btn'), '« Aujourd’hui »');
+    await expectReadable(page, page.locator('.cal-month-btn'), 'month');
+    await expectReadable(page, page.locator('.cal-cell:not(.other-month):not(.today) .cal-day-num').first(), 'day number');
+    await expectReadable(page, page.locator('.ev-course').first(), 'upcoming session');
+  });
 
-test('the admin and manager pages stay readable in dark mode', async ({ page }) => {
-  await signIn(page, ACCOUNTS.admin, '/admin/courses');
-  await expectReadable(page, page.locator('.link-btn.violet').first(), '« Définition » link');
+  test('the admin and manager pages stay readable in dark mode', async ({ page }) => {
+    await signIn(page, ACCOUNTS.admin, '/admin/courses');
+    await expectReadable(page, page.locator('.link-btn.violet').first(), '« Définition » link');
 
-  await page.goto('/admin/settings');
-  await expectReadable(page, page.locator('.info-box').first(), 'info box');
+    await page.goto('/admin/settings');
+    await expectReadable(page, page.locator('.info-box').first(), 'info box');
 
-  await page.getByRole('button', { name: 'Déconnexion' }).click();
-  await signIn(page, ACCOUNTS.manager, '/manager/users');
-  await expectReadable(page, page.locator('.mu-table tbody td').getByText('alice', { exact: true }), 'member name');
-});
+    await page.getByRole('button', { name: 'Déconnexion' }).click();
+    await signIn(page, ACCOUNTS.manager, '/manager/users');
+    await expectReadable(page, page.locator('.mu-table tbody td').getByText('alice', { exact: true }), 'member name');
+  });
 });

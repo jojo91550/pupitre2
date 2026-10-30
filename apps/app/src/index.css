@@ -321,8 +321,8 @@
 }
 :root.dark :is(.continue-badge, .badge-xp-reward) {
   background: var(--color-orange-soft);
-  border-color: #92400e;
-  color: #fbbf24;
+  border-color: var(--fix-amber-border);
+  color: var(--fix-amber-ink);
 }
 :root.dark .continue-prog {
   background: var(--color-line);

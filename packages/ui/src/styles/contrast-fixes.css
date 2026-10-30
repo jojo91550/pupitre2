@@ -1,8 +1,21 @@
 /*
  * Contrast fixes the pupitre CSS needs (docs/specs/090-gaps-and-defects.md, A26 and A27). Kept
- * apart from the copies in ./pupitre, which stay unchanged; the values are pupitre's tokens.
- * Unlayered, so they win over the layered rules.
+ * apart from the copies in ./pupitre, which stay unchanged. The values are pupitre's tokens, plus
+ * the dark-mode colours below, which tokens.css does not have. Unlayered, so they win over the
+ * layered rules.
  */
+
+/* Dark-mode colours missing from tokens.css, named once (also used by apps/app/src/index.css). */
+:root.dark {
+  --fix-blue-ink: #7db8f7;
+  --fix-violet-ink: #a78bfa;
+  --fix-cyan-ink: #67d4ea;
+  --fix-cyan-soft: #0b2a33;
+  --fix-amber-ink: #fbbf24;
+  --fix-amber-border: #92400e;
+  --fix-good-border: #166534;
+  --fix-hover-border: #4f5d9a;
+}
 
 /*
  * A27, both modes: a locked module stays readable. pupitre dims the whole row to 50 % (55 % in
@@ -31,7 +44,7 @@
   color: var(--color-blue-deep);
 }
 :root.dark .sidebar-link.active {
-  color: #6cb2f7;
+  color: var(--fix-blue-ink);
 }
 
 /*
@@ -40,8 +53,8 @@
  */
 
 /* Every card is solid, like the module rows of the course page: a plain --color-paper
-   background, without transparency or backdrop blur (a decided change of spec 005). Only the background colour changes, so
-   coloured borders, gradients and the variants below keep theirs. */
+   background, without transparency or backdrop blur (a decided change of spec 005). Only the
+   background colour changes, so coloured borders, gradients and the variants below keep theirs. */
 :root.dark
   :is(
     .stat-card,
@@ -83,11 +96,11 @@
 :root.dark .chip-reset.has-filter {
   background: var(--color-blue-soft);
   border-color: var(--color-blue);
-  color: #7db8f7;
+  color: var(--fix-blue-ink);
 }
 :root.dark .badge-inperson {
-  background: #0b2a33;
-  color: #67d4ea;
+  background: var(--fix-cyan-soft);
+  color: var(--fix-cyan-ink);
 }
 
 /* Course page: the module rows and the in-person session cards. */
@@ -97,7 +110,7 @@
 }
 :root.dark .mod-row:hover {
   background: var(--color-paper);
-  border-color: #4f5d9a;
+  border-color: var(--fix-hover-border);
 }
 :root.dark .mod-row.current {
   background: var(--color-blue-soft);
@@ -109,7 +122,7 @@
 }
 :root.dark .session-card-booked {
   background: var(--color-good-soft);
-  border-color: #166534;
+  border-color: var(--fix-good-border);
 }
 
 /* Agenda: the calendar, its top bar and the « Sessions à venir » panel. */
@@ -129,19 +142,18 @@
   border-color: var(--color-line);
 }
 :root.dark .ev-card:hover {
-  border-color: #4f5d9a;
+  border-color: var(--fix-hover-border);
 }
 
 /* Admin and manager space: the members table, the violet and orange links, the info box. */
 :root.dark .mu-table-wrap {
-  background: var(--color-paper);
   border-color: var(--color-line);
 }
 :root.dark :is(.mu-table thead tr, .mu-table tbody tr) {
   border-color: var(--color-line);
 }
 :root.dark .link-btn.violet {
-  color: #a78bfa;
+  color: var(--fix-violet-ink);
 }
 :root.dark .link-btn.violet:hover {
   background: var(--color-purple-soft);
@@ -150,5 +162,5 @@
   background: var(--color-orange-soft);
 }
 :root.dark .info-box {
-  color: #7db8f7;
+  color: var(--fix-blue-ink);
 }
