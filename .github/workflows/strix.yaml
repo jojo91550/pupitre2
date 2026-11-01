@@ -46,7 +46,7 @@ jobs:
         with:
           # Strix scopes a pull request scan to the changed files.
           fetch-depth: 0
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         if: ${{ env.LLM_API_KEY != '' }}
         with:
           python-version: '3.12'
