@@ -12,8 +12,10 @@ Please give us time to release a fix before you disclose the vulnerability.
 
 ## Scope
 
-The learner and admin apps (`apps/app`, `apps/admin`, `packages/*`), the API (`apps/api`), the
-container images and the Helm chart. The security rules the code follows are in
+The learner and admin apps (`apps/app`, `apps/admin`, `packages/*`), the API (`apps/api`) and the
+container images. The Helm chart lives in its own repository (see
+[`docs/specs/108-backend-operations-and-testing.md`](docs/specs/108-backend-operations-and-testing.md)):
+report its vulnerabilities there. The security rules the code follows are in
 [`docs/specs/003-security.md`](docs/specs/003-security.md).
 
 The test accounts and passwords of the local Keycloak realm
