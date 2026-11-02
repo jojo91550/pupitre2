@@ -16,7 +16,7 @@ I have:
 
 - [ ] Read and followed `AGENTS.md` and the specs in `docs/specs`.
 - [ ] Followed the Conventional Commits message format and a Conventional Branch name.
-- [ ] Updated the specs when the behaviour or the design changes (`005`, `parity.md`, `090`, `190`).
+- [ ] Updated the specs when the behaviour or the design changes (`docs/specs/005-ui-theme-navigation.md`, `parity.md`, `docs/specs/090-gaps-and-defects.md`, `docs/specs/190-backend-defects.md`).
 - [ ] Run `pnpm typecheck`, `pnpm lint`, `pnpm test` and `pnpm build`.
 - [ ] Run `pnpm api:lint`, `pnpm api:test` and `pnpm api:build` when `apps/api` changes.
 
